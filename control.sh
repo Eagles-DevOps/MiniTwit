@@ -1,7 +1,7 @@
 #!/bin/bash
 if [ "$1" = "init" ]; then
 
-    if [ -f "/tmp/minitwit.db" ]; then 
+    if [ -f "/minitwit.db" ]; then 
         echo "Database already exists."
         exit 1
     fi
