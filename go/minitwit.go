@@ -1,88 +1,157 @@
 package main
 
+import (
+	"crypto/md5"
+	"database/sql"
+	"encoding/hex"
+	"fmt"
 
-import "fmt"
-import "github.com/gorilla/mux"
-import "net/http"
+	"github.com/gorilla/mux"
+
+	//_ "go-sql-driver/mysql"
+	"net/http"
+	"os"
+	"strings"
+	"time"
+)
+
+const (
+	DATABASE   = "./minitwit.db"
+	PER_PAGE   = 30
+	DEBUG      = true
+	SECRET_KEY = "development key"
+)
+
+var db *sql.DB
+var f []byte
 
 func main() {
-    r := mux.NewRouter()
-    r.HandleFunc("/", Home)
-    //r.HandleFunc("/timeline", TimeLine)
-    //r.HandleFunc("/public", Public)
-    http.Handle("/", r)
-	fmt.Print("Hello world")
+	db, _ = connect_db()
+	err := db.Ping()
+	fmt.Print("Error:", err)
 
+	r := mux.NewRouter()
+	r.HandleFunc("/", handle)
+	//r.HandleFunc("/", timeLine)
+	//r.HandleFunc("/public", public_timeline)
+	//r.HandleFunc("/<username>", user_timeline)
+	//r.HandleFunc("/<username>/follow", follow_user)
+	//r.HandleFunc("/<username>/unfollow", unfollow_user)
+	//r.HandleFunc("/add_message", add_message).Methods("POST")
+	//r.HandleFunc("/login", login)
+	//r.HandleFunc("/register", register)
+	//r.HandleFunc("/logout", logout)
+	//http.Handle("/", r)
+	fmt.Print("Listening on port 80...")
+	http.ListenAndServe(":80", r)
 }
 
 // "/"
-func Home(w http.ResponseWriter, r *http.Request){
-	vars := mux.Vars(r)
-    w.WriteHeader(http.StatusOK)
-    fmt.Fprintf(w, "Category: %v\n", vars["category"])
+func handle(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
 }
 
-//database connection conf
+// """Returns a new connection to the database."""
+func connect_db() (db *sql.DB, err error) {
+	db, err = sql.Open("sqlite3", DATABASE)
+	if err != nil {
+		return nil, err
+	}
+	return db, nil
+}
 
+// """Creates the database tables."""
+func init_db() (f []byte, err error) {
+	f, err = os.ReadFile("schema.sql")
+	if err != nil {
+		return nil, err
+	}
+	return f, nil
+}
 
+// TODO: include 'g'
+// """Queries the database and returns a list of dictionaries."""
+// variable one must be false as a default
+func query_db(query string, args []interface{}, one bool) interface{} {
+	cur, err := db.Query(query, args)
+	if err != nil {
+		return nil
+	}
+	defer cur.Close()
+	var rv []map[interface{}]interface{}
 
-// def connect_db():
-//     """Returns a new connection to the database."""
-//     return sqlite3.connect(DATABASE)
+	for cur.Next() {
+		var idx int
+		var value string
+		err = cur.Scan(&idx, &value)
+		if err != nil {
+			break
+		}
+		names, col_err := cur.Columns()
+		if col_err != nil {
+			break
+		}
+		dict := map[interface{}]interface{}{
+			names[idx]: value,
+		}
+		rv = append(rv, dict)
+		if one {
+			break
+		}
+	}
+	if len(rv) != 0 {
+		if one {
+			return rv[0]
+		}
+		return rv
+	}
+	return nil
+}
 
+// """Format a timestamp for display."""
+// timestamp of type time.Now()
+func format_datetime(timestamp time.Time) string {
+	return timestamp.Format("%Y-%m-%d @ %H:%M")
+}
 
-// def init_db():
-//     """Creates the database tables."""
-//     with closing(connect_db()) as db:
-//         with app.open_resource('schema.sql', mode='r') as f:
-//             db.cursor().executescript(f.read())
-//         db.commit()
+// """Return the gravatar image for the given email address."""
+// size=80
+func gravatar_url(email string, size int) string {
+	hash := md5.Sum([]byte(strings.ToLower(strings.TrimSpace(email))))
+	enc := hex.EncodeToString(hash[:])
+	return fmt.Sprintf("http://www.gravatar.com/avatar/%s?d=identicon&s=%d", enc, size)
+}
 
+// TODO: include 'g'
+// """Convenience method to look up the id for a username."""
+func get_user_id(username string) int {
+	var user_id int
+	rv := db.QueryRow("SELECT user_id FROM user WHERE username = ?",
+		username)
+	err := rv.Scan(&user_id)
 
-// def query_db(query, args=(), one=False):
-//     """Queries the database and returns a list of dictionaries."""
-//     cur = g.db.execute(query, args)
-//     rv = [dict((cur.description[idx][0], value)
-//                for idx, value in enumerate(row)) for row in cur.fetchall()]
-//     return (rv[0] if rv else None) if one else rv
+	if err != sql.ErrNoRows {
+		return user_id
+	}
+	return 0
+}
 
-
-// def get_user_id(username):
-//     """Convenience method to look up the id for a username."""
-//     rv = g.db.execute('select user_id from user where username = ?',
-//                        [username]).fetchone()
-//     return rv[0] if rv else None
-
-
-// def format_datetime(timestamp):
-//     """Format a timestamp for display."""
-//     return datetime.utcfromtimestamp(timestamp).strftime('%Y-%m-%d @ %H:%M')
-
-
-// def gravatar_url(email, size=80):
-//     """Return the gravatar image for the given email address."""
-//     return 'http://www.gravatar.com/avatar/%s?d=identicon&s=%d' % \
-//         (md5(email.strip().lower().encode('utf-8')).hexdigest(), size)
-
-
-// @app.before_request
-// def before_request():
-//     """Make sure we are connected to the database each request and look
-//     up the current user so that we know he's there.
-//     """
-//     g.db = connect_db()
-//     g.user = None
-//     if 'user_id' in session:
-//         g.user = query_db('select * from user where user_id = ?',
-//                           [session['user_id']], one=True)
-
+//@app.before_request
+//def before_request():
+//    """Make sure we are connected to the database each request and look
+//    up the current user so that we know he's there.
+//    """
+//    g.db = connect_db()
+//    g.user = None
+//    if 'user_id' in session:
+//        g.user = query_db('select * from user where user_id = ?',
+//                          [session['user_id']], one=True)
 
 // @app.after_request
 // def after_request(response):
 //     """Closes the database again at the end of the request."""
 //     g.db.close()
 //     return response
-
 
 // @app.route('/')
 // def timeline():
@@ -103,7 +172,6 @@ func Home(w http.ResponseWriter, r *http.Request){
 //         order by message.pub_date desc limit ?''',
 //         [session['user_id'], session['user_id'], PER_PAGE]))
 
-
 // @app.route('/public')
 // def public_timeline():
 //     """Displays the latest messages of all users."""
@@ -111,7 +179,6 @@ func Home(w http.ResponseWriter, r *http.Request){
 //         select message.*, user.* from message, user
 //         where message.flagged = 0 and message.author_id = user.user_id
 //         order by message.pub_date desc limit ?''', [PER_PAGE]))
-
 
 // @app.route('/<username>')
 // def user_timeline(username):
@@ -132,7 +199,6 @@ func Home(w http.ResponseWriter, r *http.Request){
 //             [profile_user['user_id'], PER_PAGE]), followed=followed,
 //             profile_user=profile_user)
 
-
 // @app.route('/<username>/follow')
 // def follow_user(username):
 //     """Adds the current user as follower of the given user."""
@@ -146,7 +212,6 @@ func Home(w http.ResponseWriter, r *http.Request){
 //     g.db.commit()
 //     flash('You are now following "%s"' % username)
 //     return redirect(url_for('user_timeline', username=username))
-
 
 // @app.route('/<username>/unfollow')
 // def unfollow_user(username):
@@ -162,7 +227,6 @@ func Home(w http.ResponseWriter, r *http.Request){
 //     flash('You are no longer following "%s"' % username)
 //     return redirect(url_for('user_timeline', username=username))
 
-
 // @app.route('/add_message', methods=['POST'])
 // def add_message():
 //     """Registers a new message for the user."""
@@ -175,7 +239,6 @@ func Home(w http.ResponseWriter, r *http.Request){
 //         g.db.commit()
 //         flash('Your message was recorded')
 //     return redirect(url_for('timeline'))
-
 
 // @app.route('/login', methods=['GET', 'POST'])
 // def login():
@@ -196,7 +259,6 @@ func Home(w http.ResponseWriter, r *http.Request){
 //             session['user_id'] = user['user_id']
 //             return redirect(url_for('timeline'))
 //     return render_template('login.html', error=error)
-
 
 // @app.route('/register', methods=['GET', 'POST'])
 // def register():
@@ -226,14 +288,12 @@ func Home(w http.ResponseWriter, r *http.Request){
 //             return redirect(url_for('login'))
 //     return render_template('register.html', error=error)
 
-
 // @app.route('/logout')
 // def logout():
 //     """Logs the user out"""
 //     flash('You were logged out')
 //     session.pop('user_id', None)
 //     return redirect(url_for('public_timeline'))
-
 
 // # add some filters to jinja and set the secret key and debug mode
 // # from the configuration.
@@ -242,13 +302,5 @@ func Home(w http.ResponseWriter, r *http.Request){
 // app.secret_key = SECRET_KEY
 // app.debug = DEBUG
 
-
 // if __name__ == '__main__':
 //     app.run(host="0.0.0.0")
-
-
-// //Timeline
-
-// //Public
-
-// //
