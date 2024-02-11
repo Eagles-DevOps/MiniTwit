@@ -5,14 +5,13 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"fmt"
-
-	"github.com/gorilla/mux"
-
-	//_ "go-sql-driver/mysql"
 	"net/http"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/gorilla/mux"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 const (
@@ -27,8 +26,6 @@ var f []byte
 
 func main() {
 	db, _ = connect_db()
-	err := db.Ping()
-	fmt.Print("Error:", err)
 
 	r := mux.NewRouter()
 	r.HandleFunc("/", handle)
@@ -42,6 +39,10 @@ func main() {
 	//r.HandleFunc("/register", register)
 	//r.HandleFunc("/logout", logout)
 	//http.Handle("/", r)
+	content := query_db("SELECT user_id, user_id FROM user WHERE username = ? OR username = ?", []any{"Roger Histand", "Geoffrey Stieff"}, false)
+	//id_string := strconv.FormatInt(int64(id), 10)
+
+	fmt.Println("Content: ", content)
 	fmt.Print("Listening on port 80...")
 	http.ListenAndServe(":80", r)
 }
@@ -53,45 +54,40 @@ func handle(w http.ResponseWriter, r *http.Request) {
 
 // """Returns a new connection to the database."""
 func connect_db() (db *sql.DB, err error) {
-	db, err = sql.Open("sqlite3", DATABASE)
-	if err != nil {
-		return nil, err
-	}
-	return db, nil
+	return sql.Open("sqlite3", DATABASE)
 }
 
 // """Creates the database tables."""
 func init_db() (f []byte, err error) {
-	f, err = os.ReadFile("schema.sql")
-	if err != nil {
-		return nil, err
-	}
-	return f, nil
+	return os.ReadFile("schema.sql")
 }
 
 // TODO: include 'g'
 // """Queries the database and returns a list of dictionaries."""
 // variable one must be false as a default
-func query_db(query string, args []interface{}, one bool) interface{} {
-	cur, err := db.Query(query, args)
+func query_db(query string, args []any, one bool) any {
+	cur, err := db.Query(query, args...)
 	if err != nil {
+		fmt.Print("query err: ", err)
 		return nil
 	}
 	defer cur.Close()
-	var rv []map[interface{}]interface{}
+	var rv []map[any]any
 
 	for cur.Next() {
 		var idx int
 		var value string
 		err = cur.Scan(&idx, &value)
 		if err != nil {
+			fmt.Print("scan err: ", err)
 			break
 		}
 		names, col_err := cur.Columns()
 		if col_err != nil {
+			fmt.Print("col err: ", err)
 			break
 		}
-		dict := map[interface{}]interface{}{
+		dict := map[any]any{
 			names[idx]: value,
 		}
 		rv = append(rv, dict)
