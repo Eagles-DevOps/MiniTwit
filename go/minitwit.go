@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"fmt"
+	"html/template"
 	"net/http"
 	"os"
 	"strings"
@@ -26,8 +27,6 @@ var db *sql.DB
 var f []byte
 
 func main() {
-	db, _ = connect_db()
-
 	r := mux.NewRouter()
 	r.HandleFunc("/", handle)
 	//r.HandleFunc("/", timeLine)
@@ -40,12 +39,11 @@ func main() {
 	//r.HandleFunc("/register", register)
 	//r.HandleFunc("/logout", logout)
 	//http.Handle("/", r)
-	content := query_db("SELECT user_id FROM user WHERE username IN (?, ?, ?)", []any{"Roger Histand", "Ayako Yestramski", "Leonora Alford"}, false)
+	content, err := query_db("SELECT user_id FROM user WHERE username IN (?, ?, ?)", []any{"Roger Histand", "Ayako Yestramski", "Leonora Alford"}, false)
 	//dt := format_datetime(time.Now())
 	//id_string := strconv.FormatInt(int64(id), 10)
 	//output := gravatar_url("anam@itu.dk", 80)
-
-	fmt.Println("Content: ", content)
+	fmt.Println("Content: ", content, err)
 	fmt.Print("Listening on port 5000...")
 	http.ListenAndServe(":5000", r)
 }
@@ -66,18 +64,17 @@ func init_db() ([]byte, error) {
 }
 
 // """Queries the database and returns a list of dictionaries."""
-// variable one must be false as a default
-func query_db(query string, args []any, one bool) any {
+func query_db(query string, args []any, one bool) (any, error) {
 	cur, err := db.Query(query, args...)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 	defer cur.Close()
 
 	var rv []map[any]any
 	cols, err := cur.Columns()
 	if err != nil {
-		return nil
+		return nil, err
 	}
 	for cur.Next() {
 		row := make([]any, len(cols))
@@ -99,11 +96,11 @@ func query_db(query string, args []any, one bool) any {
 	}
 	if len(rv) != 0 {
 		if one {
-			return rv[0]
+			return rv[0], nil
 		}
-		return rv
+		return rv, nil
 	}
-	return nil
+	return nil, nil
 }
 
 // """Format a timestamp for display."""
@@ -118,21 +115,23 @@ func gravatar_url(email string, size int) string {
 }
 
 // """Convenience method to look up the id for a username."""
-func get_user_id(username string) int {
+func get_user_id(username string) (any, error) {
 	var user_id int
 	rv := db.QueryRow("SELECT user_id FROM user WHERE username = ?",
 		username)
 	err := rv.Scan(&user_id)
-
-	if err != sql.ErrNoRows {
-		return user_id
+	if err != nil {
+		return nil, err
 	}
-	return 0
+	return user_id, err
 }
 
 // """Make sure we are connected to the database each request and look
 // up the current user so that we know he's there.
 var store = sessions.NewCookieStore([]byte(os.Getenv("SESSIONKEY")))
+var session *sessions.Session
+var user any
+var user_id any
 
 func before_request(r *http.Request) {
 	db, _ = connect_db()
@@ -140,7 +139,10 @@ func before_request(r *http.Request) {
 	user_id := session.Values["user_id"]
 	fmt.Println("user_id: ", user_id)
 	if user_id != nil {
-		user := query_db("select * from user where user_id = ?", []any{"user_id"}, true)
+		user, err := query_db("SELECT * FROM user WHERE user_id = ?", []any{"user_id"}, true)
+		if err != nil {
+			return
+		}
 		fmt.Println("user: ", user)
 	}
 }
@@ -151,98 +153,123 @@ func after_request(response http.Response) http.Response {
 	return response
 }
 
-// @app.after_request
-// def after_request(response):
-//     """Closes the database again at the end of the request."""
-//     g.db.close()
-//     return response
+func follow_user(username string, w http.ResponseWriter, r *http.Request) {
+	//"""Adds the current user as follower of the given user."""
+	if user == nil {
+		http.Error(w, "You need to login before you can follow the user", http.StatusUnauthorized)
+	}
+	whom_id, err := get_user_id(username)
+	if err != nil {
+		http.Error(w, "Error when trying to find the user in the database", http.StatusNotFound)
+		return
+	}
+	who_id := user_id
+	_, err = db.Exec("INSERT INTO follower (who_id, whom_id) VALUES (?, ?)", who_id, whom_id)
+	if err != nil {
+		http.Error(w, "Error when trying to insert data into database", http.StatusInternalServerError)
+	}
+	fmt.Printf("You are now following %s", username)
+	//http.Redirect(w, r, "/<username>", http.StatusFound)
+}
 
-// @app.route('/')
-// def timeline():
-//     """Shows a users timeline or if no user is logged in it will
-//     redirect to the public timeline.  This timeline shows the user's
-//     messages as well as all the messages of followed users.
-//     """
-//     print("We got a visitor from: " + str(request.remote_addr))
-//     if not g.user:
-//         return redirect(url_for('public_timeline'))
-//     offset = request.args.get('offset', type=int)
-//     return render_template('timeline.html', messages=query_db('''
-//         select message.*, user.* from message, user
-//         where message.flagged = 0 and message.author_id = user.user_id and (
-//             user.user_id = ? or
-//             user.user_id in (select whom_id from follower
-//                                     where who_id = ?))
-//         order by message.pub_date desc limit ?''',
-//         [session['user_id'], session['user_id'], PER_PAGE]))
+func unfollow_user(username string, w http.ResponseWriter, r *http.Request) {
+	if user == nil {
+		http.Error(w, "You need to login before you can follow the user", http.StatusUnauthorized)
+	}
+	whom_id, err := get_user_id(username)
+	if err != nil {
+		http.Error(w, "Error when trying to find the user in the database", http.StatusNotFound)
+		return
+	}
+	who_id := user_id
+	_, err = db.Exec("DELETE FROM follower WHERE who_id=? and whom_id=?", who_id, whom_id)
+	if err != nil {
+		http.Error(w, "Error when trying to delete data from database", http.StatusInternalServerError)
+	}
+	fmt.Printf("You are no longer following %s", username)
+	//http.Redirect(w, r, "/<username>", http.StatusFound)
+}
 
-// @app.route('/public')
-// def public_timeline():
-//     """Displays the latest messages of all users."""
-//     return render_template('timeline.html', messages=query_db('''
-//         select message.*, user.* from message, user
-//         where message.flagged = 0 and message.author_id = user.user_id
-//         order by message.pub_date desc limit ?''', [PER_PAGE]))
+// """Registers a new message for the user."""
+func add_message(w http.ResponseWriter, r *http.Request) {
+	if user == nil {
+		http.Error(w, "You need to login before you can post a message", http.StatusUnauthorized)
+	}
+	text := r.FormValue("text")
+	if text != "" {
+		db.Exec("INSERT INTO message (author_id, text, pub_date, flagged) VALUES (?, ?, ?, 0)", user_id, text, int(time.Now().Unix()))
+	} else {
+		fmt.Printf("You need to write a message in the text form")
+	}
+	fmt.Printf("Your message was recorded")
+	//http.Redirect(w, r, "/", http.StatusFound)
+}
 
-// @app.route('/<username>')
-// def user_timeline(username):
-//     """Display's a users tweets."""
-//     profile_user = query_db('select * from user where username = ?',
-//                             [username], one=True)
-//     if profile_user is None:
-//         abort(404)
-//     followed = False
-//     if g.user:
-//         followed = query_db('''select 1 from follower where
-//             follower.who_id = ? and follower.whom_id = ?''',
-//             [session['user_id'], profile_user['user_id']], one=True) is not None
-//     return render_template('timeline.html', messages=query_db('''
-//             select message.*, user.* from message, user where
-//             user.user_id = message.author_id and user.user_id = ?
-//             order by message.pub_date desc limit ?''',
-//             [profile_user['user_id'], PER_PAGE]), followed=followed,
-//             profile_user=profile_user)
+// TODO: include the followed and profile_user functionalities
+func render_template(w http.ResponseWriter, r *http.Request, tmplt string, query string, args []any, one bool, followed any, profile_user any) {
+	messages, err := query_db(query, args, false)
+	if err != nil {
+		http.Error(w, "Error when trying to query the database", http.StatusInternalServerError)
+	}
+	_template, err := template.ParseFiles(tmplt)
+	if err != nil {
+		http.Error(w, "Error when trying to parse the template", http.StatusInternalServerError)
+	}
+	err = _template.Execute(w, messages)
+	if err != nil {
+		http.Error(w, "Error when trying to execute the template", http.StatusInternalServerError)
+	}
+}
 
-// @app.route('/<username>/follow')
-// def follow_user(username):
-//     """Adds the current user as follower of the given user."""
-//     if not g.user:
-//         abort(401)
-//     whom_id = get_user_id(username)
-//     if whom_id is None:
-//         abort(404)
-//     g.db.execute('insert into follower (who_id, whom_id) values (?, ?)',
-//                 [session['user_id'], whom_id])
-//     g.db.commit()
-//     flash('You are now following "%s"' % username)
-//     return redirect(url_for('user_timeline', username=username))
+// """Shows a users timeline or if no user is logged in it will
+// redirect to the public timeline.  This timeline shows the user's
+// messages as well as all the messages of followed users."""
+func timeline(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("We got a visitor from: ", r.RemoteAddr)
+	if user == nil {
+		//http.Redirect(w, r, "/", http.StatusFound)
+	}
+	render_template(w, r, "timeline.html", `SELECT message.*, user.* FROM message, user
+    WHERE message.flagged = 0 AND message.author_id = user.user_id AND (
+        user.user_id = ? OR
+        user.user_id IN (SELECT whom_id FROM follower
+                                WHERE who_id = ?))
+    ORDER BY message.pub_date DESC LIMIT ?`, []any{"user_id", "user_id", PER_PAGE}, false, nil, nil)
+}
 
-// @app.route('/<username>/unfollow')
-// def unfollow_user(username):
-//     """Removes the current user as follower of the given user."""
-//     if not g.user:
-//         abort(401)
-//     whom_id = get_user_id(username)
-//     if whom_id is None:
-//         abort(404)
-//     g.db.execute('delete from follower where who_id=? and whom_id=?',
-//                 [session['user_id'], whom_id])
-//     g.db.commit()
-//     flash('You are no longer following "%s"' % username)
-//     return redirect(url_for('user_timeline', username=username))
+// """Displays the latest messages of all users."""
+func public_timeline(w http.ResponseWriter, r *http.Request) {
+	render_template(w, r, "timeline.html", `SELECT message.*, user.* FROM message, user
+    WHERE message.flagged = 0 AND message.author_id = user.user_id
+    ORDER BY message.pub_date desc limit ?`, []any{PER_PAGE}, false, nil, nil)
+}
 
-// @app.route('/add_message', methods=['POST'])
-// def add_message():
-//     """Registers a new message for the user."""
-//     if 'user_id' not in session:
-//         abort(401)
-//     if request.form['text']:
-//         g.db.execute('''insert into message (author_id, text, pub_date, flagged)
-//             values (?, ?, ?, 0)''', (session['user_id'], request.form['text'],
-//                                   int(time.time())))
-//         g.db.commit()
-//         flash('Your message was recorded')
-//     return redirect(url_for('timeline'))
+// """Display's a users tweets."""
+func user_timeline(w http.ResponseWriter, r *http.Request, username string) {
+	profile_user, err := query_db("SELECT * FROM user WHERE username = ?", []any{username}, true)
+	if err != nil {
+		http.Error(w, "Error when trying to find the profile user in the database", http.StatusNotFound)
+		return
+	}
+	profile_user_id, err := get_user_id(username)
+	if err != nil {
+		return
+	}
+	if user == nil {
+		http.Error(w, "Error when trying to find the user in the database", http.StatusNotFound)
+		return
+	}
+	followed, err := query_db(`select 1 from follower where
+        follower.who_id = ? and follower.whom_id = ?`, []any{user_id, profile_user_id}, true)
+
+	if err != nil {
+		http.Error(w, "Error when trying to query the database", http.StatusNotFound)
+		return
+	}
+	render_template(w, r, "timeline.html", `SELECT message.*, user.* FROM message, user WHERE
+        user.user_id = message.author_id AND user.user_id = ?
+        ORDER BY message.pub_date desc limit ?`, []any{profile_user_id, PER_PAGE}, false, followed, profile_user)
+}
 
 // @app.route('/login', methods=['GET', 'POST'])
 // def login():
