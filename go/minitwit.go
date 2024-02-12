@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/gorilla/sessions"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -39,12 +40,14 @@ func main() {
 	//r.HandleFunc("/register", register)
 	//r.HandleFunc("/logout", logout)
 	//http.Handle("/", r)
-	content := query_db("SELECT user_id, user_id FROM user WHERE username = ? OR username = ?", []any{"Roger Histand", "Geoffrey Stieff"}, false)
+	content := query_db("SELECT user_id FROM user WHERE username IN (?, ?, ?)", []any{"Roger Histand", "Ayako Yestramski", "Leonora Alford"}, false)
+	//dt := format_datetime(time.Now())
 	//id_string := strconv.FormatInt(int64(id), 10)
+	//output := gravatar_url("anam@itu.dk", 80)
 
 	fmt.Println("Content: ", content)
-	fmt.Print("Listening on port 80...")
-	http.ListenAndServe(":80", r)
+	fmt.Print("Listening on port 5000...")
+	http.ListenAndServe(":5000", r)
 }
 
 // "/"
@@ -53,42 +56,41 @@ func handle(w http.ResponseWriter, r *http.Request) {
 }
 
 // """Returns a new connection to the database."""
-func connect_db() (db *sql.DB, err error) {
+func connect_db() (*sql.DB, error) {
 	return sql.Open("sqlite3", DATABASE)
 }
 
 // """Creates the database tables."""
-func init_db() (f []byte, err error) {
+func init_db() ([]byte, error) {
 	return os.ReadFile("schema.sql")
 }
 
-// TODO: include 'g'
 // """Queries the database and returns a list of dictionaries."""
 // variable one must be false as a default
 func query_db(query string, args []any, one bool) any {
 	cur, err := db.Query(query, args...)
 	if err != nil {
-		fmt.Print("query err: ", err)
 		return nil
 	}
 	defer cur.Close()
-	var rv []map[any]any
 
+	var rv []map[any]any
+	cols, err := cur.Columns()
+	if err != nil {
+		return nil
+	}
 	for cur.Next() {
-		var idx int
-		var value string
-		err = cur.Scan(&idx, &value)
+		row := make([]any, len(cols))
+		for i := range row {
+			row[i] = new(any)
+		}
+		err = cur.Scan(row...)
 		if err != nil {
-			fmt.Print("scan err: ", err)
 			break
 		}
-		names, col_err := cur.Columns()
-		if col_err != nil {
-			fmt.Print("col err: ", err)
-			break
-		}
-		dict := map[any]any{
-			names[idx]: value,
+		dict := make(map[any]any)
+		for i, col := range cols {
+			dict[col] = *(row[i].(*any))
 		}
 		rv = append(rv, dict)
 		if one {
@@ -105,20 +107,16 @@ func query_db(query string, args []any, one bool) any {
 }
 
 // """Format a timestamp for display."""
-// timestamp of type time.Now()
 func format_datetime(timestamp time.Time) string {
-	return timestamp.Format("%Y-%m-%d @ %H:%M")
+	return timestamp.Format("2006-01-02 @ 15:04")
 }
 
 // """Return the gravatar image for the given email address."""
-// size=80
 func gravatar_url(email string, size int) string {
 	hash := md5.Sum([]byte(strings.ToLower(strings.TrimSpace(email))))
-	enc := hex.EncodeToString(hash[:])
-	return fmt.Sprintf("http://www.gravatar.com/avatar/%s?d=identicon&s=%d", enc, size)
+	return fmt.Sprintf("http://www.gravatar.com/avatar/%s?d=identicon&s=%d", hex.EncodeToString(hash[:]), size)
 }
 
-// TODO: include 'g'
 // """Convenience method to look up the id for a username."""
 func get_user_id(username string) int {
 	var user_id int
@@ -132,16 +130,26 @@ func get_user_id(username string) int {
 	return 0
 }
 
-//@app.before_request
-//def before_request():
-//    """Make sure we are connected to the database each request and look
-//    up the current user so that we know he's there.
-//    """
-//    g.db = connect_db()
-//    g.user = None
-//    if 'user_id' in session:
-//        g.user = query_db('select * from user where user_id = ?',
-//                          [session['user_id']], one=True)
+// """Make sure we are connected to the database each request and look
+// up the current user so that we know he's there.
+var store = sessions.NewCookieStore([]byte(os.Getenv("SESSIONKEY")))
+
+func before_request(r *http.Request) {
+	db, _ = connect_db()
+	session, _ := store.Get(r, "session-name")
+	user_id := session.Values["user_id"]
+	fmt.Println("user_id: ", user_id)
+	if user_id != nil {
+		user := query_db("select * from user where user_id = ?", []any{"user_id"}, true)
+		fmt.Println("user: ", user)
+	}
+}
+
+// """Closes the database again at the end of the request."""
+func after_request(response http.Response) http.Response {
+	db.Close()
+	return response
+}
 
 // @app.after_request
 // def after_request(response):
