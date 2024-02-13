@@ -43,15 +43,15 @@ func main() {
 	r := mux.NewRouter()
 	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 
+	r.HandleFunc("/login", Login)
+	r.HandleFunc("/register", Register)
+	r.HandleFunc("/logout", Logout)
 	r.HandleFunc("/", timeline)
 	r.HandleFunc("/public", public_timeline)
 	r.HandleFunc("/{username}", user_timeline)
 	r.HandleFunc("/add_message", add_message).Methods("POST")
 	r.HandleFunc("/{username}/follow", follow_user)
 	r.HandleFunc("/{username}/unfollow", unfollow_user)
-	r.HandleFunc("/login", Login)
-	r.HandleFunc("/register", Register)
-	r.HandleFunc("/logout", Logout)
 
 	db, err = connect_db()
 	if err != nil {
@@ -194,7 +194,7 @@ func follow_user(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, "Error when trying to insert data into database", http.StatusInternalServerError)
 	}
-	fmt.Printf("You are now following %s", username)
+	session.AddFlash("You are now following %s", username)
 	http.Redirect(w, r, "/"+username, http.StatusSeeOther)
 }
 
@@ -215,7 +215,7 @@ func unfollow_user(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, "Error when trying to delete data from database", http.StatusInternalServerError)
 	}
-	fmt.Printf("You are no longer following %s", username)
+	session.AddFlash("You are no longer following %s", username)
 	http.Redirect(w, r, "/"+username, http.StatusSeeOther)
 }
 
@@ -230,27 +230,8 @@ func add_message(w http.ResponseWriter, r *http.Request) {
 	} else {
 		fmt.Printf("You need to write a message in the text form")
 	}
-	fmt.Printf("Your message was recorded")
+	session.AddFlash("Your message was recorded")
 	http.Redirect(w, r, "/timeline", http.StatusSeeOther)
-}
-
-// TODO: include the followed and profile_user functionalities
-func render_template(w http.ResponseWriter, r *http.Request, tmplt string, query string, args []any, one bool, followed any, profile_user any) {
-	messages, err := query_db(query, args, false)
-	if err != nil {
-		http.Error(w, "Error when trying to query the database", http.StatusInternalServerError)
-	}
-	tpl.ExecuteTemplate(w, tmplt, messages)
-
-	/*
-		_template, err := template.ParseFiles(tmplt)
-		if err != nil {
-			http.Error(w, "Error when trying to parse the template", http.StatusInternalServerError)
-		}
-		err = _template.Execute(w, messages)
-		if err != nil {
-			http.Error(w, "Error when trying to execute the template", http.StatusInternalServerError)
-		}*/
 }
 
 // """Shows a users timeline or if no user is logged in it will
@@ -261,19 +242,36 @@ func timeline(w http.ResponseWriter, r *http.Request) {
 	if user == nil {
 		http.Redirect(w, r, "/public", http.StatusSeeOther)
 	}
-	render_template(w, r, "timeline.html", `SELECT message.*, user.* FROM message, user
+	messages, err := query_db(`SELECT message.*, user.* FROM message, user
     WHERE message.flagged = 0 AND message.author_id = user.user_id AND (
         user.user_id = ? OR
         user.user_id IN (SELECT whom_id FROM follower
                                 WHERE who_id = ?))
-    ORDER BY message.pub_date DESC LIMIT ?`, []any{"user_id", "user_id", PER_PAGE}, false, nil, nil)
+    ORDER BY message.pub_date DESC LIMIT ?`, []any{"user_id", "user_id", PER_PAGE}, false)
+
+	if err != nil {
+		http.Error(w, "Error when trying to query the database", http.StatusInternalServerError)
+	}
+
+	err = tpl.ExecuteTemplate(w, "timeline.html", messages)
+	if err != nil {
+		http.Error(w, "Error when trying to execute the template", http.StatusInternalServerError)
+	}
 }
 
 // """Displays the latest messages of all users."""
 func public_timeline(w http.ResponseWriter, r *http.Request) {
-	render_template(w, r, "timeline.html", `SELECT message.*, user.* FROM message, user
+	messages, err := query_db(`SELECT message.*, user.* FROM message, user
     WHERE message.flagged = 0 AND message.author_id = user.user_id
-    ORDER BY message.pub_date desc limit ?`, []any{PER_PAGE}, false, nil, nil)
+    ORDER BY message.pub_date desc limit ?`, []any{PER_PAGE}, false)
+	if err != nil {
+		http.Error(w, "Error when trying to query the database", http.StatusInternalServerError)
+	}
+
+	err = tpl.ExecuteTemplate(w, "timeline.html", messages)
+	if err != nil {
+		http.Error(w, "Error when trying to execute the template", http.StatusInternalServerError)
+	}
 }
 
 // """Display's a users tweets."""
@@ -294,16 +292,30 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error when trying to find the user in the database", http.StatusNotFound)
 		return
 	}
-	followed, err := query_db(`select 1 from follower where
+
+	_, err = query_db(`select 1 from follower where
         follower.who_id = ? and follower.whom_id = ?`, []any{user_id, profile_user_id}, true)
 
-	if err != nil {
-		http.Error(w, "Error when trying to query the database", http.StatusNotFound)
-		return
+	var followed bool = false
+	if err == nil {
+		followed = true
 	}
-	render_template(w, r, "timeline.html", `SELECT message.*, user.* FROM message, user WHERE
-        user.user_id = message.author_id AND user.user_id = ?
-        ORDER BY message.pub_date desc limit ?`, []any{profile_user_id, PER_PAGE}, false, followed, profile_user)
+	messages, err := query_db(`SELECT message.*, user.* FROM message, user WHERE
+	user.user_id = message.author_id AND user.user_id = ?
+	ORDER BY message.pub_date desc limit ?`, []any{profile_user_id, PER_PAGE}, false)
+	if err != nil {
+		http.Error(w, "Error when trying to query the database", http.StatusInternalServerError)
+	}
+
+	dict := make(map[string]any)
+	dict["messages"] = messages
+	dict["followed"] = followed
+	dict["profile_user"] = profile_user
+
+	err = tpl.ExecuteTemplate(w, "timeline.html", dict)
+	if err != nil {
+		http.Error(w, "Error when trying to execute the template", http.StatusInternalServerError)
+	}
 }
 
 func Login(w http.ResponseWriter, r *http.Request) {
@@ -346,7 +358,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		session.Save(r, w)
 
 		// Redirect to timeline
-		fmt.Println("You are logged in and redirected to timeline")
+		session.AddFlash("You were logged in")
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 	}
 }
@@ -393,7 +405,6 @@ func Register(w http.ResponseWriter, r *http.Request) {
 				fmt.Println("Error when trying to insert data into the database")
 				return
 			}
-
 			fmt.Println("You were successfully registered and can login now")
 			http.Redirect(w, r, "/login", http.StatusSeeOther)
 		}
