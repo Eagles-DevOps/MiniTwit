@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Test</title>
+  <link rel="stylesheet" type="text/css" href="/static/style.css">
+</head>
+<body>
+  <div class=page>
+    <h1>MiniTwit</h1>
+    <div class=navigation>
+      <a href="/">my timeline</a> |
+    </div>
+    <div class=body>
+    {{ template "body" . }}
+    </div>
+    <div class=footer>
+      MiniTwit - A Go Application
+    </div>
+  </div>
+</body>
+</html>
