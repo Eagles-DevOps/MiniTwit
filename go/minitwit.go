@@ -42,17 +42,17 @@ func main() {
 	}
 	r := mux.NewRouter()
 	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
-	//r.HandleFunc("/", handle)
-	//r.HandleFunc("/", timeLine)
-	//r.HandleFunc("/public", public_timeline)
-	//r.HandleFunc("/<username>", user_timeline)
-	//r.HandleFunc("/<username>/follow", follow_user)
-	//r.HandleFunc("/<username>/unfollow", unfollow_user)
-	//r.HandleFunc("/add_message", add_message).Methods("POST")
+
+	r.HandleFunc("/", timeline)
+	r.HandleFunc("/public", public_timeline)
+	r.HandleFunc("/add_message", add_message).Methods("POST")
 	r.HandleFunc("/login", Login)
 	r.HandleFunc("/register", Register)
 	r.HandleFunc("/logout", Logout)
-	//http.Handle("/", r)
+
+	r.HandleFunc("/{username}/follow", follow_user)
+	r.HandleFunc("/{username}/unfollow", unfollow_user)
+	r.HandleFunc("/{username}", user_timeline)
 
 	db, err = connect_db()
 	if err != nil {
@@ -185,8 +185,12 @@ func after_request(response http.Response) http.Response {
 	return response
 }
 
-func follow_user(username string, w http.ResponseWriter, r *http.Request) {
+func follow_user(w http.ResponseWriter, r *http.Request) {
 	//"""Adds the current user as follower of the given user."""
+	vars := mux.Vars(r)
+	username := vars["username"]
+	println("Now following " + username)
+
 	if user == nil {
 		http.Error(w, "You need to login before you can follow the user", http.StatusUnauthorized)
 	}
@@ -201,10 +205,13 @@ func follow_user(username string, w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error when trying to insert data into database", http.StatusInternalServerError)
 	}
 	fmt.Printf("You are now following %s", username)
-	//http.Redirect(w, r, "/<username>", http.StatusFound)
+	http.Redirect(w, r, "/"+username, http.StatusFound)
 }
 
-func unfollow_user(username string, w http.ResponseWriter, r *http.Request) {
+func unfollow_user(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	username := vars["username"]
+	println("displaying username for " + username)
 	if user == nil {
 		http.Error(w, "You need to login before you can follow the user", http.StatusUnauthorized)
 	}
@@ -219,7 +226,7 @@ func unfollow_user(username string, w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error when trying to delete data from database", http.StatusInternalServerError)
 	}
 	fmt.Printf("You are no longer following %s", username)
-	//http.Redirect(w, r, "/<username>", http.StatusFound)
+	http.Redirect(w, r, "/"+username, http.StatusFound)
 }
 
 // """Registers a new message for the user."""
@@ -234,7 +241,7 @@ func add_message(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("You need to write a message in the text form")
 	}
 	fmt.Printf("Your message was recorded")
-	//http.Redirect(w, r, "/", http.StatusFound)
+	http.Redirect(w, r, "/timeline", http.StatusFound)
 }
 
 // TODO: include the followed and profile_user functionalities
@@ -259,7 +266,7 @@ func render_template(w http.ResponseWriter, r *http.Request, tmplt string, query
 func timeline(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("We got a visitor from: ", r.RemoteAddr)
 	if user == nil {
-		//http.Redirect(w, r, "/", http.StatusFound)
+		http.Redirect(w, r, "/public_timeline", http.StatusFound)
 	}
 	render_template(w, r, "timeline.html", `SELECT message.*, user.* FROM message, user
     WHERE message.flagged = 0 AND message.author_id = user.user_id AND (
@@ -277,7 +284,10 @@ func public_timeline(w http.ResponseWriter, r *http.Request) {
 }
 
 // """Display's a users tweets."""
-func user_timeline(w http.ResponseWriter, r *http.Request, username string) {
+func user_timeline(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	username := vars["username"]
+	println("displaying username for " + username)
 	profile_user, err := query_db("SELECT * FROM user WHERE username = ?", []any{username}, true)
 	if err != nil {
 		http.Error(w, "Error when trying to find the profile user in the database", http.StatusNotFound)
@@ -350,9 +360,9 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		//session.Values["user_id"] = userMap["user_id"]
 
 		// Redirect to timeline
-		//http.Redirect(w, r, "/timeline", http.StatusSeeOther)
-		fmt.Println("Logged in")
-		tpl.ExecuteTemplate(w, "login_test.html", nil)
+		fmt.Println("Logged in redirecting to timeline")
+		http.Redirect(w, r, "/timeline", http.StatusSeeOther)
+		//tpl.ExecuteTemplate(w, "login_test.html", nil)
 	}
 }
 
