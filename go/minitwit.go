@@ -49,8 +49,8 @@ func main() {
 	//r.HandleFunc("/<username>/unfollow", unfollow_user)
 	//r.HandleFunc("/add_message", add_message).Methods("POST")
 	r.HandleFunc("/login", Login)
-	//r.HandleFunc("/register", register)
-	//r.HandleFunc("/logout", logout)
+	r.HandleFunc("/register", Register)
+	r.HandleFunc("/logout", Logout)
 	//http.Handle("/", r)
 
     db, err = connect_db()
@@ -305,16 +305,8 @@ func user_timeline(w http.ResponseWriter, r *http.Request, username string) {
 
 func Login(w http.ResponseWriter, r *http.Request) {
     if r.Method == "GET" {
-        fmt.Println("GET, render login")
-        var name = "- Roman"
-
-        data := struct {
-            Name string
-        }{
-            Name: name,
-        }
     
-        tpl.ExecuteTemplate(w, "login_test.html", data)
+        tpl.ExecuteTemplate(w, "login_test.html", nil)
 
     }else if r.Method == "POST"{
         fmt.Println("POST, render login")
@@ -323,119 +315,8 @@ func Login(w http.ResponseWriter, r *http.Request) {
 
         user, err := query_db("select * from user where username = ?", []any{username}, true)
         if err != nil {
-            //http.Error(w, "Database error", http.StatusInternalServerError)
-            fmt.Println("Database error")
-            return
-        }
-
-        if user == nil {
-            //http.Error(w, "Invalid username", http.StatusBadRequest)
-            return
-        }
-
-        // Assuming user is a map with key 'pw_hash'
-        userMap := user.(map[any]any)
-        pwHash := userMap["pw_hash"].(string)
-        
-        // Check password (assuming you have a function checkPasswordHash)
-        if !checkPasswordHash(password, pwHash) {
-            //http.Error(w, "Invalid password", http.StatusBadRequest)
-            return
-        }
-
-
-        // Set session data
-        session, _ := store.Get(r, "user-session")
-        session.Options = &sessions.Options{
-            Path:     "/",
-            //MaxAge:   3600, // 1 hour in seconds
-            MaxAge: 20,
-            HttpOnly: true,  // Recommended for security
-        }
-        
-        //values needs to be from a name form
-        session.Values["name"] = "Tester"
-        session.Save(r,w)
-
-        //session.Values["user_id"] = userMap["user_id"]
-        //session.Save(r, w)
-
-        // Redirect to timeline
-        //http.Redirect(w, r, "/timeline", http.StatusSeeOther)
-        fmt.Println("Logged in")
-        tpl.ExecuteTemplate(w, "login_test.html", nil)
-    }
-}
-
-func RegisterTMP(){
-    username := "Tester"
-    email := "tester@test.com"
-    password := "test"
-    password2 := "test"
-
-    var error_s string
-
-    // Validate form input
-    if username == "" {
-        error_s = "You have to enter a username"
-    } else if !strings.Contains(email, "@") {
-        error_s = "You have to enter a valid email address"
-    } else if password == "" {
-        error_s = "You have to enter a password"
-    } else if password != password2 {
-        error_s = "The two passwords do not match"
-    } else if _, err := get_user_id(username); err == nil {
-        error_s = "The username is already taken"
-    } else {
-        // Hash the password
-        hashedPassword, err := hashPassword(password)
-        if err != nil {
-            //http.Error(w, "Error hashing password", http.StatusInternalServerError)
-            fmt.Println("Error hashing the password")
-            return
-        }
-
-        // Insert the new user into the database
-        _, err = db.Exec("INSERT INTO user (username, email, pw_hash) VALUES (?, ?, ?)", username, email, hashedPassword)
-        if err != nil {
-            //http.Error(w, "Database error", http.StatusInternalServerError)
-            fmt.Println("Database error")
-            return
-        }
-
-        fmt.Println("User added")
-        return
-    }
-
-    fmt.Println(error_s)
-}
-
-/* func LogOut(){
-    //delete(session.Values, "Tester")
-    fmt.Println("session: ", session)
-    return
-    
-    //return to /public
-} */
-
-/* func Login(w http.ResponseWriter, r *http.Request) {
-    if r.Method == "GET" {
-        // Render login template
-        tmpl, err := template.ParseFiles("login.html")
-        if err != nil {
-            http.Error(w, err.Error(), http.StatusInternalServerError)
-            return
-        }
-        tmpl.Execute(w, nil)
-    } else if r.Method == "POST" {
-        // Process login form submission
-        r.ParseForm()
-        username := r.FormValue("username")
-        password := r.FormValue("password")
-
-        user, err := query_db("select * from user where username = ?", []any{username}, true)
-        if err != nil {
             http.Error(w, "Database error", http.StatusInternalServerError)
+            fmt.Println("Database error")
             return
         }
 
@@ -448,58 +329,72 @@ func RegisterTMP(){
         userMap := user.(map[any]any)
         pwHash := userMap["pw_hash"].(string)
         
-        // Check password (assuming you have a function checkPasswordHash)
         if !checkPasswordHash(password, pwHash) {
             http.Error(w, "Invalid password", http.StatusBadRequest)
             return
         }
 
         // Set session data
-        session, _ := store.Get(r, "session-name")
-        session.Values["user_id"] = userMap["user_id"]
-        session.Save(r, w)
+        session, _ := store.Get(r, "user-session")
+        session.Options = &sessions.Options{
+            Path:     "/",
+            //MaxAge:   3600, // 1 hour in seconds
+            MaxAge: 5,
+            HttpOnly: true,  // Recommended for security
+        }
+        
+        //values needs to be from a name form
+        session.Values["name"] = username
+        session.Save(r,w)
+
+        //session.Values["user_id"] = userMap["user_id"]
 
         // Redirect to timeline
-        http.Redirect(w, r, "/timeline", http.StatusSeeOther)
+        //http.Redirect(w, r, "/timeline", http.StatusSeeOther)
+        fmt.Println("Logged in")
+        tpl.ExecuteTemplate(w, "login_test.html", nil)
     }
-} */
-/* 
-func registerHandler(w http.ResponseWriter, r *http.Request) {
+}
+
+func Register(w http.ResponseWriter, r *http.Request){
     if r.Method == "GET" {
-        // Render the registration template
-        tmpl, err := template.ParseFiles("register.html")
-        if err != nil {
-            http.Error(w, err.Error(), http.StatusInternalServerError)
-            return
-        }
-        tmpl.Execute(w, nil)
-    } else if r.Method == "POST" {
-        // Process the registration form
-        r.ParseForm()
+
+        tpl.ExecuteTemplate(w, "register.html", nil)
+
+    } else if r.Method == "POST"{
 
         username := r.FormValue("username")
         email := r.FormValue("email")
         password := r.FormValue("password")
         password2 := r.FormValue("password2")
 
-        var error string
+        var error_s string
 
         // Validate form input
         if username == "" {
-            error = "You have to enter a username"
+            error_s = "You have to enter a username"
+            fmt.Println(error_s)
         } else if !strings.Contains(email, "@") {
-            error = "You have to enter a valid email address"
+            error_s = "You have to enter a valid email address"
+            fmt.Println(error_s)
+
         } else if password == "" {
-            error = "You have to enter a password"
+            error_s = "You have to enter a password"
+            fmt.Println(error_s)
+
         } else if password != password2 {
-            error = "The two passwords do not match"
+            error_s = "The two passwords do not match"
+            fmt.Println(error_s)
+
         } else if _, err := get_user_id(username); err == nil {
-            error = "The username is already taken"
+            error_s = "The username is already taken"
+            fmt.Println(error_s)
         } else {
             // Hash the password
             hashedPassword, err := hashPassword(password)
             if err != nil {
                 http.Error(w, "Error hashing password", http.StatusInternalServerError)
+                fmt.Println("Error hashing the password")
                 return
             }
 
@@ -507,89 +402,43 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
             _, err = db.Exec("INSERT INTO user (username, email, pw_hash) VALUES (?, ?, ?)", username, email, hashedPassword)
             if err != nil {
                 http.Error(w, "Database error", http.StatusInternalServerError)
+                fmt.Println("Database error")
                 return
             }
 
-            // Redirect to login page after successful registration
-            http.Redirect(w, r, "/login", http.StatusSeeOther)
-            return
+            fmt.Println("User added")
+            tpl.ExecuteTemplate(w, "login_test.html", nil)
         }
-
-        // Render the registration template with error message
-        tmpl, err := template.ParseFiles("register.html")
-        if err != nil {
-            http.Error(w, err.Error(), http.StatusInternalServerError)
-            return
-        }
-        tmpl.Execute(w, map[string]string{"Error": error})
     }
 }
- */
 
-// @app.route('/login', methods=['GET', 'POST'])
-// def login():
-//     """Logs the user in."""
-//     if g.user:
-//         return redirect(url_for('timeline'))
-//     error = None
-//     if request.method == 'POST':
-//         user = query_db('''select * from user where
-//             username = ?''', [request.form['username']], one=True)
-//         if user is None:
-//             error = 'Invalid username'
-//         elif not check_password_hash(user['pw_hash'],
-//                                      request.form['password']):
-//             error = 'Invalid password'
-//         else:
-//             flash('You were logged in')
-//             session['user_id'] = user['user_id']
-//             return redirect(url_for('timeline'))
-//     return render_template('login.html', error=error)
+func Logout(w http.ResponseWriter, r *http.Request){
+    //check if there is any session
+    session, err := store.Get(r, "user-session")
+    if err != nil {
+        fmt.Println("Error getting session data")
+        tpl.ExecuteTemplate(w, "login_test.html", nil)
+    }else{
+        // Logout session
+        name, ok := session.Values["name"].(string)
+        if !ok {
+            fmt.Println("Session ended")
+        } else {
+            fmt.Println("Logging of:", name)
+            session.Options.MaxAge = -1
+            err = session.Save(r, w)
+            if err != nil {
+                fmt.Println("Error saving the session")
+                return
+            }
 
-// @app.route('/register', methods=['GET', 'POST'])
-// def register():
-//     """Registers the user."""
-//     if g.user:
-//         return redirect(url_for('timeline'))
-//     error = None
-//     if request.method == 'POST':
-//         if not request.form['username']:
-//             error = 'You have to enter a username'
-//         elif not request.form['email'] or \
-//                  '@' not in request.form['email']:
-//             error = 'You have to enter a valid email address'
-//         elif not request.form['password']:
-//             error = 'You have to enter a password'
-//         elif request.form['password'] != request.form['password2']:
-//             error = 'The two passwords do not match'
-//         elif get_user_id(request.form['username']) is not None:
-//             error = 'The username is already taken'
-//         else:
-//             g.db.execute('''insert into user (
-//                 username, email, pw_hash) values (?, ?, ?)''',
-//                 [request.form['username'], request.form['email'],
-//                  generate_password_hash(request.form['password'])])
-//             g.db.commit()
-//             flash('You were successfully registered and can login now')
-//             return redirect(url_for('login'))
-//     return render_template('register.html', error=error)
+            fmt.Println("Logged off")
+        }
+    }
 
-// @app.route('/logout')
-// def logout():
-//     """Logs the user out"""
-//     flash('You were logged out')
-//     session.pop('user_id', None)
-//     return redirect(url_for('public_timeline'))
-
-// # add some filters to jinja and set the secret key and debug mode
-// # from the configuration.
-// app.jinja_env.filters['datetimeformat'] = format_datetime
-// app.jinja_env.filters['gravatar'] = gravatar_url
-// app.secret_key = SECRET_KEY
-// app.debug = DEBUG
-
-// if __name__ == '__main__':
-//     app.run(host="0.0.0.0")
+    //return to /public
+    tpl.ExecuteTemplate(w, "login_test.html", nil)    
+} 
 
 func hashPassword(password string) (string, error) {
     bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
@@ -600,3 +449,13 @@ func checkPasswordHash(password, hash string) bool {
     err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
     return err == nil
 }
+
+// # add some filters to jinja and set the secret key and debug mode
+// # from the configuration.
+// app.jinja_env.filters['datetimeformat'] = format_datetime
+// app.jinja_env.filters['gravatar'] = gravatar_url
+// app.secret_key = SECRET_KEY
+// app.debug = DEBUG
+
+// if __name__ == '__main__':
+//     app.run(host="0.0.0.0")
