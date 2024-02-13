@@ -42,16 +42,17 @@ func main() {
 	}
 	r := mux.NewRouter()
 	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
-
-	r.HandleFunc("/", timeline)
+    r.HandleFunc("/login", Login)
+	r.HandleFunc("/register", Register)
+	r.HandleFunc("/logout", Logout)
 	r.HandleFunc("/public", public_timeline)
-	r.HandleFunc("/{username}", user_timeline)
 	r.HandleFunc("/add_message", add_message).Methods("POST")
 	r.HandleFunc("/{username}/follow", follow_user)
 	r.HandleFunc("/{username}/unfollow", unfollow_user)
-	r.HandleFunc("/login", Login)
-	r.HandleFunc("/register", Register)
-	r.HandleFunc("/logout", Logout)
+    r.HandleFunc("/{username}", user_timeline)
+    r.HandleFunc("/", timeline)
+
+
 
 	db, err = connect_db()
 	if err != nil {
