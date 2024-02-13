@@ -6,15 +6,16 @@ import (
 	"encoding/hex"
 	"fmt"
 	"html/template"
+	"log"
 	"net/http"
 	"os"
 	"strings"
 	"time"
-    "log"
-    "golang.org/x/crypto/bcrypt"
+
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 	_ "github.com/mattn/go-sqlite3"
+	"golang.org/x/crypto/bcrypt"
 )
 
 const (
@@ -34,13 +35,13 @@ var user_id any
 var tpl *template.Template
 
 func main() {
-    var err error
-    tpl, err = template.ParseGlob("templates/*.html")
-    if err != nil {
-        log.Fatalf("Error parsing template: %v", err)
-    }
+	var err error
+	tpl, err = template.ParseGlob("templates/*.html")
+	if err != nil {
+		log.Fatalf("Error parsing template: %v", err)
+	}
 	r := mux.NewRouter()
-    r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
+	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 	//r.HandleFunc("/", handle)
 	//r.HandleFunc("/", timeLine)
 	//r.HandleFunc("/public", public_timeline)
@@ -53,23 +54,23 @@ func main() {
 	r.HandleFunc("/logout", Logout)
 	//http.Handle("/", r)
 
-    db, err = connect_db()
-    if err != nil {
-        log.Fatalf("Error connecting to the database: %v", err)
-    }
-    defer db.Close()
-    
+	db, err = connect_db()
+	if err != nil {
+		log.Fatalf("Error connecting to the database: %v", err)
+	}
+	defer db.Close()
+
 	//content, err := query_db("SELECT user_id FROM user WHERE username IN (?, ?, ?)", []any{"Roger Histand", "Ayako Yestramski", "Leonora Alford"}, false)
 	//dt := format_datetime(time.Now())
 	//id_string := strconv.FormatInt(int64(id), 10)
 	//output := gravatar_url("anam@itu.dk", 80)
 
 	//fmt.Println("Content: ", content, err)
-	fmt.Println("Listening on port 8080...")
-	err = http.ListenAndServe("localhost:8080", r)
-    if err != nil {
-        log.Fatalf("Failed to start server: %v", err)
-    }
+	fmt.Println("Listening on port 5000...")
+	err = http.ListenAndServe(":5000", r)
+	if err != nil {
+		log.Fatalf("Failed to start server: %v", err)
+	}
 }
 
 // "/"
@@ -79,13 +80,13 @@ func handle(w http.ResponseWriter, r *http.Request) {
 
 // """Returns a new connection to the database."""
 func connect_db() (*sql.DB, error) {
-    fmt.Println("Connecting to database...")
+	fmt.Println("Connecting to database...")
 	return sql.Open("sqlite3", DATABASE)
 }
 
 // """Creates the database tables."""
 func init_db() ([]byte, error) {
-    fmt.Println("Initializing database...")
+	fmt.Println("Initializing database...")
 	return os.ReadFile("schema.sql")
 }
 
@@ -121,9 +122,9 @@ func query_db(query string, args []any, one bool) (any, error) {
 		}
 	}
 
-    if err = cur.Err(); err != nil {
-        return nil, fmt.Errorf("error during rows iteration: %w", err)
-    }
+	if err = cur.Err(); err != nil {
+		return nil, fmt.Errorf("error during rows iteration: %w", err)
+	}
 
 	if len(rv) != 0 {
 		if one {
@@ -160,13 +161,12 @@ func get_user_id(username string) (any, error) {
 // """Make sure we are connected to the database each request and look
 // up the current user so that we know he's there.
 
-
 func before_request(r *http.Request) {
-    var err error
+	var err error
 	db, err = connect_db()
-    if err != nil {
-        log.Fatal("Error connecting to the database: ", err)
-    }
+	if err != nil {
+		log.Fatal("Error connecting to the database: ", err)
+	}
 	//session, _ := store.Get(r, "session-name")
 	//user_id := session.Values["user_id"]
 	//fmt.Println("user_id: ", user_id)
@@ -304,150 +304,150 @@ func user_timeline(w http.ResponseWriter, r *http.Request, username string) {
 }
 
 func Login(w http.ResponseWriter, r *http.Request) {
-    if r.Method == "GET" {
-    
-        tpl.ExecuteTemplate(w, "login_test.html", nil)
+	if r.Method == "GET" {
 
-    }else if r.Method == "POST"{
-        fmt.Println("POST, render login")
-        username := r.FormValue("username")
-        password := r.FormValue("password")
+		tpl.ExecuteTemplate(w, "login_test.html", nil)
 
-        user, err := query_db("select * from user where username = ?", []any{username}, true)
-        if err != nil {
-            http.Error(w, "Database error", http.StatusInternalServerError)
-            fmt.Println("Database error")
-            return
-        }
+	} else if r.Method == "POST" {
+		fmt.Println("POST, render login")
+		username := r.FormValue("username")
+		password := r.FormValue("password")
 
-        if user == nil {
-            http.Error(w, "Invalid username", http.StatusBadRequest)
-            return
-        }
+		user, err := query_db("select * from user where username = ?", []any{username}, true)
+		if err != nil {
+			http.Error(w, "Database error", http.StatusInternalServerError)
+			fmt.Println("Database error")
+			return
+		}
 
-        // Assuming user is a map with key 'pw_hash'
-        userMap := user.(map[any]any)
-        pwHash := userMap["pw_hash"].(string)
-        
-        if !checkPasswordHash(password, pwHash) {
-            http.Error(w, "Invalid password", http.StatusBadRequest)
-            return
-        }
+		if user == nil {
+			http.Error(w, "Invalid username", http.StatusBadRequest)
+			return
+		}
 
-        // Set session data
-        session, _ := store.Get(r, "user-session")
-        session.Options = &sessions.Options{
-            Path:     "/",
-            //MaxAge:   3600, // 1 hour in seconds
-            MaxAge: 5,
-            HttpOnly: true,  // Recommended for security
-        }
-        
-        //values needs to be from a name form
-        session.Values["name"] = username
-        session.Save(r,w)
+		// Assuming user is a map with key 'pw_hash'
+		userMap := user.(map[any]any)
+		pwHash := userMap["pw_hash"].(string)
 
-        //session.Values["user_id"] = userMap["user_id"]
+		if !checkPasswordHash(password, pwHash) {
+			http.Error(w, "Invalid password", http.StatusBadRequest)
+			return
+		}
 
-        // Redirect to timeline
-        //http.Redirect(w, r, "/timeline", http.StatusSeeOther)
-        fmt.Println("Logged in")
-        tpl.ExecuteTemplate(w, "login_test.html", nil)
-    }
+		// Set session data
+		session, _ := store.Get(r, "user-session")
+		session.Options = &sessions.Options{
+			Path: "/",
+			//MaxAge:   3600, // 1 hour in seconds
+			MaxAge:   5,
+			HttpOnly: true, // Recommended for security
+		}
+
+		//values needs to be from a name form
+		session.Values["name"] = username
+		session.Save(r, w)
+
+		//session.Values["user_id"] = userMap["user_id"]
+
+		// Redirect to timeline
+		//http.Redirect(w, r, "/timeline", http.StatusSeeOther)
+		fmt.Println("Logged in")
+		tpl.ExecuteTemplate(w, "login_test.html", nil)
+	}
 }
 
-func Register(w http.ResponseWriter, r *http.Request){
-    if r.Method == "GET" {
+func Register(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "GET" {
 
-        tpl.ExecuteTemplate(w, "register.html", nil)
+		tpl.ExecuteTemplate(w, "register.html", nil)
 
-    } else if r.Method == "POST"{
+	} else if r.Method == "POST" {
 
-        username := r.FormValue("username")
-        email := r.FormValue("email")
-        password := r.FormValue("password")
-        password2 := r.FormValue("password2")
+		username := r.FormValue("username")
+		email := r.FormValue("email")
+		password := r.FormValue("password")
+		password2 := r.FormValue("password2")
 
-        var error_s string
+		var error_s string
 
-        // Validate form input
-        if username == "" {
-            error_s = "You have to enter a username"
-            fmt.Println(error_s)
-        } else if !strings.Contains(email, "@") {
-            error_s = "You have to enter a valid email address"
-            fmt.Println(error_s)
+		// Validate form input
+		if username == "" {
+			error_s = "You have to enter a username"
+			fmt.Println(error_s)
+		} else if !strings.Contains(email, "@") {
+			error_s = "You have to enter a valid email address"
+			fmt.Println(error_s)
 
-        } else if password == "" {
-            error_s = "You have to enter a password"
-            fmt.Println(error_s)
+		} else if password == "" {
+			error_s = "You have to enter a password"
+			fmt.Println(error_s)
 
-        } else if password != password2 {
-            error_s = "The two passwords do not match"
-            fmt.Println(error_s)
+		} else if password != password2 {
+			error_s = "The two passwords do not match"
+			fmt.Println(error_s)
 
-        } else if _, err := get_user_id(username); err == nil {
-            error_s = "The username is already taken"
-            fmt.Println(error_s)
-        } else {
-            // Hash the password
-            hashedPassword, err := hashPassword(password)
-            if err != nil {
-                http.Error(w, "Error hashing password", http.StatusInternalServerError)
-                fmt.Println("Error hashing the password")
-                return
-            }
+		} else if _, err := get_user_id(username); err == nil {
+			error_s = "The username is already taken"
+			fmt.Println(error_s)
+		} else {
+			// Hash the password
+			hashedPassword, err := hashPassword(password)
+			if err != nil {
+				http.Error(w, "Error hashing password", http.StatusInternalServerError)
+				fmt.Println("Error hashing the password")
+				return
+			}
 
-            // Insert the new user into the database
-            _, err = db.Exec("INSERT INTO user (username, email, pw_hash) VALUES (?, ?, ?)", username, email, hashedPassword)
-            if err != nil {
-                http.Error(w, "Database error", http.StatusInternalServerError)
-                fmt.Println("Database error")
-                return
-            }
+			// Insert the new user into the database
+			_, err = db.Exec("INSERT INTO user (username, email, pw_hash) VALUES (?, ?, ?)", username, email, hashedPassword)
+			if err != nil {
+				http.Error(w, "Database error", http.StatusInternalServerError)
+				fmt.Println("Database error")
+				return
+			}
 
-            fmt.Println("User added")
-            tpl.ExecuteTemplate(w, "login_test.html", nil)
-        }
-    }
+			fmt.Println("User added")
+			tpl.ExecuteTemplate(w, "login_test.html", nil)
+		}
+	}
 }
 
-func Logout(w http.ResponseWriter, r *http.Request){
-    //check if there is any session
-    session, err := store.Get(r, "user-session")
-    if err != nil {
-        fmt.Println("Error getting session data")
-        tpl.ExecuteTemplate(w, "login_test.html", nil)
-    }else{
-        // Logout session
-        name, ok := session.Values["name"].(string)
-        if !ok {
-            fmt.Println("Session ended")
-        } else {
-            fmt.Println("Logging of:", name)
-            session.Options.MaxAge = -1
-            err = session.Save(r, w)
-            if err != nil {
-                fmt.Println("Error saving the session")
-                return
-            }
+func Logout(w http.ResponseWriter, r *http.Request) {
+	//check if there is any session
+	session, err := store.Get(r, "user-session")
+	if err != nil {
+		fmt.Println("Error getting session data")
+		tpl.ExecuteTemplate(w, "login_test.html", nil)
+	} else {
+		// Logout session
+		name, ok := session.Values["name"].(string)
+		if !ok {
+			fmt.Println("Session ended")
+		} else {
+			fmt.Println("Logging of:", name)
+			session.Options.MaxAge = -1
+			err = session.Save(r, w)
+			if err != nil {
+				fmt.Println("Error saving the session")
+				return
+			}
 
-            fmt.Println("Logged off")
-        }
-    }
+			fmt.Println("Logged off")
+		}
+	}
 
-    //return to /public
-    tpl.ExecuteTemplate(w, "login_test.html", nil)    
-} 
+	//return to /public
+	tpl.ExecuteTemplate(w, "login_test.html", nil)
+}
 
 func hashPassword(password string) (string, error) {
-    bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
-    return string(bytes), err
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
+	return string(bytes), err
 }
 
 func checkPasswordHash(password, hash string) bool {
-    err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
-    return err == nil
+	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+	return err == nil
 }
 
 // # add some filters to jinja and set the secret key and debug mode
