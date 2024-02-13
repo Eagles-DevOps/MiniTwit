@@ -45,14 +45,13 @@ func main() {
 
 	r.HandleFunc("/", timeline)
 	r.HandleFunc("/public", public_timeline)
+	r.HandleFunc("/{username}", user_timeline)
 	r.HandleFunc("/add_message", add_message).Methods("POST")
+	r.HandleFunc("/{username}/follow", follow_user)
+	r.HandleFunc("/{username}/unfollow", unfollow_user)
 	r.HandleFunc("/login", Login)
 	r.HandleFunc("/register", Register)
 	r.HandleFunc("/logout", Logout)
-
-	r.HandleFunc("/{username}/follow", follow_user)
-	r.HandleFunc("/{username}/unfollow", unfollow_user)
-	r.HandleFunc("/{username}", user_timeline)
 
 	db, err = connect_db()
 	if err != nil {
@@ -66,8 +65,8 @@ func main() {
 	//output := gravatar_url("anam@itu.dk", 80)
 
 	//fmt.Println("Content: ", content, err)
-	fmt.Println("Listening on port 5000...")
-	err = http.ListenAndServe(":5000", r)
+	fmt.Println("Listening on port 15000...")
+	err = http.ListenAndServe(":15000", r)
 	if err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
@@ -167,9 +166,6 @@ func before_request(r *http.Request) {
 	if err != nil {
 		log.Fatal("Error connecting to the database: ", err)
 	}
-	//session, _ := store.Get(r, "session-name")
-	//user_id := session.Values["user_id"]
-	//fmt.Println("user_id: ", user_id)
 	if user_id != nil {
 		user, err := query_db("SELECT * FROM user WHERE user_id = ?", []any{"user_id"}, true)
 		if err != nil {
@@ -315,7 +311,6 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 
 func Login(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
-
 		tpl.ExecuteTemplate(w, "login_test.html", nil)
 
 	} else if r.Method == "POST" {

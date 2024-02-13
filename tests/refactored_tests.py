@@ -14,7 +14,7 @@ import requests
 
 import unittest
 
-BASE_URL = "http://server:5000"
+BASE_URL = "http://server:15000"
 
 
 class MiniTwitTestCase(unittest.TestCase):
