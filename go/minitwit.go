@@ -13,8 +13,8 @@ func main() {
 	//r.HandleFunc("/timeline", TimeLine)
 	//r.HandleFunc("/public", Public)
 	http.Handle("/", r)
-	fmt.Print("Hello world")
-
+	fmt.Println("Starting server")
+	http.ListenAndServe(":5000", r)
 }
 
 // "/"
