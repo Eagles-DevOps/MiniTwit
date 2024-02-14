@@ -302,10 +302,11 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 	_, err = query_db(`select 1 from follower where
         follower.who_id = ? and follower.whom_id = ?`, []any{user_id, profile_user_id}, true)
 
-	var followed bool = false
-	if err == nil {
-		followed = true
+	if err != nil {
+		http.Error(w, "You are not following the user and cannot see their timeline", http.StatusNotFound)
+		return
 	}
+
 	messages, err := query_db(`SELECT message.*, user.* FROM message, user WHERE
 	user.user_id = message.author_id AND user.user_id = ?
 	ORDER BY message.pub_date desc limit ?`, []any{profile_user_id, PER_PAGE}, false)
@@ -313,12 +314,7 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error when trying to query the database", http.StatusInternalServerError)
 	}
 
-	dict := make(map[string]any)
-	dict["messages"] = messages
-	dict["followed"] = followed
-	dict["profile_user"] = profile_user
-
-	err = tpl.ExecuteTemplate(w, "timeline.html", dict)
+	err = tpl.ExecuteTemplate(w, "timeline.html", messages)
 	if err != nil {
 		http.Error(w, "Error when trying to execute the template", http.StatusInternalServerError)
 	}
