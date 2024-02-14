@@ -57,14 +57,14 @@ func main() {
 
 	r.HandleFunc("/timeline", timeline)
 	r.HandleFunc("/public_timeline", public_timeline)
+	r.HandleFunc("/{username}", user_timeline)
+
 	r.HandleFunc("/add_message", add_message).Methods("POST")
+	r.HandleFunc("/{username}/follow", follow_user)
+	r.HandleFunc("/{username}/unfollow", unfollow_user)
 	r.HandleFunc("/login", Login)
 	r.HandleFunc("/register", Register)
 	r.HandleFunc("/logout", Logout)
-
-	r.HandleFunc("/{username}/follow", follow_user)
-	r.HandleFunc("/{username}/unfollow", unfollow_user)
-	r.HandleFunc("/{username}", user_timeline)
 
 	db, err = connect_db()
 	if err != nil {
@@ -78,8 +78,8 @@ func main() {
 	//output := gravatar_url("anam@itu.dk", 80)
 
 	//fmt.Println("Content: ", content, err)
-	fmt.Println("Listening on port 5000...")
-	err = http.ListenAndServe(":5000", r)
+	fmt.Println("Listening on port 15000...")
+	err = http.ListenAndServe(":15000", r)
 	if err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
@@ -180,9 +180,6 @@ func before_request(r *http.Request) {
 	if err != nil {
 		log.Fatal("Error connecting to the database: ", err)
 	}
-	//session, _ := store.Get(r, "session-name")
-	//user_id := session.Values["user_id"]
-	//fmt.Println("user_id: ", user_id)
 	if user_id != nil {
 		user, err := query_db("SELECT * FROM user WHERE user_id = ?", []any{"user_id"}, true)
 		if err != nil {
@@ -347,10 +344,10 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 
 func Login(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
-
 		tpl.ExecuteTemplate(w, "login_test.html", nil)
 
 	} else if r.Method == "POST" {
+		var user_id_val any
 		fmt.Println("POST, render login")
 		username := r.FormValue("username")
 		password := r.FormValue("password")
@@ -379,17 +376,19 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		// Set session data
 		session, _ := store.Get(r, "user-session")
 		session.Options = &sessions.Options{
-			Path: "/",
-			//MaxAge:   3600, // 1 hour in seconds
-			MaxAge:   5,
+			Path:   "/",
+			MaxAge: 3600, // 1 hour in seconds
+			//MaxAge: 5,
 			HttpOnly: true, // Recommended for security
 		}
 
+		user_id_val, err = get_user_id(username)
+		if err != nil {
+			fmt.Println("Cant get User ID")
+		}
 		//values needs to be from a name form
-		session.Values["name"] = username
+		session.Values["user_id"] = user_id_val
 		session.Save(r, w)
-
-		//session.Values["user_id"] = userMap["user_id"]
 
 		// Redirect to timeline
 		fmt.Println("Logged in redirecting to timeline")
@@ -462,18 +461,17 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 		tpl.ExecuteTemplate(w, "login_test.html", nil)
 	} else {
 		// Logout session
-		name, ok := session.Values["name"].(string)
+		user_id_val, ok := session.Values["user_id"].(any)
 		if !ok {
 			fmt.Println("Session ended")
 		} else {
-			fmt.Println("Logging of:", name)
+			fmt.Println("Logging of:", user_id_val)
 			session.Options.MaxAge = -1
 			err = session.Save(r, w)
 			if err != nil {
 				fmt.Println("Error saving the session")
 				return
 			}
-
 			fmt.Println("Logged off")
 		}
 	}
