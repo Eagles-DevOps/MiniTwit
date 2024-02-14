@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Timeline</title>
+  <link rel="stylesheet" type="text/css" href="/static/style.css">
+</head>
+<body>
+    <ul class = messages>
+  {{range $fields := .}}
+  <li>
+    <img src = "{{getavatar $fields.email 48 }}"><p>
+      <strong> 
+        {{$fields.username}}
+      </strong>
+      {{$fields.text}}
+    <small>&mdash; {{(gettimestamp $fields.pub_date)}}</small>
+
+    
+
+  {{end}}
+</ul>
+</body>
+</html>

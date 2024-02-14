@@ -7,8 +7,10 @@ import (
 	"fmt"
 	"html/template"
 	"log"
+	"net"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -36,21 +38,32 @@ var tpl *template.Template
 
 func main() {
 	var err error
-	tpl, err = template.ParseGlob("templates/*.html")
+
+	funcMap := template.FuncMap{"getavatar": func(url string, size int) string {
+		return gravatar_url(url, size)
+	},
+		"gettimestamp": func(time int64) string {
+			return format_datetime(time)
+		},
+	}
+	tpl, err = template.New("timeline.html").Funcs(funcMap).ParseGlob("templates/*.html") // we need to add the funcs that we want to use before parsing
+
 	if err != nil {
 		log.Fatalf("Error parsing template: %v", err)
 	}
 	r := mux.NewRouter()
 	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
+
+	r.HandleFunc("/", timeline)
+	r.HandleFunc("/public", public_timeline)
+	r.HandleFunc("/add_message", add_message).Methods("POST")
 	r.HandleFunc("/login", Login)
 	r.HandleFunc("/register", Register)
 	r.HandleFunc("/logout", Logout)
-	r.HandleFunc("/public", public_timeline)
-	r.HandleFunc("/add_message", add_message).Methods("POST")
+
 	r.HandleFunc("/{username}/follow", follow_user)
 	r.HandleFunc("/{username}/unfollow", unfollow_user)
 	r.HandleFunc("/{username}", user_timeline)
-	r.HandleFunc("/", timeline)
 
 	db, err = connect_db()
 	if err != nil {
@@ -59,16 +72,17 @@ func main() {
 	defer db.Close()
 
 	//content, err := query_db("SELECT user_id FROM user WHERE username IN (?, ?, ?)", []any{"Roger Histand", "Ayako Yestramski", "Leonora Alford"}, false)
-	//dt := format_datetime(time.Now())
-	//id_string := strconv.FormatInt(int64(id), 10)
-	//output := gravatar_url("anam@itu.dk", 80)
 
-	//fmt.Println("Content: ", content, err)
 	fmt.Println("Listening on port 15000...")
 	err = http.ListenAndServe(":15000", r)
 	if err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
+}
+
+// "/"
+func handle(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
 }
 
 // """Returns a new connection to the database."""
@@ -129,8 +143,9 @@ func query_db(query string, args []any, one bool) (any, error) {
 }
 
 // """Format a timestamp for display."""
-func format_datetime(timestamp time.Time) string {
-	return timestamp.Format("2006-01-02 @ 15:04")
+func format_datetime(timestamp int64) string {
+	return strconv.FormatInt(timestamp, 10)
+	//return timestamp.Format("2006-01-02 @ 15:04")
 }
 
 // """Return the gravatar image for the given email address."""
@@ -215,7 +230,7 @@ func unfollow_user(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error when trying to delete data from database", http.StatusInternalServerError)
 	}
 	session.AddFlash("You are no longer following %s", username)
-	http.Redirect(w, r, "/"+username, http.StatusSeeOther)
+	http.Redirect(w, r, "/"+username, http.StatusFound)
 }
 
 // """Registers a new message for the user."""
@@ -230,39 +245,29 @@ func add_message(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("You need to write a message in the text form")
 	}
 	session.AddFlash("Your message was recorded")
-	http.Redirect(w, r, "/timeline", http.StatusSeeOther)
+	http.Redirect(w, r, "/", http.StatusFound)
 }
 
 // """Shows a users timeline or if no user is logged in it will
 // redirect to the public timeline.  This timeline shows the user's
 // messages as well as all the messages of followed users."""
 func timeline(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("We got a visitor from: ", r.RemoteAddr)
+	_, ip, _ := net.SplitHostPort(r.RemoteAddr)
+	fmt.Println("We got a visitor from: ", ip)
+
 	if user == nil {
-		http.Redirect(w, r, "/public", http.StatusSeeOther)
-	}
-	messages, err := query_db(`SELECT message.*, user.* FROM message, user
-    WHERE message.flagged = 0 AND message.author_id = user.user_id AND (
-        user.user_id = ? OR
-        user.user_id IN (SELECT whom_id FROM follower
-                                WHERE who_id = ?))
-    ORDER BY message.pub_date DESC LIMIT ?`, []any{"user_id", "user_id", PER_PAGE}, false)
-
-	if err != nil {
-		http.Error(w, "Error when trying to query the database", http.StatusInternalServerError)
-	}
-
-	err = tpl.ExecuteTemplate(w, "timeline.html", messages)
-	if err != nil {
-		http.Error(w, "Error when trying to execute the template", http.StatusInternalServerError)
+		http.Redirect(w, r, "/public", http.StatusFound)
 	}
 }
 
 // """Displays the latest messages of all users."""
 func public_timeline(w http.ResponseWriter, r *http.Request) {
-	messages, err := query_db(`SELECT message.*, user.* FROM message, user
-    WHERE message.flagged = 0 AND message.author_id = user.user_id
-    ORDER BY message.pub_date desc limit ?`, []any{PER_PAGE}, false)
+
+	var query = `SELECT message.*, user.* FROM message, user
+	WHERE message.flagged = 0 AND message.author_id = user.user_id
+	ORDER BY message.pub_date desc limit ?`
+
+	messages, err := query_db(query, []any{PER_PAGE}, false)
 	if err != nil {
 		http.Error(w, "Error when trying to query the database", http.StatusInternalServerError)
 	}
@@ -319,7 +324,7 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 
 func Login(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
-		tpl.ExecuteTemplate(w, "login_test.html", nil)
+		tpl.ExecuteTemplate(w, "login.html", nil)
 
 	} else if r.Method == "POST" {
 		fmt.Println("POST, render login")
@@ -364,35 +369,42 @@ func Login(w http.ResponseWriter, r *http.Request) {
 
 func Register(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
+
 		tpl.ExecuteTemplate(w, "register.html", nil)
 
 	} else if r.Method == "POST" {
+
 		username := r.FormValue("username")
 		email := r.FormValue("email")
 		password := r.FormValue("password")
 		password2 := r.FormValue("password2")
 
+		var error_s string
+
 		// Validate form input
 		if username == "" {
-			fmt.Println("You have to enter a username")
-
+			error_s = "You have to enter a username"
+			fmt.Println(error_s)
 		} else if !strings.Contains(email, "@") {
-			fmt.Println("You have to enter a valid email address")
+			error_s = "You have to enter a valid email address"
+			fmt.Println(error_s)
 
 		} else if password == "" {
-			fmt.Println("You have to enter a password")
+			error_s = "You have to enter a password"
+			fmt.Println(error_s)
 
 		} else if password != password2 {
-			fmt.Println("The two passwords do not match")
+			error_s = "The two passwords do not match"
+			fmt.Println(error_s)
 
 		} else if _, err := get_user_id(username); err == nil {
-			fmt.Println("The username is already taken")
-
+			error_s = "The username is already taken"
+			fmt.Println(error_s)
 		} else {
 			// Hash the password
 			hashedPassword, err := hashPassword(password)
 			if err != nil {
-				http.Error(w, "Error hashing the password", http.StatusInternalServerError)
+				http.Error(w, "Error hashing password", http.StatusInternalServerError)
 				fmt.Println("Error hashing the password")
 				return
 			}
@@ -400,11 +412,12 @@ func Register(w http.ResponseWriter, r *http.Request) {
 			// Insert the new user into the database
 			_, err = db.Exec("INSERT INTO user (username, email, pw_hash) VALUES (?, ?, ?)", username, email, hashedPassword)
 			if err != nil {
-				http.Error(w, "Error when trying to insert data into the database", http.StatusInternalServerError)
-				fmt.Println("Error when trying to insert data into the database")
+				http.Error(w, "Database error", http.StatusInternalServerError)
+				fmt.Println("Database error")
 				return
 			}
-			fmt.Println("You were successfully registered and can login now")
+
+			fmt.Println("User added")
 			http.Redirect(w, r, "/login", http.StatusSeeOther)
 		}
 	}
@@ -438,13 +451,3 @@ func checkPasswordHash(password, hash string) error {
 	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
 	return err
 }
-
-// # add some filters to jinja and set the secret key and debug mode
-// # from the configuration.
-// app.jinja_env.filters['datetimeformat'] = format_datetime
-// app.jinja_env.filters['gravatar'] = gravatar_url
-// app.secret_key = SECRET_KEY
-// app.debug = DEBUG
-
-// if __name__ == '__main__':
-//     app.run(host="0.0.0.0")
