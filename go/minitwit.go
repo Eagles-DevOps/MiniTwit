@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -36,16 +37,28 @@ var tpl *template.Template
 
 func main() {
 	var err error
-	tpl, err = template.ParseGlob("templates/*.html")
+
+	funcMap := template.FuncMap{"getavatar": func(url string, size int) string {
+		return gravatar_url(url, size)
+	},
+		"gettimestamp": func(time int64) string {
+			return format_datetime(time)
+		},
+	}
+	tpl, err = template.New("timeline.html").Funcs(funcMap).ParseGlob("templates/*.html") // we need to add the funcs that we want to use before parsing
+
+	//tpl, err = template.ParseGlob("templates/*.html")
+
 	if err != nil {
 		log.Fatalf("Error parsing template: %v", err)
 	}
 	r := mux.NewRouter()
 	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 
-	r.HandleFunc("/", timeline)
-	r.HandleFunc("/public", public_timeline)
+	r.HandleFunc("/timeline", timeline)
+	r.HandleFunc("/public_timeline", public_timeline)
 	r.HandleFunc("/{username}", user_timeline)
+
 	r.HandleFunc("/add_message", add_message).Methods("POST")
 	r.HandleFunc("/{username}/follow", follow_user)
 	r.HandleFunc("/{username}/unfollow", unfollow_user)
@@ -135,8 +148,9 @@ func query_db(query string, args []any, one bool) (any, error) {
 }
 
 // """Format a timestamp for display."""
-func format_datetime(timestamp time.Time) string {
-	return timestamp.Format("2006-01-02 @ 15:04")
+func format_datetime(timestamp int64) string {
+	return strconv.FormatInt(timestamp, 10)
+	//return timestamp.Format("2006-01-02 @ 15:04")
 }
 
 // """Return the gravatar image for the given email address."""
@@ -246,11 +260,12 @@ func render_template(w http.ResponseWriter, r *http.Request, tmplt string, query
 	if err != nil {
 		http.Error(w, "Error when trying to query the database", http.StatusInternalServerError)
 	}
-	_template, err := template.ParseFiles(tmplt)
-	if err != nil {
-		http.Error(w, "Error when trying to parse the template", http.StatusInternalServerError)
-	}
-	err = _template.Execute(w, messages)
+
+	//_template, err := template.ParseFiles(tmplt) // this breaks it, but we've also already parsed the file
+	//if err != nil {//
+	//	http.Error(w, "Error when trying to parse the template", http.StatusInternalServerError)
+	//}
+	err = tpl.ExecuteTemplate(w, tmplt, messages)
 	if err != nil {
 		http.Error(w, "Error when trying to execute the template", http.StatusInternalServerError)
 	}
@@ -261,22 +276,40 @@ func render_template(w http.ResponseWriter, r *http.Request, tmplt string, query
 // messages as well as all the messages of followed users."""
 func timeline(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("We got a visitor from: ", r.RemoteAddr)
+
 	if user == nil {
-		http.Redirect(w, r, "/public_timeline", http.StatusFound)
+		http.Redirect(w, r, "/public_timeline", http.StatusFound) // This currently just provides a link, doesn't redirect
 	}
-	render_template(w, r, "timeline.html", `SELECT message.*, user.* FROM message, user
-    WHERE message.flagged = 0 AND message.author_id = user.user_id AND (
-        user.user_id = ? OR
-        user.user_id IN (SELECT whom_id FROM follower
-                                WHERE who_id = ?))
-    ORDER BY message.pub_date DESC LIMIT ?`, []any{"user_id", "user_id", PER_PAGE}, false, nil, nil)
+
+	//render_template(w, r, "timeline.html", `SELECT message.* FROM message
+	//WHERE message.message_id = 1`, []any{}, false, nil, nil)
+
+	/*
+	  `WHERE message.flagged = 0 AND message.author_id = user.user_id AND (
+	      user.user_id = ? OR
+	      user.user_id IN (SELECT whom_id FROM follower
+	                              WHERE who_id = ?))
+	  ORDER BY message.pub_date DESC LIMIT ?`, []any{"user_id", "user_id", PER_PAGE}, false, nil, nil)
+	*/
+
 }
 
 // """Displays the latest messages of all users."""
 func public_timeline(w http.ResponseWriter, r *http.Request) {
-	render_template(w, r, "timeline.html", `SELECT message.*, user.* FROM message, user
-    WHERE message.flagged = 0 AND message.author_id = user.user_id
-    ORDER BY message.pub_date desc limit ?`, []any{PER_PAGE}, false, nil, nil)
+	/*
+		var data, _ = query_db(`SELECT message.*, user.* FROM message, user
+		WHERE message.flagged = 0 AND message.author_id = user.user_id
+		ORDER BY message.pub_date desc limit ?`, []any{PER_PAGE}, false)
+	*/
+	var query = `SELECT message.*, user.* FROM message, user
+	WHERE message.flagged = 0 AND message.author_id = user.user_id
+	ORDER BY message.pub_date desc limit ?`
+	render_template(w, r, "timeline.html", query, []any{PER_PAGE}, false, nil, nil)
+	/*
+		if err := tpl.ExecuteTemplate(w, "timeline.html", data); err != nil {
+			panic(err)
+		}
+	*/
 }
 
 // """Display's a users tweets."""
