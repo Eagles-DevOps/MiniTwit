@@ -24,4 +24,3 @@ docker compose up -d --build
 docker logs minitwit-tests-1
 
 tests are failing as of now (to be expected)
-
