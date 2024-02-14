@@ -290,10 +290,10 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error when trying to find the profile user in the database", http.StatusNotFound)
 		return
 	}
-	profile_user_id, err := get_user_id(username)
-	if err != nil {
-		return
-	}
+
+	userMap := profile_user.(map[any]any)
+	profile_user_id := userMap["user_id"]
+
 	if user == nil {
 		http.Error(w, "Error when trying to find the user in the database", http.StatusNotFound)
 		return
