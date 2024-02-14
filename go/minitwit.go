@@ -168,19 +168,27 @@ func get_user_id(username string) (any, error) {
 
 // """Make sure we are connected to the database each request and look
 // up the current user so that we know he's there.
-func before_request(r *http.Request) {
+func before_request(r *http.Request) (any, error) {
 	var err error
 	db, err = connect_db()
 	if err != nil {
 		log.Fatal("Error connecting to the database: ", err)
 	}
-	if user_id != nil {
-		user, err := query_db("SELECT * FROM user WHERE user_id = ?", []any{"user_id"}, true)
-		if err != nil {
-			return
-		}
-		fmt.Println("user: ", user)
+
+	session, err := store.Get(r, "user-session")
+	user_id, ok := session.Values["user_id"].(any)
+
+	if !ok {
+		fmt.Println("Session ended")
+		return nil, err
 	}
+
+	user, err := query_db("SELECT * FROM user WHERE user_id = ?", []any{user_id}, true)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Println("user: ", user)
+	return user, err
 }
 
 // """Closes the database again at the end of the request."""
@@ -255,10 +263,16 @@ func timeline(w http.ResponseWriter, r *http.Request) {
 	_, ip, _ := net.SplitHostPort(r.RemoteAddr)
 	fmt.Println("We got a visitor from: ", ip)
 
-	if user == nil {
+	var err error
+	user, err = before_request(r)
+
+	if err != nil {
 		http.Redirect(w, r, "/public", http.StatusFound)
 	} else {
-		http.Redirect(w, r, "/{username}", http.StatusFound)
+		userMap := user.(map[any]any)
+		username := userMap["username"].(string)
+		usernameURL := fmt.Sprintf("/%s", username)
+		http.Redirect(w, r, usernameURL, http.StatusFound)
 	}
 }
 
@@ -285,36 +299,57 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	username := vars["username"]
 	println("displaying username for " + username)
+
+	fmt.Println("Calling before_request() in user_timeline...")
+
+	_, err := before_request(r)
+
+	//Uncertain how to handle the case where user is not logged in. Currently redirecting to /public
+	if err != nil {
+		//replace with flash popup
+		//http.Error(w, "Error when trying to find the user in the database", http.StatusNotFound)
+		http.Redirect(w, r, "/public", http.StatusSeeOther)
+	}
+
+	fmt.Println("Query for profile_user data...")
+
 	profile_user, err := query_db("SELECT * FROM user WHERE username = ?", []any{username}, true)
 	if err != nil {
-		http.Error(w, "Error when trying to find the profile user in the database", http.StatusNotFound)
-		return
+		//replace with flash popup
+		//http.Error(w, "Error when trying to find the profile user in the database", http.StatusNotFound)
+		http.Redirect(w, r, "/public", http.StatusSeeOther)
 	}
 
-	userMap := profile_user.(map[any]any)
-	profile_user_id := userMap["user_id"]
+	profileuserMap := profile_user.(map[any]any)
+	profile_user_id := profileuserMap["user_id"]
 
-	if user == nil {
-		http.Error(w, "Error when trying to find the user in the database", http.StatusNotFound)
-		return
-	}
-
+	var followed bool = false
 	_, err = query_db(`select 1 from follower where
         follower.who_id = ? and follower.whom_id = ?`, []any{user_id, profile_user_id}, true)
 
-	if err != nil {
-		http.Error(w, "You are not following the user and cannot see their timeline", http.StatusNotFound)
-		return
+	if err == nil {
+		followed = true
 	}
 
-	messages, err := query_db(`SELECT message.*, user.* FROM message, user WHERE
+	fmt.Println("Query for user_timeline...")
+
+	var query = `SELECT message.*, user.* FROM message, user WHERE
 	user.user_id = message.author_id AND user.user_id = ?
-	ORDER BY message.pub_date desc limit ?`, []any{profile_user_id, PER_PAGE}, false)
+	ORDER BY message.pub_date desc limit ?`
+
+	messages, err := query_db(query, []any{profile_user_id, PER_PAGE}, false)
 	if err != nil {
 		http.Error(w, "Error when trying to query the database", http.StatusInternalServerError)
 	}
 
-	err = tpl.ExecuteTemplate(w, "timeline.html", messages)
+	dict := make(map[string]any)
+	dict["messages"] = messages
+	dict["followed"] = followed
+	dict["profile_user"] = profile_user
+
+	fmt.Println("Rendering template...")
+
+	err = tpl.ExecuteTemplate(w, "timeline.html", dict)
 	if err != nil {
 		http.Error(w, "Error when trying to execute the template", http.StatusInternalServerError)
 	}
