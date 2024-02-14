@@ -10,7 +10,6 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 
@@ -46,7 +45,7 @@ func main() {
 			return format_datetime(time)
 		},
 	}
-	tpl, err = template.New("timeline.html").Funcs(funcMap).ParseGlob("templates/*.html") // we need to add the funcs that we want to use before parsing
+	tpl, err = template.New("timeline.html").Funcs(funcMap).ParseGlob("templates/*.html") // We need to add the funcs that we want to use before parsing
 
 	if err != nil {
 		log.Fatalf("Error parsing template: %v", err)
@@ -144,8 +143,9 @@ func query_db(query string, args []any, one bool) (any, error) {
 
 // """Format a timestamp for display."""
 func format_datetime(timestamp int64) string {
-	return strconv.FormatInt(timestamp, 10)
-	//return timestamp.Format("2006-01-02 @ 15:04")
+	t := time.Unix(timestamp, 0)
+	return t.Format("2006-01-02 @ 15:04")
+	//return strconv.FormatInt(timestamp, 10)
 }
 
 // """Return the gravatar image for the given email address."""
@@ -257,6 +257,8 @@ func timeline(w http.ResponseWriter, r *http.Request) {
 
 	if user == nil {
 		http.Redirect(w, r, "/public", http.StatusFound)
+	} else {
+		http.Redirect(w, r, "/{username}", http.StatusFound)
 	}
 }
 
