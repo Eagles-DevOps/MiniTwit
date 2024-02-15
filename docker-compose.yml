@@ -17,6 +17,11 @@ services:
     ports:
       - '5000:5000'
 
+  go_tests:
+    build: ./go
+    depends_on:
+      - server
+    command: go test
 
 
 

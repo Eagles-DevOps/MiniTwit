@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const BASE_URL = "http://localhost:5000"
+const BASE_URL = "http://localhost:15000"
 
 func do_register(username string, password string, password2 string, email string) (*http.Response, error) {
 	// Helper function to register a user
