@@ -13,6 +13,8 @@
 import requests
 
 import unittest
+import uuid
+
 
 BASE_URL = "http://server:15000"
 
@@ -61,86 +63,96 @@ class MiniTwitTestCase(unittest.TestCase):
         r = http_session.post(f'{BASE_URL}/add_message', data={'text': text},
                                     allow_redirects=True)
         if text:
-            assert 'Your message was recorded' in r.text
+            assert 'Your message was recorded' in r.text, r.text
         return r
 
     # testing functions
 
     def test_register(self):
         """Make sure registering works"""
-        r = self.register('user1', 'default')
+
+        user1 = 'user' + str(uuid.uuid4())
+        user2 = 'user' + str(uuid.uuid4())
+        user3 = 'user' + str(uuid.uuid4())
+        user4 = 'user' + str(uuid.uuid4())
+        r = self.register(user1, 'default')
         assert 'You were successfully registered ' \
-            'and can login now' in r.text
-        r = self.register('user1', 'default')
-        assert 'The username is already taken' in r.text
+            'and can login now' in r.text, r.text
+        r = self.register(user1, 'default')
+        assert 'The username is already taken' in r.text, r.text
         r = self.register('', 'default')
-        assert 'You have to enter a username' in r.text
-        r = self.register('meh', '')
-        assert 'You have to enter a password' in r.text
-        r = self.register('meh', 'x', 'y')
-        assert 'The two passwords do not match' in r.text
-        r = self.register('meh', 'foo', email='broken')
-        assert 'You have to enter a valid email address' in r.text
+        assert 'You have to enter a username' in r.text, r.text
+        r = self.register(user2, '')
+        assert 'You have to enter a password' in r.text, r.text
+        r = self.register(user3, 'x', 'y')
+        assert 'The two passwords do not match' in r.text, r.text
+        r = self.register(user4, 'foo', email='broken')
+        assert 'You have to enter a valid email address' in r.text, r.text
 
     def test_login_logout(self):
         """Make sure logging in and logging out works"""
-        r, http_session = self.register_and_login('user1', 'default')
-        assert 'You were logged in' in r.text
+        user1 = 'user' + str(uuid.uuid4())
+        user2= 'user' + str(uuid.uuid4())
+        r, http_session = self.register_and_login(user1, 'default')
+        assert 'You were logged in' in r.text, r.text
         r = self.logout(http_session)
-        assert 'You were logged out' in r.text
-        r, _ = self.login('user1', 'wrongpassword')
-        assert 'Invalid password' in r.text
-        r, _ = self.login('user2', 'wrongpassword')
-        assert 'Invalid username' in r.text
+        assert 'You were logged out' in r.text, r.text
+        r, _ = self.login(user1, 'wrongpassword')
+        assert 'Invalid password' in r.text, r.text
+        r, _ = self.login(user2, 'wrongpassword')
+        assert 'Invalid username' in r.text, r.text
 
     def test_message_recording(self):
         """Check if adding messages works"""
-        _, http_session = self.register_and_login('foo', 'default')
+        user1 = 'user' + str(uuid.uuid4())
+        _, http_session = self.register_and_login(user1, 'default')
         self.add_message(http_session, 'test message 1')
         self.add_message(http_session, '<test message 2>')
         r = requests.get(f'{BASE_URL}/')
-        assert 'test message 1' in r.text
-        assert '&lt;test message 2&gt;' in r.text
+        assert 'test message 1' in r.text, r.text
+        assert '&lt;test message 2&gt;' in r.text, r.text
 
     def test_timelines(self):
         """Make sure that timelines work"""
+        user1 = 'user' + str(uuid.uuid4())
+        user2 = 'user' + str(uuid.uuid4())
         _, http_session = self.register_and_login('foo', 'default')
         self.add_message(http_session, 'the message by foo')
         self.logout(http_session)
         _, http_session = self.register_and_login('bar', 'default')
         self.add_message(http_session, 'the message by bar')
         r = http_session.get(f'{BASE_URL}/public')
-        assert 'the message by foo' in r.text
-        assert 'the message by bar' in r.text
+        assert 'the message by foo' in r.text, r.text
+        assert 'the message by bar' in r.text, r.text
 
         # bar's timeline should just show bar's message
         r = http_session.get(f'{BASE_URL}/')
-        assert 'the message by foo' not in r.text
-        assert 'the message by bar' in r.text
+        assert 'the message by foo' not in r.text, r.text
+        assert 'the message by bar' in r.text, r.text
 
         # now let's follow foo
         r = http_session.get(f'{BASE_URL}/foo/follow', allow_redirects=True)
-        assert 'You are now following &#34;foo&#34;' in r.text
+        assert 'You are now following &#34;foo&#34;' in r.text, r.text
 
         # we should now see foo's message
         r = http_session.get(f'{BASE_URL}/')
-        assert 'the message by foo' in r.text
-        assert 'the message by bar' in r.text
+        assert 'the message by foo' in r.text, r.text
+        assert 'the message by bar' in r.text, r.text
 
         # but on the user's page we only want the user's message
         r = http_session.get(f'{BASE_URL}/bar')
-        assert 'the message by foo' not in r.text
-        assert 'the message by bar' in r.text
+        assert 'the message by foo' not in r.text, r.text
+        assert 'the message by bar' in r.text, r.text
         r = http_session.get(f'{BASE_URL}/foo')
-        assert 'the message by foo' in r.text
-        assert 'the message by bar' not in r.text
+        assert 'the message by foo' in r.text, r.text
+        assert 'the message by bar' not in r.text, r.text
 
         # now unfollow and check if that worked
         r = http_session.get(f'{BASE_URL}/foo/unfollow', allow_redirects=True)
-        assert 'You are no longer following &#34;foo&#34;' in r.text
+        assert 'You are no longer following &#34;foo&#34;' in r.text, r.text
         r = http_session.get(f'{BASE_URL}/')
-        assert 'the message by foo' not in r.text
-        assert 'the message by bar' in r.text
+        assert 'the message by foo' not in r.text, r.text
+        assert 'the message by bar' in r.text, r.text
 
 if __name__ == '__main__':
     unittest.main()
