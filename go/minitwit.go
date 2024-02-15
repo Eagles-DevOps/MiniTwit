@@ -55,9 +55,6 @@ func main() {
 			}
 
 		},
-		"formatUsernameUrl": func(username string) string {
-			return strings.Replace(username, " ", "%20", -1)
-		},
 	}
 	tpl, err = template.New("timeline.html").Funcs(funcMap).ParseGlob("templates/*.html") // We need to add the funcs that we want to use before parsing
 
@@ -240,8 +237,7 @@ func follow_user(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//session.AddFlash("You are now following %s", username)
-	//session.AddFlash("You are now following %s")
+	session.AddFlash("You are now following %s", username)
 	http.Redirect(w, r, "/"+username, http.StatusSeeOther)
 }
 
@@ -268,7 +264,7 @@ func unfollow_user(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error when trying to delete data from database", http.StatusInternalServerError)
 		return
 	}
-	//session.AddFlash("You are no longer following %s", username)
+	session.AddFlash("You are no longer following %s", username)
 	http.Redirect(w, r, "/"+username, http.StatusFound)
 }
 
@@ -375,11 +371,12 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(profile_user)
 	profileuserMap := profile_user.(map[any]any)
 	profile_user_id := profileuserMap["user_id"]
+
 	var followed bool = false
-	usr, err := query_db(`select 1 from follower where
+	_, err = query_db(`select 1 from follower where
         follower.who_id = ? and follower.whom_id = ?`, []any{user_id, profile_user_id}, true)
 
-	if err == nil && usr != nil {
+	if err == nil {
 		followed = true
 	}
 
@@ -396,6 +393,10 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	dict := make(map[string]any)
+	dict["messages"] = messages
+	dict["followed"] = followed
+	dict["profile_user"] = profile_user
 	fmt.Println(user_id)
 	d := Data{Message: messages,
 		Followed: followed,
@@ -405,7 +406,7 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fmt.Println("Rendering template...")
-	fmt.Println(d)
+	fmt.Println(dict)
 	//err = tpl.ExecuteTemplate(w, "timeline.html", dict)
 	err = tpl.ExecuteTemplate(w, "timeline.html", d)
 	if err != nil {
