@@ -52,6 +52,16 @@ func main() {
 				return "/" + username + "/follow"
 			case "add_message":
 				return "/add_message"
+			case "timeline":
+				return "/"
+			case "public_timeline":
+				return "/public"
+			case "logout":
+				return "/logout"
+			case "login":
+				return "/login"
+			case "register":
+				return "/register"
 			default:
 				return "/"
 			}
