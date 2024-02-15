@@ -1,5 +1,6 @@
 version: '3'
 services:
+
   server:
     build: ./go
     ports:
@@ -10,6 +11,11 @@ services:
       context: ./tests
       dockerfile: pythontests.Dockerfile
     entrypoint: sh -c  "sleep 5 && python /tests/refactored_tests.py"
+
+  old_server:
+    build: ./old_app
+    ports:
+      - '5000:5000'
 
   go_tests:
     build: ./go

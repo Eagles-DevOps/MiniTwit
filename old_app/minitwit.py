@@ -1,4 +1,3 @@
-import re
 import time
 import sqlite3
 from hashlib import md5
