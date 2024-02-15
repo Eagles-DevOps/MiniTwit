@@ -71,8 +71,8 @@ func main() {
 	r.HandleFunc("/public", public_timeline)
 	r.HandleFunc("/add_message", add_message).Methods("POST")
 	r.HandleFunc("/login", Login)
-	r.HandleFunc("/register", Register)
 	r.HandleFunc("/logout", Logout)
+	r.HandleFunc("/register", Register)
 
 	r.HandleFunc("/{username}/follow", follow_user)
 	r.HandleFunc("/{username}/unfollow", unfollow_user)
@@ -191,7 +191,7 @@ func before_request(r *http.Request) (any, error) {
 	}
 
 	session, err := store.Get(r, "user-session")
-	fmt.Println(session)
+	//fmt.Println(session)
 	user_id, ok := session.Values["user_id"].(any)
 
 	if !ok {
@@ -204,7 +204,7 @@ func before_request(r *http.Request) (any, error) {
 		fmt.Println("Unable to query for user data in before_request()")
 		return nil, err
 	}
-	fmt.Println("user: ", user)
+	//fmt.Println("user: ", user)
 	return user, err
 }
 
@@ -239,6 +239,8 @@ func follow_user(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error when trying to insert data into database", http.StatusInternalServerError)
 		return
 	}
+	message := fmt.Sprintf("You are now following %s ", username)
+	setFlash(r, w, message)
 
 	//session.AddFlash("You are now following %s", username)
 	//session.AddFlash("You are now following %s")
@@ -268,6 +270,9 @@ func unfollow_user(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error when trying to delete data from database", http.StatusInternalServerError)
 		return
 	}
+
+	message := fmt.Sprintf("You are no longer following %s ", username)
+	setFlash(r, w, message)
 	//session.AddFlash("You are no longer following %s", username)
 	http.Redirect(w, r, "/"+username, http.StatusFound)
 }
@@ -287,18 +292,18 @@ func add_message(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("You need to write a message in the text form")
 		http.Error(w, "You need to write a message in the text form", http.StatusBadRequest)
 	}
-	session, _ := store.Get(r, "user-session")
-	session.AddFlash("Your message was recorded")
-	err = session.Save(r, w)
+	setFlash(r, w, "Your message was recorded")
+
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
 type Data struct { //used to inject the html template with the requestURI (to figure out if we're on public or user timeline)
-	Message  any
-	User     any
-	Req      string
-	Followed any
-	USERID   any
+	Message       any
+	User          any
+	Req           string
+	Followed      any
+	USERID        any
+	FlashMessages any
 }
 
 // """Shows a users timeline or if no user is logged in it will
@@ -334,8 +339,9 @@ func public_timeline(w http.ResponseWriter, r *http.Request) {
 		println("Error when trying to query the database: ", err)
 		http.Error(w, "Error when trying to query the database", http.StatusInternalServerError)
 	}
-	d := Data{Message: messages, Req: r.RequestURI}
-	fmt.Println(d)
+
+	flash := getFlash(r, w)
+	d := Data{Message: messages, Req: r.RequestURI, FlashMessages: flash}
 	err = tpl.ExecuteTemplate(w, "timeline.html", d)
 	if err != nil {
 		println("Error trying to execute template: ", err)
@@ -396,12 +402,15 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	flash := getFlash(r, w)
+
 	fmt.Println(user_id)
 	d := Data{Message: messages,
-		Followed: followed,
-		User:     profile_user,
-		Req:      r.RequestURI,
-		USERID:   user_id,
+		Followed:      followed,
+		User:          profile_user,
+		Req:           r.RequestURI,
+		USERID:        user_id,
+		FlashMessages: flash,
 	}
 
 	fmt.Println("Rendering template...")
@@ -417,7 +426,20 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 
 func Login(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
-		tpl.ExecuteTemplate(w, "login.html", nil)
+
+		flash := getFlash(r, w)
+		if flash != nil {
+
+			fmt.Println("Login no ses: ", flash)
+
+			d := Data{
+				FlashMessages: flash,
+			}
+			tpl.ExecuteTemplate(w, "login.html", d)
+		} else {
+			fmt.Println("No session in login")
+			tpl.ExecuteTemplate(w, "login.html", nil)
+		}
 
 	} else if r.Method == "POST" {
 		fmt.Println("POST, render login")
@@ -454,8 +476,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		session.Values["user_id"] = user_id
 		session.Save(r, w)
 
-		// Redirect to timeline
-		session.AddFlash("You were logged in")
+		setFlash(r, w, "You were logged in")
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 	}
 }
@@ -509,8 +530,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 				fmt.Println("Database error")
 				return
 			}
-
-			fmt.Println("User added")
+			setFlash(r, w, "You were successfully registered and can login now")
 			http.Redirect(w, r, "/login", http.StatusSeeOther)
 		}
 	}
@@ -524,9 +544,8 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 	} else {
 		// Logout session
-		session.AddFlash("You were logged out")
-		session.Values["user_id"] = nil
-		session.Options.MaxAge = -1
+		setFlash(r, w, "You were logged out")
+		delete(session.Values, "user_id")
 		err = session.Save(r, w)
 		if err != nil {
 			fmt.Println("Error in saving the session data")
@@ -551,5 +570,22 @@ func checkNilInterface2(i interface{}) bool {
 		return true
 	} else {
 		return false
+	}
+}
+
+func setFlash(r *http.Request, w http.ResponseWriter, message string) {
+	session, _ := store.Get(r, "user-session")
+	session.AddFlash(message)
+	session.Save(r, w)
+}
+
+func getFlash(r *http.Request, w http.ResponseWriter) []interface{} {
+	session, err := store.Get(r, "user-session")
+	if err != nil {
+		return nil
+	} else {
+		flashes := session.Flashes()
+		session.Save(r, w)
+		return flashes
 	}
 }
