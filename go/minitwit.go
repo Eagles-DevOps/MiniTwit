@@ -4,6 +4,7 @@ import (
 	"crypto/md5"
 	"database/sql"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"html/template"
 	"log"
@@ -138,7 +139,8 @@ func query_db(query string, args []any, one bool) (any, error) {
 		}
 		return rv, nil
 	}
-	return nil, nil
+	//Todo should not actually be an error to not find any rows, fix when solution to identifying the empty interface returned exists
+	return nil, errors.New("Failed to find any rows")
 }
 
 // """Format a timestamp for display."""
@@ -271,7 +273,9 @@ func add_message(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("You need to write a message in the text form")
 		http.Error(w, "You need to write a message in the text form", http.StatusBadRequest)
 	}
+	session, _ := store.Get(r, "user-session")
 	session.AddFlash("Your message was recorded")
+	err = session.Save(r, w)
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
@@ -285,7 +289,7 @@ func timeline(w http.ResponseWriter, r *http.Request) {
 	var err error
 	user, err = before_request(r)
 
-	if err != nil {
+	if err != nil || checkNilInterface2(user) {
 		http.Redirect(w, r, "/public", http.StatusFound)
 	} else {
 		userMap := user.(map[any]any)
@@ -503,4 +507,13 @@ func hashPassword(password string) (string, error) {
 func checkPasswordHash(password, hash string) error {
 	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
 	return err
+}
+
+// ChatGPT
+func checkNilInterface2(i interface{}) bool {
+	if i == nil || (i != nil && i == interface{}(nil)) {
+		return true
+	} else {
+		return false
+	}
 }
