@@ -50,6 +50,8 @@ func main() {
 				return "/" + username + "/unfollow"
 			case "follow":
 				return "/" + username + "/follow"
+			case "add_message":
+				return "/add_message"
 			default:
 				return "/"
 			}
@@ -324,7 +326,6 @@ func timeline(w http.ResponseWriter, r *http.Request) {
 
 // """Displays the latest messages of all users."""
 func public_timeline(w http.ResponseWriter, r *http.Request) {
-
 	var query = `SELECT message.*, user.* FROM message, user
 	WHERE message.flagged = 0 AND message.author_id = user.user_id
 	ORDER BY message.pub_date desc limit ?`
@@ -335,7 +336,6 @@ func public_timeline(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error when trying to query the database", http.StatusInternalServerError)
 	}
 	d := Data{Message: messages, Req: r.RequestURI}
-	fmt.Println(d)
 	err = tpl.ExecuteTemplate(w, "timeline.html", d)
 	if err != nil {
 		println("Error trying to execute template: ", err)
@@ -372,19 +372,19 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 	if profile_user == nil {
 		http.Redirect(w, r, "/public", http.StatusFound)
 	}
-	fmt.Println(profile_user)
 	profileuserMap := profile_user.(map[any]any)
 	profile_user_id := profileuserMap["user_id"]
+	fmt.Println(user_id)
+	fmt.Println(profile_user_id)
+
 	var followed bool = false
 	usr, err := query_db(`select 1 from follower where
-        follower.who_id = ? and follower.whom_id = ?`, []any{user_id, profile_user_id}, true)
+        follower.who_id = ? and follower.whom_id = ?`, []any{profile_user_id, user_id}, true)
 
 	if err == nil && usr != nil {
 		followed = true
 	}
-
 	fmt.Println("Query for user_timeline...")
-
 	var query = `SELECT message.*, user.* FROM message, user WHERE
 	user.user_id = message.author_id AND user.user_id = ?
 	ORDER BY message.pub_date desc limit ?`
@@ -395,9 +395,10 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error when trying to query the database", http.StatusInternalServerError)
 		return
 	}
+	//fmt.Println(messages)
 
-	fmt.Println(user_id)
-	d := Data{Message: messages,
+	d := Data{
+		Message:  messages,
 		Followed: followed,
 		User:     profile_user,
 		Req:      r.RequestURI,
