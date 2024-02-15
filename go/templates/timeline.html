@@ -30,6 +30,14 @@
 </head>
 
 <body>
+  <div>
+    {{ if .FlashMessages }}
+    <div id="flash-messages">
+        {{ range .FlashMessages }}
+            <div class="flash-message">{{ . }}</div>
+        {{ end }}
+    </div>
+    {{ end }}
   {{if .USERID}}
   {{if eq .Req (print "/" (formatUsernameUrl .User.username))}}
   
