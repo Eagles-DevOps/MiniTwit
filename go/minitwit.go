@@ -316,6 +316,7 @@ type Data struct { //used to inject the html template with the requestURI (to fi
 	Followed      any
 	USERID        any
 	FlashMessages any
+	ErrMsg        string
 }
 
 // """Shows a users timeline or if no user is logged in it will
@@ -386,8 +387,9 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error when trying to find the profile user in the database", http.StatusNotFound)
 		return
 	}
-	if profile_user == nil {
+	if checkNilInterface2(profile_user) {
 		http.Redirect(w, r, "/public", http.StatusFound)
+		return
 	}
 	profileuserMap := profile_user.(map[any]any)
 	profile_user_id := profileuserMap["user_id"]
@@ -458,18 +460,25 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		username := r.FormValue("username")
 		password := r.FormValue("password")
 
+		ErrMsg := ""
+
+		d := Data{}
+
 		user, err := query_db("select * from user where username = ?", []any{username}, true)
-		if err != nil {
-			http.Error(w, "Invalid username", http.StatusInternalServerError)
+		if err != nil || checkNilInterface2(user) {
+			d.ErrMsg = "Invalid username"
+			tpl.ExecuteTemplate(w, "login.html", d)
 			return
 		}
+
 		// Assuming user is a map with key 'pw_hash'
 		userMap := user.(map[any]any)
 		pwHash := userMap["pw_hash"].(string)
 
 		err = checkPasswordHash(password, pwHash)
 		if err != nil {
-			http.Error(w, "Invalid password", http.StatusBadRequest)
+			d.ErrMsg = "Invalid password"
+			tpl.ExecuteTemplate(w, "login.html", d)
 			return
 		}
 		// Set session data
@@ -482,14 +491,18 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		}
 		user_id, err = get_user_id(username)
 		if err != nil {
-			fmt.Println("Can't find the user_id in database")
+			panic("This is not allowed happen!")
+			//d.ErrMsg = "Can't find the user_id in database"
 		}
 		//setting the session values
-		session.Values["user_id"] = user_id
-		session.Save(r, w)
-
-		setFlash(r, w, "You were logged in")
-		http.Redirect(w, r, "/", http.StatusSeeOther)
+		if ErrMsg == "" {
+			session.Values["user_id"] = user_id
+			session.Save(r, w)
+			setFlash(r, w, "You were logged in")
+			http.Redirect(w, r, "/", http.StatusSeeOther)
+			return
+		}
+		tpl.ExecuteTemplate(w, "login.html", d)
 	}
 }
 
