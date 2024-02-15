@@ -152,19 +152,15 @@ div.page div.twitbox input[type="submit"] {
     margin-left: 5px;
 }
 
-ul.flashes {
-    list-style: none;
-    margin: 10px 10px 0 10px;
-    padding: 0;
-}
-
-ul.flashes li {
-    background: #B9F3ED;
-    border: 1px solid #81CEC6;
-    -moz-border-radius: 2px;
-    -webkit-border-radius: 2px;
-    padding: 4px;
-    font-size: 13px;
+.flashes {
+    background: #B9F3ED; /* Light blue background */
+    border: 1px solid #81CEC6; /* Solid border with a slightly darker blue */
+    border-radius: 2px; /* Rounded corners */
+    padding: 4px; /* Padding around the text */
+    font-size: 13px; /* Font size */
+    margin-bottom: 10px; /* Margin at the bottom */
+    text-align: center; /* Center-align the text */
+    color: #105751; /* Darker text color for contrast */
 }
 
 div.error {
