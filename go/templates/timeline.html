@@ -1,6 +1,26 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <title>Welcome MiniTwit</title>
+<link rel="stylesheet" type="text/css" href="/static/style.css">
+<div class=page>
+  <h1>MiniTwitGo</h1>
+  <div class=navigation>
+    {{if .User}}
+    <a href="{{url_for "timeline" ""}}">my timeline</a>
+    <a href="{{url_for "public_timeline" ""}}">public timeline</a>
+    <a href="{{url_for "logout" ""}}"> logout {{ .User.username }}</a>
+
+    {{else}}
+    <a href="{{url_for "public_timeline" ""}}">public timeline</a>
+    <a href="{{url_for "register" ""}}">sign up</a>
+    <a href="{{url_for "login" ""}}"> sign in</a>
+    {{end}}
+
+
+  </div>
+  <div class="footer"></div>
+</div>
   {{if not .User}}
   <h2>Public timeline</h2>
   {{else}}
@@ -11,7 +31,6 @@
 
 <body>
   {{if .USERID}}
-
   {{if eq .Req (print "/" (formatUsernameUrl .User.username))}}
   
   <div class = followstatus>
@@ -24,7 +43,16 @@
     You are not yet following this user
     <a class=follow href="{{url_for "follow" (formatUsernameUrl .User.username)}}"> follow user</a>
     {{end}}
+    {{if eq .Req (print "/" (formatUsernameUrl .User.username))}}
+    <div class="twitbox">
+      <h3>whats on your mind {{.User.username}} </h3>
+      <form action ="{{url_for "add_message" ""}}" method=POST>
+    <p><input type=text name=text size=60>
+        <input type=submit value="Share"></p>
 
+      </form>
+    </div>
+    {{end}}
     {{end}}
     {{end}}
   </div>
