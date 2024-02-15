@@ -44,6 +44,17 @@ func main() {
 		"gettimestamp": func(time int64) string {
 			return format_datetime(time)
 		},
+		"url_for": func(routename string, username string) string { //with help from chatGPT
+			switch routename {
+			case "unfollow":
+				return "/" + username + "/unfollow"
+			case "follow":
+				return "/" + username + "/follow"
+			default:
+				return "/"
+			}
+
+		},
 	}
 	tpl, err = template.New("timeline.html").Funcs(funcMap).ParseGlob("templates/*.html") // We need to add the funcs that we want to use before parsing
 
@@ -63,7 +74,6 @@ func main() {
 	r.HandleFunc("/{username}/follow", follow_user)
 	r.HandleFunc("/{username}/unfollow", unfollow_user)
 	r.HandleFunc("/{username}", user_timeline)
-
 	db, err = connect_db()
 	if err != nil {
 		log.Fatalf("Error connecting to the database: %v", err)
@@ -178,6 +188,7 @@ func before_request(r *http.Request) (any, error) {
 	}
 
 	session, err := store.Get(r, "user-session")
+	fmt.Println(session)
 	user_id, ok := session.Values["user_id"].(any)
 
 	if !ok {
@@ -279,8 +290,11 @@ func add_message(w http.ResponseWriter, r *http.Request) {
 }
 
 type Data struct { //used to inject the html template with the requestURI (to figure out if we're on public or user timeline)
-	Message any
-	Req     string
+	Message  any
+	User     any
+	Req      string
+	Followed any
+	USERID   any
 }
 
 // """Shows a users timeline or if no user is logged in it will
@@ -301,6 +315,7 @@ func timeline(w http.ResponseWriter, r *http.Request) {
 		usernameURL := fmt.Sprintf("/%s", username)
 		http.Redirect(w, r, usernameURL, http.StatusFound)
 	}
+
 }
 
 // """Displays the latest messages of all users."""
@@ -316,6 +331,7 @@ func public_timeline(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error when trying to query the database", http.StatusInternalServerError)
 	}
 	d := Data{Message: messages, Req: r.RequestURI}
+	fmt.Println(d)
 	err = tpl.ExecuteTemplate(w, "timeline.html", d)
 	if err != nil {
 		println("Error trying to execute template: ", err)
@@ -335,6 +351,7 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 
 	//Uncertain how to handle the case where user is not logged in. Currently redirecting to /public
 	if err != nil {
+		//http.Redirect(w, r, "/public", http.StatusFound)
 		fmt.Println("Error when trying to find the user in the database: ", err)
 		http.Error(w, "Error when trying to find the user in the database", http.StatusNotFound)
 		return
@@ -348,7 +365,10 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error when trying to find the profile user in the database", http.StatusNotFound)
 		return
 	}
-
+	if profile_user == nil {
+		http.Redirect(w, r, "/public", http.StatusFound)
+	}
+	fmt.Println(profile_user)
 	profileuserMap := profile_user.(map[any]any)
 	profile_user_id := profileuserMap["user_id"]
 
@@ -377,10 +397,18 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 	dict["messages"] = messages
 	dict["followed"] = followed
 	dict["profile_user"] = profile_user
+	fmt.Println(user_id)
+	d := Data{Message: messages,
+		Followed: followed,
+		User:     profile_user,
+		Req:      r.RequestURI,
+		USERID:   user_id,
+	}
 
 	fmt.Println("Rendering template...")
-
-	err = tpl.ExecuteTemplate(w, "timeline.html", dict)
+	fmt.Println(dict)
+	//err = tpl.ExecuteTemplate(w, "timeline.html", dict)
+	err = tpl.ExecuteTemplate(w, "timeline.html", d)
 	if err != nil {
 		fmt.Println("Error when trying to execute the template: ", err)
 		http.Error(w, "Error when trying to execute the template", http.StatusInternalServerError)
