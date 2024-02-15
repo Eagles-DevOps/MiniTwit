@@ -27,12 +27,9 @@ const (
 )
 
 var db *sql.DB
-var f []byte
 
 var store = sessions.NewCookieStore([]byte("SESSIONKEY"))
 var session *sessions.Session
-var user any
-var user_id any
 var tpl *template.Template
 
 func main() {
@@ -77,11 +74,7 @@ func main() {
 	r.HandleFunc("/{username}/follow", follow_user)
 	r.HandleFunc("/{username}/unfollow", unfollow_user)
 	r.HandleFunc("/{username}", user_timeline)
-	db, err = connect_db()
-	if err != nil {
-		log.Fatalf("Error connecting to the database: %v", err)
-	}
-	defer db.Close()
+
 
 	//content, err := query_db("SELECT user_id FROM user WHERE username IN (?, ?, ?)", []any{"Roger Histand", "Ayako Yestramski", "Leonora Alford"}, false)
 
@@ -90,11 +83,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
-}
-
-// "/"
-func handle(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
 }
 
 // """Returns a new connection to the database."""
@@ -151,7 +139,6 @@ func query_db(query string, args []any, one bool) (any, error) {
 		}
 		return rv, nil
 	}
-	//Todo should not actually be an error to not find any rows, fix when solution to identifying the empty interface returned exists
 	return nil, nil
 }
 
@@ -159,7 +146,6 @@ func query_db(query string, args []any, one bool) (any, error) {
 func format_datetime(timestamp int64) string {
 	t := time.Unix(timestamp, 0)
 	return t.Format("2006-01-02 @ 15:04")
-	//return strconv.FormatInt(timestamp, 10)
 }
 
 // """Return the gravatar image for the given email address."""
@@ -189,108 +175,102 @@ func before_request(r *http.Request) (any, error) {
 		log.Fatal("Error connecting to the database: ", err)
 		return nil, err
 	}
-
 	session, err := store.Get(r, "user-session")
-	fmt.Println(session)
-	user_id, ok := session.Values["user_id"].(any)
 
-	if !ok {
+	user_id, assert := session.Values["user_id"]
+
+
+	if !assert {
 		fmt.Println("Session ended")
 		return nil, err
 	}
-
-	user, err := query_db("SELECT * FROM user WHERE user_id = ?", []any{user_id}, true)
-	if err != nil {
-		fmt.Println("Unable to query for user data in before_request()")
-		return nil, err
-	}
-	fmt.Println("user: ", user)
-	return user, err
+	return user_id, err
 }
 
 // """Closes the database again at the end of the request."""
-func after_request(response http.Response) http.Response {
+func after_request() {
 	db.Close()
-	return response
 }
 
 func follow_user(w http.ResponseWriter, r *http.Request) {
 	//"""Adds the current user as follower of the given user."""
+	user_id, err := before_request(r)
+	if err != nil || checkNilInterface2(user_id) {
+		http.Error(w, "You need to login before you can follow the user", http.StatusUnauthorized)
+		after_request()
+		return
+	}
 	vars := mux.Vars(r)
 	username := vars["username"]
 	println("Now following " + username)
 
-	_, err := before_request(r)
-
-	if err != nil {
-		http.Error(w, "You need to login before you can follow the user", http.StatusUnauthorized)
-		return
-	}
-
 	whom_id, err := get_user_id(username)
-	if err != nil {
+	if err != nil || checkNilInterface2(whom_id) {
 		http.Error(w, "Error when trying to find the user in the database", http.StatusNotFound)
+		after_request()
 		return
 	}
 
-	who_id := user_id
-	_, err = db.Exec("INSERT INTO follower (who_id, whom_id) VALUES (?, ?)", who_id, whom_id)
+	_, err = db.Exec("INSERT INTO follower (who_id, whom_id) VALUES (?, ?)", user_id, whom_id)
 	if err != nil {
 		http.Error(w, "Error when trying to insert data into database", http.StatusInternalServerError)
+		after_request()
 		return
 	}
 
-	//session.AddFlash("You are now following %s", username)
-	//session.AddFlash("You are now following %s")
+	session.AddFlash("You are now following %s", username)
+
 	http.Redirect(w, r, "/"+username, http.StatusSeeOther)
+	after_request()
 }
 
 func unfollow_user(w http.ResponseWriter, r *http.Request) {
+	user_id, err := before_request(r)
+	if err != nil || checkNilInterface2(user_id) {
+		http.Error(w, "You need to login before you can follow the user", http.StatusUnauthorized)
+		after_request()
+		return
+	}
+
 	vars := mux.Vars(r)
 	username := vars["username"]
 	println("displaying username for " + username)
 
-	_, err := before_request(r)
-	if err != nil {
-		http.Error(w, "You need to login before you can follow the user", http.StatusUnauthorized)
-		return
-	}
-
 	whom_id, err := get_user_id(username)
 	if err != nil {
 		http.Error(w, "Error when trying to find the user in the database", http.StatusNotFound)
+		after_request()
 		return
 	}
 
-	who_id := user_id
-	_, err = db.Exec("DELETE FROM follower WHERE who_id=? and whom_id=?", who_id, whom_id)
+	_, err = db.Exec("DELETE FROM follower WHERE who_id=? and whom_id=?", user_id, whom_id)
 	if err != nil {
 		http.Error(w, "Error when trying to delete data from database", http.StatusInternalServerError)
+		after_request()
 		return
 	}
 	//session.AddFlash("You are no longer following %s", username)
 	http.Redirect(w, r, "/"+username, http.StatusFound)
+	after_request()
 }
 
 // """Registers a new message for the user."""
 func add_message(w http.ResponseWriter, r *http.Request) {
-	_, err := before_request(r)
-
-	if err != nil {
+	user_id, err := before_request(r)
+	if err != nil || checkNilInterface2(user_id) {
 		http.Error(w, "You need to login before you can post a message", http.StatusUnauthorized)
+		after_request()
 		return
 	}
 	text := r.FormValue("text")
+
 	if text != "" {
 		db.Exec("INSERT INTO message (author_id, text, pub_date, flagged) VALUES (?, ?, ?, 0)", user_id, text, int(time.Now().Unix()))
-	} else {
-		fmt.Printf("You need to write a message in the text form")
-		http.Error(w, "You need to write a message in the text form", http.StatusBadRequest)
 	}
-	session, _ := store.Get(r, "user-session")
+
 	session.AddFlash("Your message was recorded")
-	err = session.Save(r, w)
 	http.Redirect(w, r, "/", http.StatusFound)
+	after_request()
 }
 
 type Data struct { //used to inject the html template with the requestURI (to figure out if we're on public or user timeline)
@@ -305,25 +285,33 @@ type Data struct { //used to inject the html template with the requestURI (to fi
 // redirect to the public timeline.  This timeline shows the user's
 // messages as well as all the messages of followed users."""
 func timeline(w http.ResponseWriter, r *http.Request) {
+	user_id, err := before_request(r)
+
+	vars := mux.Vars(r)
+	username := vars["username"]
+	println("displaying username for " + username)
+
 	_, ip, _ := net.SplitHostPort(r.RemoteAddr)
 	fmt.Println("We got a visitor from: ", ip)
 
-	var err error
-	user, err = before_request(r)
-
-	if err != nil || checkNilInterface2(user) {
+	if err != nil || checkNilInterface2(user_id) {
 		http.Redirect(w, r, "/public", http.StatusFound)
+		after_request()
 	} else {
-		userMap := user.(map[any]any)
-		username := userMap["username"].(string)
-		usernameURL := fmt.Sprintf("/%s", username)
-		http.Redirect(w, r, usernameURL, http.StatusFound)
+		http.Redirect(w, r, "/"+username, http.StatusFound)
+		after_request()
 	}
 
 }
 
 // """Displays the latest messages of all users."""
 func public_timeline(w http.ResponseWriter, r *http.Request) {
+	_, err := before_request(r)
+	if err != nil {
+		println("Public_timeline: ", err.Error())
+		after_request()
+		return
+	}
 
 	var query = `SELECT message.*, user.* FROM message, user
 	WHERE message.flagged = 0 AND message.author_id = user.user_id
@@ -333,40 +321,49 @@ func public_timeline(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		println("Error when trying to query the database: ", err)
 		http.Error(w, "Error when trying to query the database", http.StatusInternalServerError)
+		after_request()
+		return
 	}
 	d := Data{Message: messages, Req: r.RequestURI}
 	fmt.Println(d)
 	err = tpl.ExecuteTemplate(w, "timeline.html", d)
+
 	if err != nil {
 		println("Error trying to execute template: ", err)
 		http.Error(w, "Error when trying to execute the template", http.StatusInternalServerError)
+		after_request()
+		return
 	}
+	after_request()
 }
 
 // """Display's a users tweets."""
 func user_timeline(w http.ResponseWriter, r *http.Request) {
+
+	vars := mux.Vars(r)
+	username := vars["username"]
+
+
+
+
+	user_id, err := before_request(r)
+	if err != nil || checkNilInterface2(user_id) {
+		fmt.Println("Error when trying to find the user in the database: ", err)
+		http.Error(w, "Error when trying to find the user in the database", http.StatusNotFound)
+		after_request()
+		return
+	}
 	vars := mux.Vars(r)
 	username := vars["username"]
 	println("displaying username for " + username)
 
-	fmt.Println("Calling before_request() in user_timeline...")
-
-	_, err := before_request(r)
-
-	//Uncertain how to handle the case where user is not logged in. Currently redirecting to /public
-	if err != nil {
-		//http.Redirect(w, r, "/public", http.StatusFound)
-		fmt.Println("Error when trying to find the user in the database: ", err)
-		http.Error(w, "Error when trying to find the user in the database", http.StatusNotFound)
-		return
-	}
-
 	fmt.Println("Query for profile_user data...")
 
 	profile_user, err := query_db("SELECT * FROM user WHERE username = ?", []any{username}, true)
-	if err != nil {
+	if err != nil || checkNilInterface2(profile_user) {
 		//replace with flash popup
 		http.Error(w, "Error when trying to find the profile user in the database", http.StatusNotFound)
+		after_request()
 		return
 	}
 	if profile_user == nil {
@@ -376,10 +373,11 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 	profileuserMap := profile_user.(map[any]any)
 	profile_user_id := profileuserMap["user_id"]
 	var followed bool = false
-	usr, err := query_db(`select 1 from follower where
+
+	content, err := query_db(`select 1 from follower where
         follower.who_id = ? and follower.whom_id = ?`, []any{user_id, profile_user_id}, true)
 
-	if err == nil && usr != nil {
+	if err == nil || !checkNilInterface2(content) {
 		followed = true
 	}
 
@@ -393,6 +391,7 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Println("User Timeline: Error when trying to query the database", err)
 		http.Error(w, "Error when trying to query the database", http.StatusInternalServerError)
+		after_request()
 		return
 	}
 
@@ -411,11 +410,20 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Println("Error when trying to execute the template: ", err)
 		http.Error(w, "Error when trying to execute the template", http.StatusInternalServerError)
+		after_request()
 		return
 	}
+	after_request()
 }
 
 func Login(w http.ResponseWriter, r *http.Request) {
+	_, err := before_request(r)
+	if err != nil {
+		log.Fatal("Error connecting to the database: ", err, db)
+		after_request()
+		return
+	}
+
 	if r.Method == "GET" {
 		tpl.ExecuteTemplate(w, "login.html", nil)
 
@@ -425,8 +433,9 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		password := r.FormValue("password")
 
 		user, err := query_db("select * from user where username = ?", []any{username}, true)
-		if err != nil {
+		if err != nil || checkNilInterface2(user) {
 			http.Error(w, "Invalid username", http.StatusInternalServerError)
+			after_request()
 			return
 		}
 		// Assuming user is a map with key 'pw_hash'
@@ -436,6 +445,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		err = checkPasswordHash(password, pwHash)
 		if err != nil {
 			http.Error(w, "Invalid password", http.StatusBadRequest)
+			after_request()
 			return
 		}
 		// Set session data
@@ -446,9 +456,11 @@ func Login(w http.ResponseWriter, r *http.Request) {
 			//MaxAge: 5,
 			HttpOnly: true, // Recommended for security
 		}
-		user_id, err = get_user_id(username)
+		user_id, err := get_user_id(username)
 		if err != nil {
 			fmt.Println("Can't find the user_id in database")
+			after_request()
+			return
 		}
 		//setting the session values
 		session.Values["user_id"] = user_id
@@ -457,10 +469,18 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		// Redirect to timeline
 		session.AddFlash("You were logged in")
 		http.Redirect(w, r, "/", http.StatusSeeOther)
+		after_request()
 	}
 }
 
 func Register(w http.ResponseWriter, r *http.Request) {
+	_, err := before_request(r)
+	if err != nil {
+		log.Fatal("Error connecting to the database: ", err)
+		after_request()
+		return
+	}
+
 	if r.Method == "GET" {
 
 		tpl.ExecuteTemplate(w, "register.html", nil)
@@ -499,18 +519,17 @@ func Register(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				http.Error(w, "Error hashing password", http.StatusInternalServerError)
 				fmt.Println("Error hashing the password")
-				return
 			}
-
-			// Insert the new user into the database
 			_, err = db.Exec("INSERT INTO user (username, email, pw_hash) VALUES (?, ?, ?)", username, email, hashedPassword)
 			if err != nil {
 				http.Error(w, "Database error", http.StatusInternalServerError)
 				fmt.Println("Database error")
+				after_request()
 				return
 			}
 
 			fmt.Println("User added")
+			after_request()
 			http.Redirect(w, r, "/login", http.StatusSeeOther)
 		}
 	}
