@@ -1,15 +1,71 @@
-<!--The data is a map, we store the map in the $fields variable.
-   to access a field use $fields.<fieldName>. fieldName corresponds to the name in the sql schema-->
-
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Timeline</title>
+  <title>Welcome MiniTwit</title>
+<link rel="stylesheet" type="text/css" href="/static/style.css">
+<div class=page>
+  <h1>MiniTwitGo</h1>
+  <div class=navigation>
+    {{if .User}}
+    <a href="{{url_for "timeline" ""}}">my timeline</a>
+    <a href="{{url_for "public_timeline" ""}}">public timeline</a>
+    <a href="{{url_for "logout" ""}}"> logout {{ .User.username }}</a>
+
+    {{else}}
+    <a href="{{url_for "public_timeline" ""}}">public timeline</a>
+    <a href="{{url_for "register" ""}}">sign up</a>
+    <a href="{{url_for "login" ""}}"> sign in</a>
+    {{end}}
+
+
+  </div>
+  <div class="footer"></div>
+</div>
+  {{if not .User}}
+  <h2>Public timeline</h2>
+  {{else}}
+  <h2>{{.User.username}}'s timeline</h2>
+  {{end}}
   <link rel="stylesheet" type="text/css" href="/static/style.css">
 </head>
+
 <body>
+  <div>
+    {{ if .FlashMessages }}
+    <div id="flash-messages">
+        {{ range .FlashMessages }}
+            <div class="flash-message">{{ . }}</div>
+        {{ end }}
+    </div>
+    {{ end }}
+  {{if .USERID}}
+  {{if eq .Req (print "/" (formatUsernameUrl .User.username))}}
+  
+  <div class = followstatus>
+    {{if eq .USERID .User.user_id}}
+    this is you!
+    {{else if .Followed}}
+    You are currently following this user
+    <a class=unfollow href="{{url_for "unfollow" (formatUsernameUrl .User.username)}}"> Unfollow user</a>
+    {{else}}
+    You are not yet following this user
+    <a class=follow href="{{url_for "follow" (formatUsernameUrl .User.username)}}"> follow user</a>
+    {{end}}
+    {{if eq .Req (print "/" (formatUsernameUrl .User.username))}}
+    <div class="twitbox">
+      <h3>whats on your mind {{.User.username}} </h3>
+      <form action ="{{url_for "add_message" ""}}" method=POST>
+    <p><input type=text name=text size=60>
+        <input type=submit value="Share"></p>
+
+      </form>
+    </div>
+    {{end}}
+    {{end}}
+    {{end}}
+  </div>
     <ul class = messages>
-  {{range $fields := .}}
+  {{range $fields := .Message}}
   <li>
     <img src = "{{getavatar $fields.email 48 }}"><p>
       <strong> 
@@ -17,10 +73,7 @@
       </strong>
       {{$fields.text}}
     <small>&mdash; {{(gettimestamp $fields.pub_date)}}</small>
-
-    
-
-  {{end}}
+          {{end}}
 </ul>
 </body>
 </html>
