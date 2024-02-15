@@ -254,6 +254,11 @@ func add_message(w http.ResponseWriter, r *http.Request) {
 	after_request()
 }
 
+type Data struct { //used to inject the html template with the requestURI (to figure out if we're on public or user timeline)
+	Message any
+	Req     string
+}
+
 // """Shows a users timeline or if no user is logged in it will
 // redirect to the public timeline.  This timeline shows the user's
 // messages as well as all the messages of followed users."""
@@ -296,8 +301,9 @@ func public_timeline(w http.ResponseWriter, r *http.Request) {
 		after_request()
 		return
 	}
-	//Trond
-	err = tpl.ExecuteTemplate(w, "timeline.html", messages)
+	d := Data{Message: messages, Req: r.RequestURI}
+	err = tpl.ExecuteTemplate(w, "timeline.html", d)
+
 	if err != nil {
 		println("Error trying to execute template: ", err)
 		http.Error(w, "Error when trying to execute the template", http.StatusInternalServerError)

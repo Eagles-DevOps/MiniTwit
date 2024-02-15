@@ -1,16 +1,16 @@
-<!--The data is a map, we store the map in the $fields variable.
-   to access a field use $fields.<fieldName>. fieldName corresponds to the name in the sql schema-->
-
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Timeline</title>
+  {{if (eq .Req "/public_timeline")}}
+  <h2>Public timeline</h2>
+  {{else if eq .Req "/timeline"}}
+  <h2>Timeline</h2>
+  {{end}}
   <link rel="stylesheet" type="text/css" href="/static/style.css">
-  <link rel="icon" href="data:,">
 </head>
 <body>
     <ul class = messages>
-  {{range $fields := .}}
+  {{range $fields := .Message}}
   <li>
     <img src = "{{getavatar $fields.email 48 }}"><p>
       <strong> 
@@ -18,10 +18,7 @@
       </strong>
       {{$fields.text}}
     <small>&mdash; {{(gettimestamp $fields.pub_date)}}</small>
-
-    
-
-  {{end}}
+          {{end}}
 </ul>
 </body>
 </html>
