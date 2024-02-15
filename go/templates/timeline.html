@@ -6,22 +6,23 @@
   {{else}}
   <h2>{{.User.username}}'s timeline</h2>
   {{end}}
-
   <link rel="stylesheet" type="text/css" href="/static/style.css">
 </head>
 
 <body>
   {{if .USERID}}
-  {{if eq .Req (print "/" .User.username)}}
+
+  {{if eq .Req (print "/" (formatUsernameUrl .User.username))}}
+  
   <div class = followstatus>
     {{if eq .USERID .User.user_id}}
     this is you!
     {{else if .Followed}}
     You are currently following this user
-    <a class=unfollow href="{{url_for "follow" .User.username}}"> Unfollow user</a>
+    <a class=unfollow href="{{url_for "unfollow" (formatUsernameUrl .User.username)}}"> Unfollow user</a>
     {{else}}
     You are not yet following this user
-    <a class=follow href="{{url_for "follow" .User.username}}"> follow user</a>
+    <a class=follow href="{{url_for "follow" (formatUsernameUrl .User.username)}}"> follow user</a>
     {{end}}
 
     {{end}}
