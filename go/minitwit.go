@@ -389,7 +389,7 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 
 	var followed bool = false
 	usr, err := query_db(`select 1 from follower where
-        follower.who_id = ? and follower.whom_id = ?`, []any{profile_user_id, user_id}, true)
+        follower.who_id = ? and follower.whom_id = ?`, []any{user_id, profile_user_id}, true)
 
 	if err == nil && usr != nil {
 		followed = true
