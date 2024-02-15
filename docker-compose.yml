@@ -4,13 +4,19 @@ services:
     build: ./go
     ports:
       - '15000:15000'
-    
+
   tests:
     build:
       context: ./tests
       dockerfile: pythontests.Dockerfile
     entrypoint: sh -c  "sleep 5 && python /tests/refactored_tests.py"
-    
+
+  go_tests:
+    build: ./go
+    depends_on:
+      - server
+    command: go test
+
 
 
 
