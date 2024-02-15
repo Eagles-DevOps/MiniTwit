@@ -431,7 +431,6 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fmt.Println("Rendering template...")
-	fmt.Println(d)
 	//err = tpl.ExecuteTemplate(w, "timeline.html", dict)
 	err = tpl.ExecuteTemplate(w, "timeline.html", d)
 	if err != nil {

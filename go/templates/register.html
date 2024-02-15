@@ -1,42 +1,43 @@
-
 <!DOCTYPE html>
 <html>
 <head>
   <title>Test</title>
   <link rel="stylesheet" type="text/css" href="/static/style.css">
-  <div class=page>
-    <h1>MiniTwitGo</h1>
-    <div class=navigation>
-      {{if .User}}
-      <a href="{{url_for "timeline" ""}}">my timeline</a>
-      <a href="{{url_for "public_timeline" ""}}">public timeline</a>
-      <a href="{{url_for "logout" ""}}"> logout .User.username</a>
-  
-      {{else}}
-      <a href="{{url_for "public_timeline" ""}}">public timeline</a>
-      <a href="{{url_for "register" ""}}">sign up</a>
-      <a href="{{url_for "login" ""}}"> sign in</a>
-      {{end}}
-  
-  
-    </div>
-    <div class="footer"></div>
-  </div>
 </head>
-<body> 
-  <h2>Sign Up</h2>
-  <form action="" method=post>
-    <dl>
-      <dt>Username:
-      <dd><input type=text name=username size=30>
-      <dt>E-Mail:
-      <dd><input type=text name=email size=30 >
-      <dt>Password:
-      <dd><input type=password name=password size=30>
-      <dt>Password <small>(repeat)</small>:
-      <dd><input type=password name=password2 size=30>
-    </dl>
-    <div class=actions><input type=submit value="Sign Up"></div>
-  </form>
+<body>
+  <div class="page">
+    <h1>MiniTwitGo</h1>
+    <div class="navigation">
+      {{if .User}}
+        <a href="{{url_for "timeline" ""}}">my timeline</a>
+        <a href="{{url_for "public_timeline" ""}}">public timeline</a>
+        <a href="{{url_for "logout" ""}}">logout {{.User.username}}</a>
+      {{else}}
+        <a href="{{url_for "public_timeline" ""}}">public timeline</a>
+        <a href="{{url_for "register" ""}}">sign up</a>
+        <a href="{{url_for "login" ""}}">sign in</a>
+      {{end}}
+    </div>
+
+    <h2>Sign Up</h2>
+    <form action="" method="post">
+      <dl>
+        <dt>Username:</dt>
+        <dd><input type="text" name="username" size="30"></dd>
+        <dt>E-Mail:</dt>
+        <dd><input type="text" name="email" size="30"></dd>
+        <dt>Password:</dt>
+        <dd><input type="password" name="password" size="30"></dd>
+        <dt>Password <small>(repeat)</small>:</dt>
+        <dd><input type="password" name="password2" size="30"></dd>
+      </dl>
+      <div class="actions">
+        <input type="submit" value="Sign Up">
+      </div>
+    </form>
+  </div>
+  <div class="footer">
+    <!-- Footer content here -->
+  </div>
 </body>
 </html>
