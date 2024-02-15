@@ -138,6 +138,7 @@ func query_db(query string, args []any, one bool) (any, error) {
 		}
 		return rv, nil
 	}
+	//Todo should not actually be an error to not find any rows, fix when solution to identifying the empty interface returned exists
 	return nil, nil
 }
 
@@ -271,7 +272,9 @@ func add_message(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("You need to write a message in the text form")
 		http.Error(w, "You need to write a message in the text form", http.StatusBadRequest)
 	}
+	session, _ := store.Get(r, "user-session")
 	session.AddFlash("Your message was recorded")
+	err = session.Save(r, w)
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
@@ -285,7 +288,7 @@ func timeline(w http.ResponseWriter, r *http.Request) {
 	var err error
 	user, err = before_request(r)
 
-	if err != nil {
+	if err != nil || checkNilInterface2(user) {
 		http.Redirect(w, r, "/public", http.StatusFound)
 	} else {
 		userMap := user.(map[any]any)
@@ -304,11 +307,13 @@ func public_timeline(w http.ResponseWriter, r *http.Request) {
 
 	messages, err := query_db(query, []any{PER_PAGE}, false)
 	if err != nil {
+		println("Error when trying to query the database: ", err)
 		http.Error(w, "Error when trying to query the database", http.StatusInternalServerError)
 	}
 
 	err = tpl.ExecuteTemplate(w, "timeline.html", messages)
 	if err != nil {
+		println("Error trying to execute template: ", err)
 		http.Error(w, "Error when trying to execute the template", http.StatusInternalServerError)
 	}
 }
@@ -325,6 +330,7 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 
 	//Uncertain how to handle the case where user is not logged in. Currently redirecting to /public
 	if err != nil {
+		fmt.Println("Error when trying to find the user in the database: ", err)
 		http.Error(w, "Error when trying to find the user in the database", http.StatusNotFound)
 		return
 	}
@@ -357,6 +363,7 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 
 	messages, err := query_db(query, []any{profile_user_id, PER_PAGE}, false)
 	if err != nil {
+		fmt.Println("User Timeline: Error when trying to query the database", err)
 		http.Error(w, "Error when trying to query the database", http.StatusInternalServerError)
 		return
 	}
@@ -370,6 +377,7 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 
 	err = tpl.ExecuteTemplate(w, "timeline.html", dict)
 	if err != nil {
+		fmt.Println("Error when trying to execute the template: ", err)
 		http.Error(w, "Error when trying to execute the template", http.StatusInternalServerError)
 		return
 	}
@@ -503,4 +511,13 @@ func hashPassword(password string) (string, error) {
 func checkPasswordHash(password, hash string) error {
 	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
 	return err
+}
+
+// ChatGPT
+func checkNilInterface2(i interface{}) bool {
+	if i == nil || (i != nil && i == interface{}(nil)) {
+		return true
+	} else {
+		return false
+	}
 }
