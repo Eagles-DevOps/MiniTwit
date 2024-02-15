@@ -241,7 +241,8 @@ func follow_user(w http.ResponseWriter, r *http.Request) {
 
 	whom_id, err := get_user_id(username)
 	if err != nil {
-		http.Error(w, "Error when trying to find the user in the database", http.StatusNotFound)
+		println("Error when trying to find the user in the database in follow", err.Error())
+		http.Error(w, "Error when trying to find the user in the database in follow", http.StatusNotFound)
 		return
 	}
 
@@ -266,13 +267,15 @@ func unfollow_user(w http.ResponseWriter, r *http.Request) {
 
 	_, err := before_request(r)
 	if err != nil {
+		println("Error beforerequest in unfollow", err.Error())
 		http.Error(w, "You need to login before you can follow the user", http.StatusUnauthorized)
 		return
 	}
 
 	whom_id, err := get_user_id(username)
 	if err != nil {
-		http.Error(w, "Error when trying to find the user in the database", http.StatusNotFound)
+		println("Error when trying to find the user in the database in unfollow", err.Error())
+		http.Error(w, "Error when trying to find the user in the database in unfollow", http.StatusNotFound)
 		return
 	}
 
