@@ -494,7 +494,6 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		user_id, err = get_user_id(username)
 		if err != nil {
 			panic("This is not allowed happen!")
-			//d.ErrMsg = "Can't find the user_id in database"
 		}
 		//setting the session values
 		if ErrMsg == "" {
@@ -504,7 +503,6 @@ func Login(w http.ResponseWriter, r *http.Request) {
 			http.Redirect(w, r, "/", http.StatusSeeOther)
 			return
 		}
-		tpl.ExecuteTemplate(w, "login.html", d)
 	}
 }
 
@@ -516,6 +514,8 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	} else if r.Method == "POST" {
 
 		ErrMsg := ""
+
+		println("ErrMesg: ", ErrMsg)
 
 		d := Data{}
 
@@ -545,12 +545,12 @@ func Register(w http.ResponseWriter, r *http.Request) {
 			tpl.ExecuteTemplate(w, "register.html", d)
 			return
 
-		} else if _, err := get_user_id(username); err != nil {
+		} else if _, err := get_user_id(username); err == nil {
 			d.ErrMsg = "The username is already taken"
 			tpl.ExecuteTemplate(w, "register.html", d)
 			return
 
-		} else if ErrMsg == "" {
+		} else {
 			// Hash the password
 			hashedPassword, err := hashPassword(password)
 			if err != nil {
