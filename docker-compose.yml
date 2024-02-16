@@ -16,3 +16,4 @@ services:
     build: ./tests
     depends_on:
       - server
+    command: go test
