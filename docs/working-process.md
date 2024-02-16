@@ -1,9 +1,14 @@
 # Ways of working
 
+## Project management
+* "Todo" is uassigned work.
+* "In Progress" is for issues that are being worked on. These should be assigned.
+* "Done" for issues that are done.
+
 ## Change process
-1. Create branch based of main.
+1. Create branch based of main for solving the GitHub issue at hand.
 2. Implement code changes.
-3. Create PR.
+3. Create PR and link to issue by adding "#xx"
 4. Have another person review it.
 5. Reviewer should understand and have tested the code before approving.
 6. Merge PR using "squash commits" option.
