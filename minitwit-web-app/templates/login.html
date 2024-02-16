@@ -34,6 +34,14 @@
     </form>
   </div>
 
+  {{if .ErrMsg}}
+    <div class="msgs">
+      {{range .ErrMsg}}
+        <div>{{.}}</div>
+      {{end}}
+    </div>
+  {{end}}
+
   <div class="footer">
     <!-- Footer content here -->
   </div>

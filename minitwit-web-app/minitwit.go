@@ -515,37 +515,45 @@ func Register(w http.ResponseWriter, r *http.Request) {
 
 	} else if r.Method == "POST" {
 
+		ErrMsg := ""
+
+		d := Data{}
+
 		username := r.FormValue("username")
 		email := r.FormValue("email")
 		password := r.FormValue("password")
 		password2 := r.FormValue("password2")
 
-		var error_s string
-
 		// Validate form input
 		if username == "" {
-			error_s = "You have to enter a username"
-			fmt.Println(error_s)
+			d.ErrMsg = "You have to enter a username"
+			tpl.ExecuteTemplate(w, "register.html", d)
+			return
+
 		} else if !strings.Contains(email, "@") {
-			error_s = "You have to enter a valid email address"
-			fmt.Println(error_s)
+			d.ErrMsg = "You have to enter a valid email address"
+			tpl.ExecuteTemplate(w, "register.html", d)
+			return
 
 		} else if password == "" {
-			error_s = "You have to enter a password"
-			fmt.Println(error_s)
+			d.ErrMsg = "You have to enter a password"
+			tpl.ExecuteTemplate(w, "register.html", d)
+			return
 
 		} else if password != password2 {
-			error_s = "The two passwords do not match"
-			fmt.Println(error_s)
+			d.ErrMsg = "The two passwords do not match"
+			tpl.ExecuteTemplate(w, "register.html", d)
+			return
 
-		} else if _, err := get_user_id(username); err == nil {
-			error_s = "The username is already taken"
-			fmt.Println(error_s)
-		} else {
+		} else if _, err := get_user_id(username); err != nil {
+			d.ErrMsg = "The username is already taken"
+			tpl.ExecuteTemplate(w, "register.html", d)
+			return
+
+		} else if ErrMsg == "" {
 			// Hash the password
 			hashedPassword, err := hashPassword(password)
 			if err != nil {
-				http.Error(w, "Error hashing password", http.StatusInternalServerError)
 				fmt.Println("Error hashing the password")
 				return
 			}
@@ -553,7 +561,6 @@ func Register(w http.ResponseWriter, r *http.Request) {
 			// Insert the new user into the database
 			_, err = db.Exec("INSERT INTO user (username, email, pw_hash) VALUES (?, ?, ?)", username, email, hashedPassword)
 			if err != nil {
-				http.Error(w, "Database error", http.StatusInternalServerError)
 				fmt.Println("Database error")
 				return
 			}
