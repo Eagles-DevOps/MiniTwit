@@ -2,28 +2,18 @@ version: '3'
 services:
 
   server:
-    build: ./go
+    build: ./minitwit-web-app
     ports:
       - '15000:15000'
 
-  tests:
+  legacy_tests:
     build:
-      context: ./tests
+      context: ./legacy_tests
       dockerfile: pythontests.Dockerfile
     entrypoint: sh -c  "sleep 5 && python /tests/refactored_tests.py"
 
-  old_server:
-    build: ./old_app
-    ports:
-      - '5000:5000'
-
-  go_tests:
-    build: ./go
+  tests:
+    build: ./tests
     depends_on:
       - server
     command: go test
-
-
-
-
-
