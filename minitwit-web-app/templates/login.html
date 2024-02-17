@@ -34,14 +34,6 @@
     </form>
   </div>
 
-  {{if .ErrMsg}}
-    <div class="msgs">
-      {{range .ErrMsg}}
-        <div>{{.}}</div>
-      {{end}}
-    </div>
-  {{end}}
-
   {{if .FlashMessages}}
     <div class="flashes">
       {{range .FlashMessages}}

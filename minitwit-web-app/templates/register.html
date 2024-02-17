@@ -35,7 +35,16 @@
         <input type="submit" value="Sign Up">
       </div>
     </form>
+
+    {{if .FlashMessages}}
+      <div class="flashes">
+        {{range .FlashMessages}}
+          <div>{{.}}</div>
+        {{end}}
+      </div>
+    {{end}}
   </div>
+
   <div class="footer">
     <!-- Footer content here -->
   </div>

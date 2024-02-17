@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"fmt"
+	"html"
 	"html/template"
 	"log"
 	"net"
@@ -204,7 +205,7 @@ func before_request(r *http.Request) (any, error) {
 
 	session, err := store.Get(r, "user-session")
 	//fmt.Println(session)
-	user_id, ok := session.Values["user_id"].(any)
+	user_id, ok := session.Values["user_id"]
 
 	if !ok {
 		fmt.Println("Session ended")
@@ -252,11 +253,9 @@ func follow_user(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error when trying to insert data into database", http.StatusInternalServerError)
 		return
 	}
-	message := fmt.Sprintf("You are now following %s ", username)
-	setFlash(r, w, message)
-
-	//session.AddFlash("You are now following %s", username)
-	//session.AddFlash("You are now following %s")
+	message := fmt.Sprintf("You are now following &#34;%s&#34;", username)
+	_message := html.UnescapeString(message)
+	setFlash(r, w, _message)
 	http.Redirect(w, r, "/"+username, http.StatusSeeOther)
 }
 
@@ -286,9 +285,9 @@ func unfollow_user(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	message := fmt.Sprintf("You are no longer following %s ", username)
-	setFlash(r, w, message)
-	//session.AddFlash("You are no longer following %s", username)
+	message := fmt.Sprintf("You are no longer following &#34;%s&#34;", username)
+	_message := html.UnescapeString(message)
+	setFlash(r, w, _message)
 	http.Redirect(w, r, "/"+username, http.StatusFound)
 }
 
@@ -336,9 +335,41 @@ func timeline(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/public", http.StatusFound)
 	} else {
 		userMap := user.(map[any]any)
-		username := userMap["username"].(string)
-		usernameURL := fmt.Sprintf("/%s", username)
-		http.Redirect(w, r, usernameURL, http.StatusFound)
+		user_id := userMap["user_id"]
+
+		var query = `SELECT message.*, user.* FROM message, user
+        WHERE message.flagged = 0 AND message.author_id = user.user_id AND (
+            user.user_id = ? OR
+            user.user_id IN (SELECT whom_id FROM follower
+                                    where who_id = ?))
+        ORDER BY message.pub_date desc limit ?`
+
+		messages, err := query_db(query, []any{user_id, user_id, PER_PAGE}, false)
+		if err != nil {
+			fmt.Println("Timeline: Error when trying to query the database", err)
+			http.Error(w, "Error when trying to query the database", http.StatusInternalServerError)
+			return
+		}
+
+		println("user: ", messages)
+
+		flash := getFlash(r, w)
+
+		fmt.Println(user_id)
+		d := Data{
+			User:          user,
+			Message:       messages,
+			USERID:        user_id,
+			FlashMessages: flash,
+		}
+
+		err = tpl.ExecuteTemplate(w, "test.html", d)
+		if err != nil {
+			fmt.Println("Error when trying to execute the template: ", err)
+			http.Error(w, "Error when trying to execute the template", http.StatusInternalServerError)
+			return
+		}
+
 	}
 
 }
@@ -441,6 +472,12 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 }
 
 func Login(w http.ResponseWriter, r *http.Request) {
+	usr, _ := before_request(r)
+
+	if usr != nil {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+	}
+
 	if r.Method == "GET" {
 
 		flash := getFlash(r, w)
@@ -462,13 +499,13 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		username := r.FormValue("username")
 		password := r.FormValue("password")
 
-		ErrMsg := ""
-
-		d := Data{}
-
 		user, err := query_db("select * from user where username = ?", []any{username}, true)
 		if err != nil || checkNilInterface2(user) {
-			d.ErrMsg = "Invalid username"
+			setFlash(r, w, "Invalid username")
+			flash := getFlash(r, w)
+			d := Data{
+				FlashMessages: flash,
+			}
 			tpl.ExecuteTemplate(w, "login.html", d)
 			return
 		}
@@ -479,7 +516,11 @@ func Login(w http.ResponseWriter, r *http.Request) {
 
 		err = checkPasswordHash(password, pwHash)
 		if err != nil {
-			d.ErrMsg = "Invalid password"
+			setFlash(r, w, "Invalid password")
+			flash := getFlash(r, w)
+			d := Data{
+				FlashMessages: flash,
+			}
 			tpl.ExecuteTemplate(w, "login.html", d)
 			return
 		}
@@ -496,28 +537,26 @@ func Login(w http.ResponseWriter, r *http.Request) {
 			panic("This is not allowed happen!")
 		}
 		//setting the session values
-		if ErrMsg == "" {
-			session.Values["user_id"] = user_id
-			session.Save(r, w)
-			setFlash(r, w, "You were logged in")
-			http.Redirect(w, r, "/", http.StatusSeeOther)
-			return
-		}
+		session.Values["user_id"] = user_id
+		session.Save(r, w)
+		setFlash(r, w, "You were logged in")
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
 	}
 }
 
 func Register(w http.ResponseWriter, r *http.Request) {
+	usr, _ := before_request(r)
+
+	if usr != nil {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+	}
+
 	if r.Method == "GET" {
 
 		tpl.ExecuteTemplate(w, "register.html", nil)
 
 	} else if r.Method == "POST" {
-
-		ErrMsg := ""
-
-		println("ErrMesg: ", ErrMsg)
-
-		d := Data{}
 
 		username := r.FormValue("username")
 		email := r.FormValue("email")
@@ -526,27 +565,47 @@ func Register(w http.ResponseWriter, r *http.Request) {
 
 		// Validate form input
 		if username == "" {
-			d.ErrMsg = "You have to enter a username"
+			setFlash(r, w, "You have to enter a username")
+			flash := getFlash(r, w)
+			d := Data{
+				FlashMessages: flash,
+			}
 			tpl.ExecuteTemplate(w, "register.html", d)
 			return
 
 		} else if !strings.Contains(email, "@") {
-			d.ErrMsg = "You have to enter a valid email address"
+			setFlash(r, w, "You have to enter a valid email address")
+			flash := getFlash(r, w)
+			d := Data{
+				FlashMessages: flash,
+			}
 			tpl.ExecuteTemplate(w, "register.html", d)
 			return
 
 		} else if password == "" {
-			d.ErrMsg = "You have to enter a password"
+			setFlash(r, w, "You have to enter a password")
+			flash := getFlash(r, w)
+			d := Data{
+				FlashMessages: flash,
+			}
 			tpl.ExecuteTemplate(w, "register.html", d)
 			return
 
 		} else if password != password2 {
-			d.ErrMsg = "The two passwords do not match"
+			setFlash(r, w, "The two passwords do not match")
+			flash := getFlash(r, w)
+			d := Data{
+				FlashMessages: flash,
+			}
 			tpl.ExecuteTemplate(w, "register.html", d)
 			return
 
-		} else if _, err := get_user_id(username); err == nil {
-			d.ErrMsg = "The username is already taken"
+		} else if id, _ := get_user_id(username); id != nil {
+			setFlash(r, w, "The username is already taken")
+			flash := getFlash(r, w)
+			d := Data{
+				FlashMessages: flash,
+			}
 			tpl.ExecuteTemplate(w, "register.html", d)
 			return
 
@@ -564,7 +623,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 				fmt.Println("Database error")
 				return
 			}
-			setFlash2(r, w, "You were successfully registered", "and can login now")
+			setFlash(r, w, "You were successfully registered and can login now")
 			//setFlash(r, w, "and can login now")
 
 			http.Redirect(w, r, "/login", http.StatusSeeOther)
@@ -612,13 +671,6 @@ func checkNilInterface2(i interface{}) bool {
 func setFlash(r *http.Request, w http.ResponseWriter, message string) {
 	session, _ := store.Get(r, "user-session")
 	session.AddFlash(message)
-	session.Save(r, w)
-}
-
-func setFlash2(r *http.Request, w http.ResponseWriter, message1 string, message2 string) {
-	session, _ := store.Get(r, "user-session")
-	session.AddFlash(message1)
-	session.AddFlash(message2)
 	session.Save(r, w)
 }
 
