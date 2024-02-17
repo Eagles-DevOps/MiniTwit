@@ -76,6 +76,7 @@ class MiniTwitTestCase(unittest.TestCase):
         user3 = 'user' + str(uuid.uuid4())
         user4 = 'user' + str(uuid.uuid4())
         r = self.register(user1, 'default')
+        
         assert 'You were successfully registered ' \
             'and can login now' in r.text, r.text
         r = self.register(user1, 'default')
@@ -136,7 +137,7 @@ class MiniTwitTestCase(unittest.TestCase):
 
         # we should now see foo's message
         r = http_session.get(f'{BASE_URL}/')
-        assert 'the message by foo' in r.text, r.text
+        assert 'the message by foo' in r.text, r.text #not supposed to show this on bar's user timeline?? 
         assert 'the message by bar' in r.text, r.text
 
         # but on the user's page we only want the user's message
