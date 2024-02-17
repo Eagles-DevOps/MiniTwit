@@ -223,7 +223,7 @@ func follow_user(w http.ResponseWriter, r *http.Request) {
 
 	user, err := before_request(r)
 
-	if err != nil || checkNilInterface2(user) {
+	if err != nil || isNil(user) {
 		http.Error(w, "You need to login before you can follow the user", http.StatusUnauthorized)
 		return
 	}
@@ -253,7 +253,7 @@ func unfollow_user(w http.ResponseWriter, r *http.Request) {
 	println("displaying username for " + username)
 
 	user, err := before_request(r)
-	if err != nil || checkNilInterface2(user) {
+	if err != nil || isNil(user) {
 		println("Error beforerequest in unfollow", err.Error())
 		http.Error(w, "You need to login before you can follow the user", http.StatusUnauthorized)
 		return
@@ -283,7 +283,7 @@ func unfollow_user(w http.ResponseWriter, r *http.Request) {
 func add_message(w http.ResponseWriter, r *http.Request) {
 	user, err := before_request(r)
 
-	if err != nil || checkNilInterface2(user) {
+	if err != nil || isNil(user) {
 		http.Error(w, "You need to login before you can post a message", http.StatusUnauthorized)
 		return
 	}
@@ -316,7 +316,7 @@ func timeline(w http.ResponseWriter, r *http.Request) {
 	var err error
 	user, err = before_request(r)
 
-	if err != nil || checkNilInterface2(user) {
+	if err != nil || isNil(user) {
 		http.Redirect(w, r, "/public", http.StatusFound)
 	} else {
 		userMap := user.(map[any]any)
@@ -380,9 +380,9 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 	username := vars["username"]
 	println("displaying username for " + username)
 
-	_, err := before_request(r)
+	user, err := before_request(r)
 
-	if err != nil {
+	if err != nil || isNil(user) {
 		fmt.Println("Error when trying to find the user in the database: ", err)
 		http.Error(w, "Error when trying to find the user in the database", http.StatusNotFound)
 		return
@@ -393,7 +393,7 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Error when trying to find the profile user in the database: ", err)
 		return
 	}
-	if checkNilInterface2(profile_user) {
+	if isNil(profile_user) {
 		http.Redirect(w, r, "/public", http.StatusFound)
 		return
 	}
@@ -441,7 +441,7 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 func Login(w http.ResponseWriter, r *http.Request) {
 	usr, _ := before_request(r)
 
-	if !(checkNilInterface2(usr)) {
+	if !(isNil(usr)) {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 	}
 
@@ -467,7 +467,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		password := r.FormValue("password")
 
 		user, err := query_db("select * from user where username = ?", []any{username}, true)
-		if err != nil || checkNilInterface2(user) {
+		if err != nil || isNil(user) {
 			setFlash(r, w, "Invalid username")
 			flash := getFlash(r, w)
 			d := Data{
@@ -515,7 +515,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 func Register(w http.ResponseWriter, r *http.Request) {
 	usr, _ := before_request(r)
 
-	if !(checkNilInterface2(usr)) {
+	if !(isNil(usr)) {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 	}
 
@@ -625,7 +625,7 @@ func checkPasswordHash(password, hash string) error {
 }
 
 // ChatGPT
-func checkNilInterface2(i interface{}) bool {
+func isNil(i interface{}) bool {
 	if i == nil || (i != nil && i == interface{}(nil)) {
 		return true
 	} else {
