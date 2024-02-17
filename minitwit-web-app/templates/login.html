@@ -34,6 +34,14 @@
     </form>
   </div>
 
+  {{if .FlashMessages}}
+    <div class="flashes">
+      {{range .FlashMessages}}
+        <div>{{.}}</div>
+      {{end}}
+    </div>
+  {{end}}
+
   <div class="footer">
     <!-- Footer content here -->
   </div>
