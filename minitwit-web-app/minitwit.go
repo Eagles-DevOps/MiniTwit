@@ -564,7 +564,9 @@ func Register(w http.ResponseWriter, r *http.Request) {
 				fmt.Println("Database error")
 				return
 			}
-			setFlash(r, w, "You were successfully registered and can login now")
+			setFlash2(r, w, "You were successfully registered", "and can login now")
+			//setFlash(r, w, "and can login now")
+
 			http.Redirect(w, r, "/login", http.StatusSeeOther)
 		}
 	}
@@ -610,6 +612,13 @@ func checkNilInterface2(i interface{}) bool {
 func setFlash(r *http.Request, w http.ResponseWriter, message string) {
 	session, _ := store.Get(r, "user-session")
 	session.AddFlash(message)
+	session.Save(r, w)
+}
+
+func setFlash2(r *http.Request, w http.ResponseWriter, message1 string, message2 string) {
+	session, _ := store.Get(r, "user-session")
+	session.AddFlash(message1)
+	session.AddFlash(message2)
 	session.Save(r, w)
 }
 
