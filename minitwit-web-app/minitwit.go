@@ -28,10 +28,8 @@ const (
 )
 
 var db *sql.DB
-var f []byte
 
 var store = sessions.NewCookieStore([]byte("SESSIONKEY"))
-var session *sessions.Session
 var user any
 var user_id any
 var tpl *template.Template
@@ -96,18 +94,11 @@ func main() {
 	}
 	defer db.Close()
 
-	//content, err := query_db("SELECT user_id FROM user WHERE username IN (?, ?, ?)", []any{"Roger Histand", "Ayako Yestramski", "Leonora Alford"}, false)
-
 	fmt.Println("Listening on port 15000...")
 	err = http.ListenAndServe(":15000", r)
 	if err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
-}
-
-// "/"
-func handle(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
 }
 
 // """Returns a new connection to the database."""
@@ -164,7 +155,6 @@ func query_db(query string, args []any, one bool) (any, error) {
 		}
 		return rv, nil
 	}
-	//Todo should not actually be an error to not find any rows, fix when solution to identifying the empty interface returned exists
 	return nil, nil
 }
 
@@ -204,7 +194,6 @@ func before_request(r *http.Request) (any, error) {
 	}
 
 	session, err := store.Get(r, "user-session")
-	//fmt.Println(session)
 	user_id, ok := session.Values["user_id"]
 
 	if !ok {
@@ -217,7 +206,6 @@ func before_request(r *http.Request) (any, error) {
 		fmt.Println("Unable to query for user data in before_request()")
 		return nil, err
 	}
-	//fmt.Println("user: ", user)
 	return user, err
 }
 
@@ -233,9 +221,9 @@ func follow_user(w http.ResponseWriter, r *http.Request) {
 	username := vars["username"]
 	println("Now following " + username)
 
-	_, err := before_request(r)
+	user, err := before_request(r)
 
-	if err != nil {
+	if err != nil || checkNilInterface2(user) {
 		http.Error(w, "You need to login before you can follow the user", http.StatusUnauthorized)
 		return
 	}
@@ -250,7 +238,7 @@ func follow_user(w http.ResponseWriter, r *http.Request) {
 	who_id := user_id
 	_, err = db.Exec("INSERT INTO follower (who_id, whom_id) VALUES (?, ?)", who_id, whom_id)
 	if err != nil {
-		http.Error(w, "Error when trying to insert data into database", http.StatusInternalServerError)
+		fmt.Println("Error when trying to insert data into database")
 		return
 	}
 	message := fmt.Sprintf("You are now following &#34;%s&#34;", username)
@@ -264,8 +252,8 @@ func unfollow_user(w http.ResponseWriter, r *http.Request) {
 	username := vars["username"]
 	println("displaying username for " + username)
 
-	_, err := before_request(r)
-	if err != nil {
+	user, err := before_request(r)
+	if err != nil || checkNilInterface2(user) {
 		println("Error beforerequest in unfollow", err.Error())
 		http.Error(w, "You need to login before you can follow the user", http.StatusUnauthorized)
 		return
@@ -281,7 +269,7 @@ func unfollow_user(w http.ResponseWriter, r *http.Request) {
 	who_id := user_id
 	_, err = db.Exec("DELETE FROM follower WHERE who_id=? and whom_id=?", who_id, whom_id)
 	if err != nil {
-		http.Error(w, "Error when trying to delete data from database", http.StatusInternalServerError)
+		fmt.Println("Error when trying to delete data from database")
 		return
 	}
 
@@ -293,20 +281,17 @@ func unfollow_user(w http.ResponseWriter, r *http.Request) {
 
 // """Registers a new message for the user."""
 func add_message(w http.ResponseWriter, r *http.Request) {
-	_, err := before_request(r)
+	user, err := before_request(r)
 
-	if err != nil {
+	if err != nil || checkNilInterface2(user) {
 		http.Error(w, "You need to login before you can post a message", http.StatusUnauthorized)
 		return
 	}
 	text := r.FormValue("text")
 	if text != "" {
 		db.Exec("INSERT INTO message (author_id, text, pub_date, flagged) VALUES (?, ?, ?, 0)", user_id, text, int(time.Now().Unix()))
-	} else {
-		fmt.Printf("You need to write a message in the text form")
-		http.Error(w, "You need to write a message in the text form", http.StatusBadRequest)
+		setFlash(r, w, "Your message was recorded")
 	}
-	setFlash(r, w, "Your message was recorded")
 
 	http.Redirect(w, r, "/", http.StatusFound)
 }
@@ -347,11 +332,8 @@ func timeline(w http.ResponseWriter, r *http.Request) {
 		messages, err := query_db(query, []any{user_id, user_id, PER_PAGE}, false)
 		if err != nil {
 			fmt.Println("Timeline: Error when trying to query the database", err)
-			http.Error(w, "Error when trying to query the database", http.StatusInternalServerError)
 			return
 		}
-
-		println("user: ", messages)
 
 		flash := getFlash(r, w)
 
@@ -366,12 +348,9 @@ func timeline(w http.ResponseWriter, r *http.Request) {
 		err = tpl.ExecuteTemplate(w, "newtimeline.html", d)
 		if err != nil {
 			fmt.Println("Error when trying to execute the template: ", err)
-			http.Error(w, "Error when trying to execute the template", http.StatusInternalServerError)
 			return
 		}
-
 	}
-
 }
 
 // """Displays the latest messages of all users."""
@@ -383,7 +362,7 @@ func public_timeline(w http.ResponseWriter, r *http.Request) {
 	messages, err := query_db(query, []any{PER_PAGE}, false)
 	if err != nil {
 		println("Error when trying to query the database: ", err)
-		http.Error(w, "Error when trying to query the database", http.StatusInternalServerError)
+		return
 	}
 
 	flash := getFlash(r, w)
@@ -391,7 +370,7 @@ func public_timeline(w http.ResponseWriter, r *http.Request) {
 	err = tpl.ExecuteTemplate(w, "timeline.html", d)
 	if err != nil {
 		println("Error trying to execute template: ", err)
-		http.Error(w, "Error when trying to execute the template", http.StatusInternalServerError)
+		return
 	}
 }
 
@@ -401,24 +380,17 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 	username := vars["username"]
 	println("displaying username for " + username)
 
-	fmt.Println("Calling before_request() in user_timeline...")
-
 	_, err := before_request(r)
 
-	//Uncertain how to handle the case where user is not logged in. Currently redirecting to /public
 	if err != nil {
-		//http.Redirect(w, r, "/public", http.StatusFound)
 		fmt.Println("Error when trying to find the user in the database: ", err)
 		http.Error(w, "Error when trying to find the user in the database", http.StatusNotFound)
 		return
 	}
 
-	fmt.Println("Query for profile_user data...")
-
 	profile_user, err := query_db("SELECT * FROM user WHERE username = ?", []any{username}, true)
 	if err != nil {
-		//replace with flash popup
-		http.Error(w, "Error when trying to find the profile user in the database", http.StatusNotFound)
+		fmt.Println("Error when trying to find the profile user in the database: ", err)
 		return
 	}
 	if checkNilInterface2(profile_user) {
@@ -445,10 +417,8 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 	messages, err := query_db(query, []any{profile_user_id, PER_PAGE}, false)
 	if err != nil {
 		fmt.Println("User Timeline: Error when trying to query the database", err)
-		http.Error(w, "Error when trying to query the database", http.StatusInternalServerError)
 		return
 	}
-	//fmt.Println(messages)
 
 	flash := getFlash(r, w)
 
@@ -461,12 +431,9 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 		FlashMessages: flash,
 	}
 
-	fmt.Println("Rendering template...")
-	//err = tpl.ExecuteTemplate(w, "timeline.html", dict)
 	err = tpl.ExecuteTemplate(w, "timeline.html", d)
 	if err != nil {
 		fmt.Println("Error when trying to execute the template: ", err)
-		http.Error(w, "Error when trying to execute the template", http.StatusInternalServerError)
 		return
 	}
 }
@@ -474,7 +441,7 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 func Login(w http.ResponseWriter, r *http.Request) {
 	usr, _ := before_request(r)
 
-	if usr != nil {
+	if !(checkNilInterface2(usr)) {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 	}
 
@@ -548,7 +515,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 func Register(w http.ResponseWriter, r *http.Request) {
 	usr, _ := before_request(r)
 
-	if usr != nil {
+	if !(checkNilInterface2(usr)) {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 	}
 
@@ -624,8 +591,6 @@ func Register(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			setFlash(r, w, "You were successfully registered and can login now")
-			//setFlash(r, w, "and can login now")
-
 			http.Redirect(w, r, "/login", http.StatusSeeOther)
 		}
 	}
