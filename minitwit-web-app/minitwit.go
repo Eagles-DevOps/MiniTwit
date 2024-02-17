@@ -363,7 +363,7 @@ func timeline(w http.ResponseWriter, r *http.Request) {
 			FlashMessages: flash,
 		}
 
-		err = tpl.ExecuteTemplate(w, "test.html", d)
+		err = tpl.ExecuteTemplate(w, "newtimeline.html", d)
 		if err != nil {
 			fmt.Println("Error when trying to execute the template: ", err)
 			http.Error(w, "Error when trying to execute the template", http.StatusInternalServerError)
