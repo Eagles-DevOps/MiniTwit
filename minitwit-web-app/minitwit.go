@@ -162,7 +162,6 @@ func query_db(query string, args []any, one bool) (any, error) {
 func format_datetime(timestamp int64) string {
 	t := time.Unix(timestamp, 0)
 	return t.Format("2006-01-02 @ 15:04")
-	//return strconv.FormatInt(timestamp, 10)
 }
 
 // """Return the gravatar image for the given email address."""
@@ -192,15 +191,13 @@ func before_request(r *http.Request) (any, error) {
 		log.Fatal("Error connecting to the database: ", err)
 		return nil, err
 	}
-
-	session, err := store.Get(r, "user-session")
+	session, _ := store.Get(r, "user-session")
 	user_id, ok := session.Values["user_id"]
 
 	if !ok {
 		fmt.Println("Session ended")
-		return nil, err
+		return nil, fmt.Errorf("no user in the session")
 	}
-
 	user, err := query_db("SELECT * FROM user WHERE user_id = ?", []any{user_id}, true)
 	if err != nil {
 		fmt.Println("Unable to query for user data in before_request()")
@@ -217,16 +214,14 @@ func after_request(response http.Response) http.Response {
 
 func follow_user(w http.ResponseWriter, r *http.Request) {
 	//"""Adds the current user as follower of the given user."""
-	vars := mux.Vars(r)
-	username := vars["username"]
-	println("Now following " + username)
-
 	user, err := before_request(r)
-
 	if err != nil || isNil(user) {
 		http.Error(w, "You need to login before you can follow the user", http.StatusUnauthorized)
 		return
 	}
+	vars := mux.Vars(r)
+	username := vars["username"]
+	println("Now following " + username)
 
 	whom_id, err := get_user_id(username)
 	if err != nil {
@@ -234,30 +229,26 @@ func follow_user(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error when trying to find the user in the database in follow", http.StatusNotFound)
 		return
 	}
-
 	who_id := user_id
 	_, err = db.Exec("INSERT INTO follower (who_id, whom_id) VALUES (?, ?)", who_id, whom_id)
 	if err != nil {
-		fmt.Println("Error when trying to insert data into database")
+		fmt.Println("Error when trying to insert data into the database")
 		return
 	}
 	message := fmt.Sprintf("You are now following &#34;%s&#34;", username)
-	_message := html.UnescapeString(message)
-	setFlash(r, w, _message)
+	setFlash(r, w, html.UnescapeString(message))
 	http.Redirect(w, r, "/"+username, http.StatusSeeOther)
 }
 
 func unfollow_user(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	username := vars["username"]
-	println("displaying username for " + username)
-
 	user, err := before_request(r)
 	if err != nil || isNil(user) {
-		println("Error beforerequest in unfollow", err.Error())
 		http.Error(w, "You need to login before you can follow the user", http.StatusUnauthorized)
 		return
 	}
+	vars := mux.Vars(r)
+	username := vars["username"]
+	println("displaying username for " + username)
 
 	whom_id, err := get_user_id(username)
 	if err != nil {
@@ -274,8 +265,7 @@ func unfollow_user(w http.ResponseWriter, r *http.Request) {
 	}
 
 	message := fmt.Sprintf("You are no longer following &#34;%s&#34;", username)
-	_message := html.UnescapeString(message)
-	setFlash(r, w, _message)
+	setFlash(r, w, html.UnescapeString(message))
 	http.Redirect(w, r, "/"+username, http.StatusFound)
 }
 
@@ -292,11 +282,10 @@ func add_message(w http.ResponseWriter, r *http.Request) {
 		db.Exec("INSERT INTO message (author_id, text, pub_date, flagged) VALUES (?, ?, ?, 0)", user_id, text, int(time.Now().Unix()))
 		setFlash(r, w, "Your message was recorded")
 	}
-
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
-type Data struct { //used to inject the html template with the requestURI (to figure out if we're on public or user timeline)
+type Data struct {
 	Message       any
 	User          any
 	Req           string
@@ -313,8 +302,7 @@ func timeline(w http.ResponseWriter, r *http.Request) {
 	_, ip, _ := net.SplitHostPort(r.RemoteAddr)
 	fmt.Println("We got a visitor from: ", ip)
 
-	var err error
-	user, err = before_request(r)
+	user, err := before_request(r)
 
 	if err != nil || isNil(user) {
 		http.Redirect(w, r, "/public", http.StatusFound)
