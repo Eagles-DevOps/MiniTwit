@@ -316,7 +316,6 @@ func timeline(w http.ResponseWriter, r *http.Request) {
 		}
 		flash := getFlash(r, w)
 
-		fmt.Println(user_id)
 		d := Data{
 			User:          user,
 			Message:       messages,
@@ -380,7 +379,7 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 	profileuserMap := profile_user.(map[any]any)
 	profile_user_id := profileuserMap["user_id"]
 
-	var followed bool = false
+	followed := false
 	usr, err := query_db(`select 1 from follower where
         follower.who_id = ? and follower.whom_id = ?`, []any{user_id, profile_user_id}, true)
 
@@ -463,7 +462,6 @@ func Login(w http.ResponseWriter, r *http.Request) {
 
 func Register(w http.ResponseWriter, r *http.Request) {
 	user, _, err := before_request(r)
-
 	if err != nil && !(isNil(user)) {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 
@@ -517,9 +515,7 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 	session, err := store.Get(r, "user-session")
 	if err != nil {
 		fmt.Println("Error getting session data")
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
 	} else {
-		// Logout session
 		setFlash(r, w, "You were logged out")
 		delete(session.Values, "user_id")
 		err = session.Save(r, w)
@@ -542,7 +538,7 @@ func checkPasswordHash(password, hash string) error {
 
 // ChatGPT
 func isNil(i interface{}) bool {
-	if i == nil || (i != nil && i == interface{}(nil)) {
+	if i == nil || i == interface{}(nil) {
 		return true
 	} else {
 		return false
