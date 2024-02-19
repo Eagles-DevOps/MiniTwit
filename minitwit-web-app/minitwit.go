@@ -99,7 +99,7 @@ func main() {
 	//content, err := query_db("SELECT user_id FROM user WHERE username IN (?, ?, ?)", []any{"Roger Histand", "Ayako Yestramski", "Leonora Alford"}, false)
 
 	fmt.Println("Listening on port 15000...")
-	err = http.ListenAndServe(":15000", r)
+	err = http.ListenAndServe("0.0.0.0:15000", r)
 	if err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
