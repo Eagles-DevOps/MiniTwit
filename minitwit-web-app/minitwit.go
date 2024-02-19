@@ -21,10 +21,8 @@ import (
 )
 
 const (
-	DATABASE   = "./minitwit.db"
-	PER_PAGE   = 30
-	DEBUG      = true
-	SECRET_KEY = "development key"
+	DATABASE = "./minitwit.db"
+	PER_PAGE = 30
 )
 
 var db *sql.DB
@@ -232,7 +230,7 @@ func follow_user(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	message := fmt.Sprintf("You are now following &#34;%s&#34;", username)
-	setFlash(r, w, html.UnescapeString(message))
+	setFlash(w, r, message)
 	http.Redirect(w, r, "/"+username, http.StatusSeeOther)
 }
 
@@ -261,7 +259,7 @@ func unfollow_user(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	message := fmt.Sprintf("You are no longer following &#34;%s&#34;", username)
-	setFlash(r, w, html.UnescapeString(message))
+	setFlash(w, r, message)
 	http.Redirect(w, r, "/"+username, http.StatusFound)
 }
 
@@ -276,7 +274,7 @@ func add_message(w http.ResponseWriter, r *http.Request) {
 	text := r.FormValue("text")
 	if text != "" {
 		db.Exec("INSERT INTO message (author_id, text, pub_date, flagged) VALUES (?, ?, ?, 0)", user_id, text, int(time.Now().Unix()))
-		setFlash(r, w, "Your message was recorded")
+		setFlash(w, r, "Your message was recorded")
 	}
 	http.Redirect(w, r, "/", http.StatusFound)
 }
@@ -314,7 +312,7 @@ func timeline(w http.ResponseWriter, r *http.Request) {
 			after_request()
 			return
 		}
-		flash := getFlash(r, w)
+		flash := getFlash(w, r)
 
 		d := Data{
 			User:          user,
@@ -347,7 +345,7 @@ func public_timeline(w http.ResponseWriter, r *http.Request) {
 		after_request()
 		return
 	}
-	flash := getFlash(r, w)
+	flash := getFlash(w, r)
 	d := Data{Message: messages, Req: r.RequestURI, FlashMessages: flash}
 	err = tpl.ExecuteTemplate(w, "timeline.html", d)
 	if err != nil {
@@ -397,7 +395,7 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 		after_request()
 		return
 	}
-	flash := getFlash(r, w)
+	flash := getFlash(w, r)
 
 	fmt.Println(user_id)
 	d := Data{Message: messages,
@@ -454,7 +452,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		//setting the session values
 		session.Values["user_id"] = user_id
 		session.Save(r, w)
-		setFlash(r, w, "You were logged in")
+		setFlash(w, r, "You were logged in")
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
@@ -505,7 +503,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 				fmt.Println("Database error")
 				return
 			}
-			setFlash(r, w, "You were successfully registered and can login now")
+			setFlash(w, r, "You were successfully registered and can login now")
 			http.Redirect(w, r, "/login", http.StatusSeeOther)
 		}
 	}
@@ -516,7 +514,7 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Println("Error getting session data")
 	} else {
-		setFlash(r, w, "You were logged out")
+		setFlash(w, r, "You were logged out")
 		delete(session.Values, "user_id")
 		err = session.Save(r, w)
 		if err != nil {
@@ -545,13 +543,13 @@ func isNil(i interface{}) bool {
 	}
 }
 
-func setFlash(r *http.Request, w http.ResponseWriter, message string) {
+func setFlash(w http.ResponseWriter, r *http.Request, message string) {
 	session, _ := store.Get(r, "user-session")
-	session.AddFlash(message)
+	session.AddFlash(html.UnescapeString(message))
 	session.Save(r, w)
 }
 
-func getFlash(r *http.Request, w http.ResponseWriter) []interface{} {
+func getFlash(w http.ResponseWriter, r *http.Request) []interface{} {
 	session, err := store.Get(r, "user-session")
 	if err != nil {
 		return nil
@@ -565,8 +563,8 @@ func getFlash(r *http.Request, w http.ResponseWriter) []interface{} {
 func reload(w http.ResponseWriter, r *http.Request, message string, template string) {
 	d := Data{}
 	if message != "" {
-		setFlash(r, w, message)
+		setFlash(w, r, message)
 	}
-	d.FlashMessages = getFlash(r, w)
+	d.FlashMessages = getFlash(w, r)
 	tpl.ExecuteTemplate(w, template, d)
 }
