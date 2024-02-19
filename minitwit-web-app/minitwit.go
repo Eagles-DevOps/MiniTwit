@@ -29,7 +29,6 @@ const (
 
 var db *sql.DB
 var store = sessions.NewCookieStore([]byte("SESSIONKEY"))
-var user_id any
 var tpl *template.Template
 
 func main() {
@@ -62,7 +61,6 @@ func main() {
 			default:
 				return "/"
 			}
-
 		},
 		"formatUsernameUrl": func(username string) string {
 			return strings.Replace(username, " ", "%20", -1)
@@ -82,7 +80,6 @@ func main() {
 	r.HandleFunc("/login", Login)
 	r.HandleFunc("/logout", Logout)
 	r.HandleFunc("/register", Register)
-
 	r.HandleFunc("/{username}/follow", follow_user)
 	r.HandleFunc("/{username}/unfollow", unfollow_user)
 	r.HandleFunc("/{username}", user_timeline)
@@ -100,7 +97,7 @@ func main() {
 }
 
 // """Returns a new connection to the database."""
-func connect_db() (*sql.DB, error) {
+func connect_db() (db *sql.DB, err error) {
 	fmt.Println("Connecting to database...")
 	return sql.Open("sqlite3", DATABASE)
 }
@@ -182,25 +179,26 @@ func get_user_id(username string) (any, error) {
 
 // """Make sure we are connected to the database each request and look
 // up the current user so that we know he's there.
-func before_request(r *http.Request) (any, error) {
-	_, err := connect_db()
+func before_request(r *http.Request) (any, any, error) {
+	db, err := connect_db()
+	println("db: ", db)
 	if err != nil {
 		log.Fatal("Error connecting to the database: ", err)
-		return nil, err
+		return nil, nil, err
 	}
 	session, _ := store.Get(r, "user-session")
 	user_id, ok := session.Values["user_id"]
 
 	if !ok {
 		fmt.Println("Session ended")
-		return nil, fmt.Errorf("no user in the session")
+		return nil, nil, fmt.Errorf("no user in the session")
 	}
 	user, err := query_db("SELECT * FROM user WHERE user_id = ?", []any{user_id}, true)
 	if err != nil {
 		fmt.Println("Unable to query for user data in before_request()")
-		return nil, err
+		return nil, nil, err
 	}
-	return user, err
+	return user, user_id, err
 }
 
 // """Closes the database again at the end of the request."""
@@ -210,7 +208,7 @@ func after_request() {
 
 func follow_user(w http.ResponseWriter, r *http.Request) {
 	//"""Adds the current user as follower of the given user."""
-	user, err := before_request(r)
+	user, user_id, err := before_request(r)
 	if err != nil || isNil(user) {
 		http.Error(w, "You need to login before you can follow the user", http.StatusUnauthorized)
 		after_request()
@@ -227,8 +225,7 @@ func follow_user(w http.ResponseWriter, r *http.Request) {
 		after_request()
 		return
 	}
-	who_id := user_id
-	_, err = db.Exec("INSERT INTO follower (who_id, whom_id) VALUES (?, ?)", who_id, whom_id)
+	_, err = db.Exec("INSERT INTO follower (who_id, whom_id) VALUES (?, ?)", user_id, whom_id)
 	if err != nil {
 		fmt.Println("Error when trying to insert data into the database")
 		after_request()
@@ -240,7 +237,7 @@ func follow_user(w http.ResponseWriter, r *http.Request) {
 }
 
 func unfollow_user(w http.ResponseWriter, r *http.Request) {
-	user, err := before_request(r)
+	user, user_id, err := before_request(r)
 	if err != nil || isNil(user) {
 		http.Error(w, "You need to login before you can follow the user", http.StatusUnauthorized)
 		after_request()
@@ -257,8 +254,7 @@ func unfollow_user(w http.ResponseWriter, r *http.Request) {
 		after_request()
 		return
 	}
-	who_id := user_id
-	_, err = db.Exec("DELETE FROM follower WHERE who_id=? and whom_id=?", who_id, whom_id)
+	_, err = db.Exec("DELETE FROM follower WHERE who_id=? and whom_id=?", user_id, whom_id)
 	if err != nil {
 		fmt.Println("Error when trying to delete data from database")
 		after_request()
@@ -271,7 +267,7 @@ func unfollow_user(w http.ResponseWriter, r *http.Request) {
 
 // """Registers a new message for the user."""
 func add_message(w http.ResponseWriter, r *http.Request) {
-	user, err := before_request(r)
+	user, user_id, err := before_request(r)
 	if err != nil || isNil(user) {
 		http.Error(w, "You need to login before you can post a message", http.StatusUnauthorized)
 		after_request()
@@ -302,13 +298,10 @@ func timeline(w http.ResponseWriter, r *http.Request) {
 	_, ip, _ := net.SplitHostPort(r.RemoteAddr)
 	fmt.Println("We got a visitor from: ", ip)
 
-	user, err := before_request(r)
+	user, user_id, err := before_request(r)
 	if err != nil || isNil(user) {
 		http.Redirect(w, r, "/public", http.StatusFound)
 	} else {
-		userMap := user.(map[any]any)
-		user_id := userMap["user_id"]
-
 		var query = `SELECT message.*, user.* FROM message, user
         WHERE message.flagged = 0 AND message.author_id = user.user_id AND (
             user.user_id = ? OR
@@ -342,7 +335,7 @@ func timeline(w http.ResponseWriter, r *http.Request) {
 
 // """Displays the latest messages of all users."""
 func public_timeline(w http.ResponseWriter, r *http.Request) {
-	user, err := before_request(r)
+	user, _, err := before_request(r)
 	if err != nil || isNil(user) {
 		println("public timeline: the user is not logged in")
 	}
@@ -368,7 +361,7 @@ func public_timeline(w http.ResponseWriter, r *http.Request) {
 
 // """Display's a users tweets."""
 func user_timeline(w http.ResponseWriter, r *http.Request) {
-	user, err := before_request(r)
+	user, user_id, err := before_request(r)
 	if err != nil || isNil(user) {
 		fmt.Println("Error when trying to find the user in the database: ", err)
 		http.Error(w, "Error when trying to find the user in the database", http.StatusNotFound)
@@ -380,13 +373,8 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 	println("displaying username for " + username)
 
 	profile_user, err := query_db("SELECT * FROM user WHERE username = ?", []any{username}, true)
-	if err != nil {
+	if err != nil || isNil(profile_user) {
 		fmt.Println("Error when trying to find the profile user in the database: ", err)
-		after_request()
-		return
-	}
-	if isNil(profile_user) {
-		http.Redirect(w, r, "/public", http.StatusFound)
 		after_request()
 		return
 	}
@@ -411,7 +399,6 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 		after_request()
 		return
 	}
-
 	flash := getFlash(r, w)
 
 	fmt.Println(user_id)
@@ -422,7 +409,6 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 		USERID:        user_id,
 		FlashMessages: flash,
 	}
-
 	err = tpl.ExecuteTemplate(w, "timeline.html", d)
 	if err != nil {
 		fmt.Println("Error when trying to execute the template: ", err)
@@ -432,7 +418,7 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 }
 
 func Login(w http.ResponseWriter, r *http.Request) {
-	usr, err := before_request(r)
+	usr, _, err := before_request(r)
 
 	if err != nil && !(isNil(usr)) {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
@@ -487,12 +473,11 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		// Set session data
 		session, _ := store.Get(r, "user-session")
 		session.Options = &sessions.Options{
-			Path:   "/",
-			MaxAge: 3600, // 1 hour in seconds
-			//MaxAge: 5,
+			Path:     "/",
+			MaxAge:   3600, // 1 hour in seconds
 			HttpOnly: true, // Recommended for security
 		}
-		user_id, err = get_user_id(username)
+		user_id, err := get_user_id(username)
 		if err != nil {
 			panic("This is not allowed happen!")
 		}
@@ -506,7 +491,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 }
 
 func Register(w http.ResponseWriter, r *http.Request) {
-	usr, err := before_request(r)
+	usr, _, err := before_request(r)
 
 	if err != nil && !(isNil(usr)) {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
