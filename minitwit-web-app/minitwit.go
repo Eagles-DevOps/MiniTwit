@@ -288,7 +288,6 @@ type Data struct {
 	Followed      any
 	USERID        any
 	FlashMessages any
-	ErrMsg        string
 }
 
 // """Shows a users timeline or if no user is logged in it will
@@ -324,7 +323,7 @@ func timeline(w http.ResponseWriter, r *http.Request) {
 			USERID:        user_id,
 			FlashMessages: flash,
 		}
-		err = tpl.ExecuteTemplate(w, "newtimeline.html", d)
+		err = tpl.ExecuteTemplate(w, "timeline.html", d)
 		if err != nil {
 			fmt.Println("Error when trying to execute the template: ", err)
 			after_request()
@@ -418,27 +417,12 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 }
 
 func Login(w http.ResponseWriter, r *http.Request) {
-	usr, _, err := before_request(r)
-
-	if err != nil && !(isNil(usr)) {
+	user, _, err := before_request(r)
+	if err != nil && !(isNil(user)) {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
-	}
 
-	if r.Method == "GET" {
-
-		flash := getFlash(r, w)
-		if flash != nil {
-
-			fmt.Println("Login no ses: ", flash)
-
-			d := Data{
-				FlashMessages: flash,
-			}
-			tpl.ExecuteTemplate(w, "login.html", d)
-		} else {
-			fmt.Println("No session in login")
-			tpl.ExecuteTemplate(w, "login.html", nil)
-		}
+	} else if r.Method == "GET" {
+		reload(w, r, "", "login.html")
 
 	} else if r.Method == "POST" {
 		fmt.Println("POST, render login")
@@ -447,30 +431,17 @@ func Login(w http.ResponseWriter, r *http.Request) {
 
 		user, err := query_db("select * from user where username = ?", []any{username}, true)
 		if err != nil || isNil(user) {
-			setFlash(r, w, "Invalid username")
-			flash := getFlash(r, w)
-			d := Data{
-				FlashMessages: flash,
-			}
-			tpl.ExecuteTemplate(w, "login.html", d)
+			reload(w, r, "Invalid username", "login.html")
 			return
 		}
-
-		// Assuming user is a map with key 'pw_hash'
 		userMap := user.(map[any]any)
 		pwHash := userMap["pw_hash"].(string)
 
 		err = checkPasswordHash(password, pwHash)
 		if err != nil {
-			setFlash(r, w, "Invalid password")
-			flash := getFlash(r, w)
-			d := Data{
-				FlashMessages: flash,
-			}
-			tpl.ExecuteTemplate(w, "login.html", d)
+			reload(w, r, "Invalid password", "login.html")
 			return
 		}
-		// Set session data
 		session, _ := store.Get(r, "user-session")
 		session.Options = &sessions.Options{
 			Path:     "/",
@@ -491,78 +462,46 @@ func Login(w http.ResponseWriter, r *http.Request) {
 }
 
 func Register(w http.ResponseWriter, r *http.Request) {
-	usr, _, err := before_request(r)
+	user, _, err := before_request(r)
 
-	if err != nil && !(isNil(usr)) {
+	if err != nil && !(isNil(user)) {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
-	}
 
-	if r.Method == "GET" {
-
+	} else if r.Method == "GET" {
 		tpl.ExecuteTemplate(w, "register.html", nil)
 
 	} else if r.Method == "POST" {
-
 		username := r.FormValue("username")
 		email := r.FormValue("email")
 		password := r.FormValue("password")
 		password2 := r.FormValue("password2")
 
-		// Validate form input
 		if username == "" {
-			setFlash(r, w, "You have to enter a username")
-			flash := getFlash(r, w)
-			d := Data{
-				FlashMessages: flash,
-			}
-			tpl.ExecuteTemplate(w, "register.html", d)
+			reload(w, r, "You have to enter a username", "register.html")
 			return
 
 		} else if !strings.Contains(email, "@") {
-			setFlash(r, w, "You have to enter a valid email address")
-			flash := getFlash(r, w)
-			d := Data{
-				FlashMessages: flash,
-			}
-			tpl.ExecuteTemplate(w, "register.html", d)
+			reload(w, r, "You have to enter a valid email address", "register.html")
 			return
 
 		} else if password == "" {
-			setFlash(r, w, "You have to enter a password")
-			flash := getFlash(r, w)
-			d := Data{
-				FlashMessages: flash,
-			}
-			tpl.ExecuteTemplate(w, "register.html", d)
+			reload(w, r, "You have to enter a password", "register.html")
 			return
 
 		} else if password != password2 {
-			setFlash(r, w, "The two passwords do not match")
-			flash := getFlash(r, w)
-			d := Data{
-				FlashMessages: flash,
-			}
-			tpl.ExecuteTemplate(w, "register.html", d)
+			reload(w, r, "The two passwords do not match", "register.html")
 			return
 
 		} else if id, _ := get_user_id(username); id != nil {
-			setFlash(r, w, "The username is already taken")
-			flash := getFlash(r, w)
-			d := Data{
-				FlashMessages: flash,
-			}
-			tpl.ExecuteTemplate(w, "register.html", d)
+			reload(w, r, "The username is already taken", "register.html")
 			return
 
 		} else {
-			// Hash the password
 			hashedPassword, err := hashPassword(password)
 			if err != nil {
 				fmt.Println("Error hashing the password")
 				return
 			}
-
-			// Insert the new user into the database
 			_, err = db.Exec("INSERT INTO user (username, email, pw_hash) VALUES (?, ?, ?)", username, email, hashedPassword)
 			if err != nil {
 				fmt.Println("Database error")
@@ -625,4 +564,13 @@ func getFlash(r *http.Request, w http.ResponseWriter) []interface{} {
 		session.Save(r, w)
 		return flashes
 	}
+}
+
+func reload(w http.ResponseWriter, r *http.Request, message string, template string) {
+	d := Data{}
+	if message != "" {
+		setFlash(r, w, message)
+	}
+	d.FlashMessages = getFlash(r, w)
+	tpl.ExecuteTemplate(w, template, d)
 }
