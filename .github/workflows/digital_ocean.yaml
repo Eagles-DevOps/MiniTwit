@@ -13,15 +13,15 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Set up Ruby
-      uses: ruby/setup-ruby@v1
-      with:
-        ruby-version: 2.7  # Specify a Ruby version compatible with Vagrant
-
     - name: Install Vagrant
       run: |
         sudo apt-get update
-        sudo apt-get install -y vagrant
+        wget https://releases.hashicorp.com/vagrant/2.3.7/vagrant_2.3.7_x86_64.deb
+
+        sudo dpkg -i vagrant_2.3.7_x86_64.deb
+
+        vagrant --version
+
         vagrant plugin install vagrant-digitalocean
 
     - name: Run Vagrant Up
