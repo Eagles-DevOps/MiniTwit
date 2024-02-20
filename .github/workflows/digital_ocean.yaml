@@ -1,0 +1,31 @@
+name: Vagrant Pull Request CI
+
+on:
+  push:
+    branches:
+      - feat/local-vagrant  # Replace with your target branch
+
+jobs:
+  vagrant-up:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 2.7  # Specify a Ruby version compatible with Vagrant
+
+    - name: Install Vagrant
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y vagrant
+
+    - name: Run Vagrant Up
+      env:
+        DIGITALOCEAN_TOKEN: ${{ secrets.DIGITALOCEAN_TOKEN }}
+      run: |
+        cd minitwit-web-app
+        vagrant up
