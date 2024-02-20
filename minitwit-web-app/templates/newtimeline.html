@@ -19,11 +19,8 @@
       {{end}}
     </div>
 
-
-    {{if eq .Req (print "/public")}}
-      <h2>Public timeline</h2>
-    {{else}}
-      <h2>{{.Profileuser.username}}'s timeline</h2>
+    {{if .User}}
+      <h2>{{.User.username}}'s timeline</h2>
     {{end}}
 
     {{if .FlashMessages}}
@@ -34,31 +31,21 @@
       </div>
     {{end}}
 
-    <div>
-        {{if eq .Req (print "/" (formatUsernameUrl .Profileuser.username))}}
-          <div class="followstatus">
-            {{if eq .USERID .Profileuser.user_id}}
-              This is you!
-            {{else if .Followed}}
-              You are currently following this user
-              <a class="unfollow" href="{{url_for "unfollow" (formatUsernameUrl .Profileuser.username)}}">Unfollow user</a>
-            {{else}}
-              You are not yet following this user
-              <a class="follow" href="{{url_for "follow" (formatUsernameUrl .Profileuser.username)}}">Follow user</a>
-            {{end}}
-          </div>
-          {{if eq .USERID .Profileuser.user_id}}
-            <div class="twitbox">
-              <h3>What's on your mind, {{.User.username}}?</h3>
-              <form action="{{url_for "add_message" ""}}" method="POST">
-                <p>
-                  <input type="text" name="text" size="60">
-                  <input type="submit" value="Share">
-                </p>
-              </form>
-            </div>
-          {{end}}
-        {{end}}
+
+    {{if .USERID}}
+      <div class="followstatus">
+        This is you!     
+    {{end}}
+      </div>
+
+    <div class="twitbox">
+      <h3>What's on your mind, {{.User.username}}?</h3>
+      <form action="{{url_for "add_message" ""}}" method="POST">
+        <p>
+          <input type="text" name="text" size="60">
+          <input type="submit" value="Share">
+        </p>
+      </form>
     </div>
 
     <ul class="messages">
