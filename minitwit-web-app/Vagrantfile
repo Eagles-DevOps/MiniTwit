@@ -1,3 +1,4 @@
+puts "Running vagrant"
 Vagrant.configure('2') do |config|
   config.vm.provider :digital_ocean do |provider, override|
     provider.ssh_key_name = ENV["SSH_KEY_NAME"]
@@ -6,11 +7,17 @@ Vagrant.configure('2') do |config|
     override.vm.box_url = "https://github.com/devopsgroup-io/vagrant-digitalocean/raw/master/box/digital_ocean.box"
 
     provider.token = ENV["DIGITALOCEAN_TOKEN"]
+  
     provider.image = 'ubuntu-22-04-x64'
     provider.region = 'ams3'
     provider.size = 's-1vcpu-1gb'
     provider.vm.hostname = 'Vagrant-created'  # Set the droplet name
   end
+
+  puts "SSH Key Name: #{ENV['SSH_KEY_NAME']}"
+  puts "Token: #{ENV['DIGITALOCEAN_TOKEN']}"
+  puts "SSH Private Key Path: #{override.ssh.private_key_path}"
+
 
   config.vm.synced_folder ".", "/vagrant", disabled: true
 
