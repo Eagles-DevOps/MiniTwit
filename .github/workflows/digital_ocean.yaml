@@ -3,7 +3,7 @@ name: Vagrant Pull Request CI
 on:
   push:
     branches:
-      - feat/local-vagrant  # Replace with your target branch
+      - feat/local-vagrant
 
 jobs:
   vagrant-up:
