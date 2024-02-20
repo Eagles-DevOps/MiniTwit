@@ -181,7 +181,6 @@ func getSession(r *http.Request) (*sessions.Session, error) {
 
 func getUser(r *http.Request) (any, any, error) {
 	session, _ := getSession(r)
-
 	user_id, ok := session.Values["user_id"]
 
 	if !ok {
@@ -245,7 +244,6 @@ func unfollow_user(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Error when trying to delete data from database")
 		return
 	}
-
 	message := fmt.Sprintf("You are no longer following &#34;%s&#34;", username)
 	setFlash(w, r, message)
 	http.Redirect(w, r, "/"+username, http.StatusFound)
@@ -273,7 +271,6 @@ type Data struct {
 	Profileuser   any
 	Req           string
 	Followed      any
-	USERID        any
 	FlashMessages any
 }
 
@@ -289,7 +286,6 @@ func timeline(w http.ResponseWriter, r *http.Request) {
 	if err != nil || isNil(user) {
 		http.Redirect(w, r, "/public", http.StatusFound)
 	} else {
-
 		var query = `SELECT message.*, user.* FROM message, user
         WHERE message.flagged = 0 AND message.author_id = user.user_id AND (
             user.user_id = ? OR
@@ -300,7 +296,6 @@ func timeline(w http.ResponseWriter, r *http.Request) {
 		messages, err := query_db(query, []any{user_id, user_id, PER_PAGE}, false)
 		if err != nil {
 			fmt.Println("Timeline: Error when trying to query the database", err)
-
 			return
 		}
 		flash := getFlash(w, r)
@@ -310,7 +305,6 @@ func timeline(w http.ResponseWriter, r *http.Request) {
 			User:          user,
 			Profileuser:   profile_user,
 			Message:       messages,
-			USERID:        user_id,
 			Req:           r.RequestURI,
 			FlashMessages: flash,
 		}
@@ -398,7 +392,6 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 		User:          user,
 		Profileuser:   profile_user,
 		Req:           r.RequestURI,
-		USERID:        user_id,
 		FlashMessages: flash,
 	}
 	err = tpl.ExecuteTemplate(w, "timeline.html", d)
@@ -449,6 +442,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		session.Values["user_id"] = user_id
 		session.Save(r, w)
 		setFlash(w, r, "You were logged in")
+
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
@@ -486,7 +480,6 @@ func Register(w http.ResponseWriter, r *http.Request) {
 
 		} else if id, _ := get_user_id(username); id != nil {
 			reload(w, r, "The username is already taken", "register.html")
-
 			return
 
 		} else {
@@ -501,7 +494,6 @@ func Register(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			setFlash(w, r, "You were successfully registered and can login now")
-
 			http.Redirect(w, r, "/login", http.StatusSeeOther)
 		}
 	}

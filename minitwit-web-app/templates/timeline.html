@@ -35,9 +35,10 @@
     {{end}}
 
     <div>
+      {{if .Profileuser.user_id}}
         {{if eq .Req (print "/" (formatUsernameUrl .Profileuser.username))}}
           <div class="followstatus">
-            {{if eq .USERID .Profileuser.user_id}}
+            {{if eq .User.user_id .Profileuser.user_id}}
               This is you!
             {{else if .Followed}}
               You are currently following this user
@@ -47,7 +48,7 @@
               <a class="follow" href="{{url_for "follow" (formatUsernameUrl .Profileuser.username)}}">Follow user</a>
             {{end}}
           </div>
-          {{if eq .USERID .Profileuser.user_id}}
+          {{if eq .User.user_id .Profileuser.user_id}}
             <div class="twitbox">
               <h3>What's on your mind, {{.User.username}}?</h3>
               <form action="{{url_for "add_message" ""}}" method="POST">
@@ -59,6 +60,7 @@
             </div>
           {{end}}
         {{end}}
+      {{end}}
     </div>
 
     <ul class="messages">
