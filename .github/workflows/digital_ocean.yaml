@@ -27,8 +27,7 @@ jobs:
     - name: Run Vagrant Up
       env:
         DIGITALOCEAN_TOKEN: ${{ secrets.DIGITALOCEAN_TOKEN }}
+        SSH_KEY_NAME: ${{ secrets.SSH_KEY_NAME }}
       run: |
         cd minitwit-web-app
-        echo "Current location"
-        pwd
         vagrant up

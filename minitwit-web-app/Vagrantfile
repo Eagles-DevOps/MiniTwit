@@ -1,11 +1,11 @@
 Vagrant.configure('2') do |config|
   config.vm.provider :digital_ocean do |provider, override|
-    provider.ssh_key_name = 'test-key'
+    provider.ssh_key_name = ENV["SSH_KEY_NAME"]
     override.ssh.private_key_path = '~/.ssh/id_rsa'  # Path to your SSH private key
     override.vm.box = 'digital_ocean'
     override.vm.box_url = "https://github.com/devopsgroup-io/vagrant-digitalocean/raw/master/box/digital_ocean.box"
 
-    provider.token = ENV['DIGITALOCEAN_TOKEN']
+    provider.token = ENV["DIGITALOCEAN_TOKEN"]
     provider.image = 'ubuntu-22-04-x64'
     provider.region = 'ams3'
     provider.size = 's-1vcpu-1gb'
