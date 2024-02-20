@@ -22,10 +22,13 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y vagrant
+        vagrant plugin install vagrant-digitalocean
 
     - name: Run Vagrant Up
       env:
         DIGITALOCEAN_TOKEN: ${{ secrets.DIGITALOCEAN_TOKEN }}
       run: |
         cd minitwit-web-app
+        echo "Current location"
+        pwd
         vagrant up
