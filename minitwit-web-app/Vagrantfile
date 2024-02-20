@@ -13,7 +13,6 @@ Vagrant.configure('2') do |config|
     provider.size = 's-1vcpu-1gb'
     provider.privatenetworking = true
   end
-  end
 
   puts "SSH Key Name: #{ENV['SSH_KEY_NAME']}"
   puts "Token: #{ENV['DIGITALOCEAN_TOKEN']}"
