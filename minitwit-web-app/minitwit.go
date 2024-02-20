@@ -184,7 +184,7 @@ func getUser(r *http.Request) (any, any, error) {
 	user_id, ok := session.Values["user_id"]
 
 	if !ok {
-		fmt.Println("Session ended")
+		fmt.Println("No user in the session")
 		return nil, nil, fmt.Errorf("no user in the session")
 	}
 	user, err := query_db("SELECT * FROM user WHERE user_id = ?", []any{user_id}, true)
@@ -268,6 +268,7 @@ func add_message(w http.ResponseWriter, r *http.Request) {
 type Data struct {
 	Message       any
 	User          any
+	Profileuser   any
 	Req           string
 	Followed      any
 	USERID        any
@@ -299,13 +300,17 @@ func timeline(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		flash := getFlash(w, r)
+		profile_user := user
 
 		d := Data{
 			User:          user,
+			Profileuser:   profile_user,
 			Message:       messages,
 			USERID:        user_id,
+			Req:           r.RequestURI,
 			FlashMessages: flash,
 		}
+
 		err = tpl.ExecuteTemplate(w, "timeline.html", d)
 		if err != nil {
 			fmt.Println("Error when trying to execute the template: ", err)
@@ -332,8 +337,13 @@ func public_timeline(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	flash := getFlash(w, r)
-	d := Data{Message: messages, FlashMessages: flash}
-	err = tpl.ExecuteTemplate(w, "timeline.html", d)
+
+	d := Data{Message: messages,
+		User:          user,
+		Req:           r.RequestURI,
+		FlashMessages: flash,
+	}
+	err = tpl.ExecuteTemplate(w, "public.html", d)
 	if err != nil {
 		println("Error trying to execute template: ", err)
 		return
@@ -381,7 +391,8 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(user_id)
 	d := Data{Message: messages,
 		Followed:      followed,
-		User:          profile_user,
+		User:          user,
+		Profileuser:   profile_user,
 		Req:           r.RequestURI,
 		USERID:        user_id,
 		FlashMessages: flash,
@@ -396,8 +407,7 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 func Login(w http.ResponseWriter, r *http.Request) {
 	//_, _ = connect_db()
 	user, _, err := getUser(r)
-	if err != nil && !(isNil(user)) {
-
+	if err == nil && !(isNil(user)) {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 
 	} else if r.Method == "GET" {
@@ -443,7 +453,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 
 func Register(w http.ResponseWriter, r *http.Request) {
 	user, _, err := getUser(r)
-	if err != nil && !(isNil(user)) {
+	if err == nil && !(isNil(user)) {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 
 	} else if r.Method == "GET" {
