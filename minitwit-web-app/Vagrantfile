@@ -5,17 +5,24 @@ Vagrant.configure('2') do |config|
     override.vm.box = 'digital_ocean'
     override.vm.box_url = "https://github.com/devopsgroup-io/vagrant-digitalocean/raw/master/box/digital_ocean.box"
 
-    provider.token = 'dop_v1_6dae5b46dfaffe2ebeb7a6f4057ac13b7c0f1cc12ca2c2b7fb199785b3615bbd'
-    provider.image = 'ubuntu-20-04-x64'
+    provider.token = 'dop_v1_e4a404a5d5c3e69adb9937e49fa316e4cd0c15ceb853d187e8d21404600d03e8'
+    provider.image = 'ubuntu-22-04-x64'
     provider.region = 'ams3'
     provider.size = 's-1vcpu-1gb'
+    provider.vm.hostname = 'Vagrant-created'  # Set the droplet name
   end
+
+  config.vm.synced_folder ".", "/vagrant", disabled: true
 
   config.vm.provision "shell", inline: <<-SHELL
     # Update package list and install Go
-    sudo apt-get update
-    sudo apt-get -y upgrade
-    sudo apt-get -y install golang-go
+    apt -y update
+    apt -y install golang
+
+    echo "-----------------------------------"
+    echo "         Golang installed"
+    echo "-----------------------------------"
+
 
     # Set GOPATH; adjust this as needed
     echo "export GOPATH=$HOME/go" >> $HOME/.profile
@@ -24,9 +31,17 @@ Vagrant.configure('2') do |config|
     # Copy or clone your application files to the VM
     git clone https://github.com/Eagles-DevOps/MiniTwit.git
 
+    echo "-----------------------------------"
+    echo "          Repo clonned"
+    echo "-----------------------------------"
+
     # Navigate to your app directory and build/run your Go app
-    cd /MiniTwit
-    cd /minitwit-web-app
+    cd MiniTwit/minitwit-web-app
+    
+
+    echo "-----------------------------------"
+    echo "         Running app .... "
+    echo "-----------------------------------"
     go run minitwit.go
   SHELL
 end
