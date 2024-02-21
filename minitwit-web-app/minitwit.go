@@ -341,7 +341,7 @@ func public_timeline(w http.ResponseWriter, r *http.Request) {
 		Req:           r.RequestURI,
 		FlashMessages: flash,
 	}
-	err = tpl.ExecuteTemplate(w, "public.html", d)
+	err = tpl.ExecuteTemplate(w, "timeline.html", d)
 	if err != nil {
 		println("Error trying to execute template: ", err)
 		return

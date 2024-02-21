@@ -35,32 +35,33 @@
     {{end}}
 
     <div>
-      {{if eq .Req (print "/" (formatUsernameUrl .Profileuser.username))}}
-        <div class="followstatus">
-          {{if eq .User.user_id .Profileuser.user_id}}
-            This is you!
-          {{else if .Followed}}
-            You are currently following this user
-            <a class="unfollow" href="{{url_for "unfollow" (formatUsernameUrl .Profileuser.username)}}">Unfollow user</a>
-          {{else}}
-            You are not yet following this user
-            <a class="follow" href="{{url_for "follow" (formatUsernameUrl .Profileuser.username)}}">Follow user</a>
-          {{end}}
-        </div>
-        {{if eq .User.user_id .Profileuser.user_id}}
-          <div class="twitbox">
-            <h3>What's on your mind, {{.User.username}}?</h3>
-            <form action="{{url_for "add_message" ""}}" method="POST">
-              <p>
-                <input type="text" name="text" size="60">
-                <input type="submit" value="Share">
-              </p>
-            </form>
+      {{if ne .Req (print "/public")}}
+        {{if eq .Req (print "/" (formatUsernameUrl .Profileuser.username))}}
+          <div class="followstatus">
+            {{if eq .User.user_id .Profileuser.user_id}}
+              This is you!
+            {{else if .Followed}}
+              You are currently following this user
+              <a class="unfollow" href="{{url_for "unfollow" (formatUsernameUrl .Profileuser.username)}}">Unfollow user</a>
+            {{else}}
+              You are not yet following this user
+              <a class="follow" href="{{url_for "follow" (formatUsernameUrl .Profileuser.username)}}">Follow user</a>
+            {{end}}
           </div>
+          {{if eq .User.user_id .Profileuser.user_id}}
+            <div class="twitbox">
+              <h3>What's on your mind, {{.User.username}}?</h3>
+              <form action="{{url_for "add_message" ""}}" method="POST">
+                <p>
+                  <input type="text" name="text" size="60">
+                  <input type="submit" value="Share">
+                </p>
+              </form>
+            </div>
+          {{end}}
         {{end}}
       {{end}}
     </div>
-    
 
     <ul class="messages">
       {{range $fields := .Message}}
