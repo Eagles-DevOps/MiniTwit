@@ -305,7 +305,6 @@ func timeline(w http.ResponseWriter, r *http.Request) {
 			User:          user,
 			Profileuser:   profile_user,
 			Message:       messages,
-			Req:           r.RequestURI,
 			FlashMessages: flash,
 		}
 
@@ -391,7 +390,6 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 		Followed:      followed,
 		User:          user,
 		Profileuser:   profile_user,
-		Req:           r.RequestURI,
 		FlashMessages: flash,
 	}
 	err = tpl.ExecuteTemplate(w, "timeline.html", d)
