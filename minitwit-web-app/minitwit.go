@@ -64,7 +64,6 @@ func main() {
 		},
 	}
 	tpl, err = template.New("timeline.html").Funcs(funcMap).ParseGlob("templates/*.html") // We need to add the funcs that we want to use before parsing
-
 	if err != nil {
 		log.Fatalf("Error parsing template: %v", err)
 	}
@@ -234,7 +233,6 @@ func follow_user(w http.ResponseWriter, r *http.Request) {
 	}
 	message := fmt.Sprintf("You are now following &#34;%s&#34;", username)
 	setFlash(w, r, message)
-
 	http.Redirect(w, r, "/"+username, http.StatusSeeOther)
 }
 
@@ -327,7 +325,6 @@ func timeline(w http.ResponseWriter, r *http.Request) {
 			fmt.Println("Error when trying to execute the template: ", err)
 			return
 		}
-
 	}
 }
 
@@ -364,8 +361,10 @@ func public_timeline(w http.ResponseWriter, r *http.Request) {
 func user_timeline(w http.ResponseWriter, r *http.Request) {
 	user, user_id, err := getUser(r)
 	if err != nil || isNil(user) {
-		fmt.Println("Error when trying to find the user in the database: ", err)
-		http.Error(w, "Error when trying to find the user in the database", http.StatusNotFound)
+		setFlash(w, r, "You need to login before you can see the user's timeline")
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		//fmt.Println("Error when trying to find the user in the database: ", err)
+		//http.Error(w, "Error when trying to find the user in the database", http.StatusNotFound)
 		return
 	}
 	vars := mux.Vars(r)
