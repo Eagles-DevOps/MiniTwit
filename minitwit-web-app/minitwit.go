@@ -81,7 +81,11 @@ func main() {
 	r.HandleFunc("/{username}/unfollow", unfollow_user)
 	r.HandleFunc("/{username}", user_timeline)
 
-	db, _ = connect_db()
+	db, err = before_request()
+	if err != nil {
+		fmt.Println("Error connecting to the database")
+	}
+	defer after_request()
 
 	fmt.Println("Listening on port 15000...")
 	err = http.ListenAndServe(":15000", r)
@@ -195,9 +199,17 @@ func getUser(r *http.Request) (any, any, error) {
 	return user, user_id, err
 }
 
+func before_request() (*sql.DB, error) {
+	return connect_db()
+}
+
+// """Closes the database again at the end of the request."""
+func after_request() {
+	db.Close()
+}
+
 // """Adds the current user as follower of the given user."""
 func follow_user(w http.ResponseWriter, r *http.Request) {
-	//db, _ := connect_db()
 	user, user_id, err := getUser(r)
 	if err != nil || isNil(user) {
 		http.Error(w, "You need to login before you can follow the user", http.StatusUnauthorized)
@@ -224,7 +236,6 @@ func follow_user(w http.ResponseWriter, r *http.Request) {
 }
 
 func unfollow_user(w http.ResponseWriter, r *http.Request) {
-	//db, _ := connect_db()
 	user, user_id, err := getUser(r)
 	if err != nil || isNil(user) {
 		http.Error(w, "You need to login before you can follow the user", http.StatusUnauthorized)
@@ -251,7 +262,6 @@ func unfollow_user(w http.ResponseWriter, r *http.Request) {
 
 // """Registers a new message for the user."""
 func add_message(w http.ResponseWriter, r *http.Request) {
-	//db, _ := connect_db()
 	user, user_id, err := getUser(r)
 	if err != nil || isNil(user) {
 		http.Error(w, "You need to login before you can post a message", http.StatusUnauthorized)
@@ -278,7 +288,6 @@ type Data struct {
 // redirect to the public timeline.  This timeline shows the user's
 // messages as well as all the messages of followed users."""
 func timeline(w http.ResponseWriter, r *http.Request) {
-	//_, _ = connect_db()
 	_, ip, _ := net.SplitHostPort(r.RemoteAddr)
 	fmt.Println("We got a visitor from: ", ip)
 
@@ -319,7 +328,6 @@ func timeline(w http.ResponseWriter, r *http.Request) {
 
 // """Displays the latest messages of all users."""
 func public_timeline(w http.ResponseWriter, r *http.Request) {
-	//_, _ = connect_db()
 	user, _, err := getUser(r)
 	if err != nil || isNil(user) {
 		println("public timeline: the user is not logged in")
@@ -349,7 +357,6 @@ func public_timeline(w http.ResponseWriter, r *http.Request) {
 
 // """Display's a users tweets."""
 func user_timeline(w http.ResponseWriter, r *http.Request) {
-	//_, _ = connect_db()
 	user, user_id, err := getUser(r)
 	if err != nil || isNil(user) {
 		fmt.Println("Error when trying to find the user in the database: ", err)
@@ -400,7 +407,6 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 }
 
 func Login(w http.ResponseWriter, r *http.Request) {
-	//_, _ = connect_db()
 	user, _, err := getUser(r)
 	if err == nil && !(isNil(user)) {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
