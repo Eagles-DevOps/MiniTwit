@@ -20,19 +20,15 @@ jobs:
         sudo apt-get install -y vagrant
         vagrant plugin install vagrant-digitalocean
 
-        
-    - name: Set up SSH Key
-      env:
-        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-      run: |
-        mkdir -p ~/.ssh
-        echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
-        chmod 600 ~/.ssh/id_rsa
-
     - name: Run Vagrant Up
       env:
         DIGITALOCEAN_TOKEN: ${{ secrets.DIGITALOCEAN_TOKEN }}
         SSH_KEY_NAME: ${{ secrets.SSH_KEY_NAME }}
+        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
       run: |
+        mkdir -p ~/.ssh
+        echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+        chmod 666 ~/.ssh/id_rsa
+
         cd minitwit-web-app
         vagrant up
