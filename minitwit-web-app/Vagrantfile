@@ -1,17 +1,17 @@
 puts "Running vagrant"
 Vagrant.configure('2') do |config|
-  config.vm.box = 'digital_ocean'
-  config.vm.box_url = "https://github.com/devopsgroup-io/vagrant-digitalocean/raw/master/box/digital_ocean.box"
-  config.ssh.private_key_path = '~/.ssh/id_rsa'
-  config.vm.synced_folder ".", "/vagrant", type: "rsync"
-
-  config.vm.provider :digital_ocean do |provider|
+  config.vm.provider :digital_ocean do |provider, override|
     provider.ssh_key_name = ENV["SSH_KEY_NAME"]
-    provider.token = ENV["DIGITAL_OCEAN_TOKEN"]
+    override.ssh.private_key_path = ENV["SSH_PRIVATE_KEY"]  # Path to your SSH private key
+    override.vm.box = 'digital_ocean'
+    override.vm.box_url = "https://github.com/devopsgroup-io/vagrant-digitalocean/raw/master/box/digital_ocean.box"
+
+    provider.token = ENV["DIGITALOCEAN_TOKEN"]
+  
     provider.image = 'ubuntu-22-04-x64'
-    provider.region = 'fra1'
+    provider.region = 'ams3'
     provider.size = 's-1vcpu-1gb'
-    provider.privatenetworking = true
+    provider.vm.hostname = 'Vagrant-created'  # Set the droplet name
   end
 
   puts "SSH Key Name: #{ENV['SSH_KEY_NAME']}"
