@@ -363,8 +363,6 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 	if err != nil || isNil(user) {
 		setFlash(w, r, "You need to login before you can see the user's timeline")
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
-		//fmt.Println("Error when trying to find the user in the database: ", err)
-		//http.Error(w, "Error when trying to find the user in the database", http.StatusNotFound)
 		return
 	}
 	vars := mux.Vars(r)
