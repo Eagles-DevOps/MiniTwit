@@ -372,7 +372,8 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 
 	profile_user, err := query_db("SELECT * FROM user WHERE username = ?", []any{username}, true)
 	if err != nil || isNil(profile_user) {
-		fmt.Println("Error when trying to find the profile user in the database: ", err)
+		setFlash(w, r, "The user does not exist")
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
 	profileuserMap := profile_user.(map[any]any)
