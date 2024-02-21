@@ -175,6 +175,7 @@ func get_user_id(username string) (any, error) {
 	return user_id, err
 }
 
+// """Gets the session"""
 func getSession(r *http.Request) (*sessions.Session, error) {
 	session, err := store.Get(r, "user-session")
 	if err != nil {
@@ -183,6 +184,7 @@ func getSession(r *http.Request) (*sessions.Session, error) {
 	return session, err
 }
 
+// """Gets the user in the session"""
 func getUser(r *http.Request) (any, any, error) {
 	session, _ := getSession(r)
 	user_id, ok := session.Values["user_id"]
@@ -199,6 +201,7 @@ func getUser(r *http.Request) (any, any, error) {
 	return user, user_id, err
 }
 
+// """Opens the database before the request."""
 func before_request() (*sql.DB, error) {
 	return connect_db()
 }
@@ -235,6 +238,7 @@ func follow_user(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/"+username, http.StatusSeeOther)
 }
 
+// """Removes the current user as follower of the given user."""
 func unfollow_user(w http.ResponseWriter, r *http.Request) {
 	user, user_id, err := getUser(r)
 	if err != nil || isNil(user) {
@@ -275,6 +279,7 @@ func add_message(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
+// """This data is parsed to the templates"""
 type Data struct {
 	Message       any
 	User          any
@@ -406,6 +411,7 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// """Logs the user in."""
 func Login(w http.ResponseWriter, r *http.Request) {
 	user, _, err := getUser(r)
 	if err == nil && !(isNil(user)) {
@@ -442,16 +448,15 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			panic("This is not allowed happen!")
 		}
-		//setting the session values
 		session.Values["user_id"] = user_id
 		session.Save(r, w)
 		setFlash(w, r, "You were logged in")
-
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
 }
 
+// """Registers the user."""
 func Register(w http.ResponseWriter, r *http.Request) {
 	user, _, err := getUser(r)
 	if err == nil && !(isNil(user)) {
@@ -503,6 +508,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// """Logs the user out"""
 func Logout(w http.ResponseWriter, r *http.Request) {
 	session, err := getSession(r)
 	if err != nil {
