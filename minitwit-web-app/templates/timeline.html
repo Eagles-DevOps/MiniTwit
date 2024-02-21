@@ -19,7 +19,6 @@
       {{end}}
     </div>
 
-
     {{if eq .Req (print "/public")}}
       <h2>Public timeline</h2>
     {{else}}
@@ -61,7 +60,6 @@
       {{end}}
     </div>
     
-
     <ul class="messages">
       {{range $fields := .Message}}
         <li>

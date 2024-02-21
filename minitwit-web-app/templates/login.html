@@ -17,8 +17,15 @@
         <a href="{{url_for "register" ""}}">sign up</a>
         <a href="{{url_for "login" ""}}">sign in</a>
       {{end}}
-
     </div>
+
+    {{if .FlashMessages}}
+      <div class="flashes">
+        {{range .FlashMessages}}
+          <div>{{.}}</div>
+        {{end}}
+      </div>
+    {{end}}
 
     <h2>Sign In</h2>
     <form action="" method="post">
@@ -33,14 +40,6 @@
       </div>
     </form>
   </div>
-
-  {{if .FlashMessages}}
-    <div class="flashes">
-      {{range .FlashMessages}}
-        <div>{{.}}</div>
-      {{end}}
-    </div>
-  {{end}}
 
   <div class="footer">
     <!-- Footer content here -->
