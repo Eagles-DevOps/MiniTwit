@@ -3,7 +3,11 @@ package db
 import (
 	"database/sql"
 	"fmt"
+	"net/http"
+	"os"
+	"strconv"
 
+	"golang.org/x/crypto/bcrypt"
 	"minitwit.com/model"
 )
 
@@ -64,7 +68,7 @@ func Query_db(query string, args []any, one bool) (any, error) {
 
 func Get_user_id(username string) (any, error) {
 	user_id, err := Query_db("SELECT user_id FROM user WHERE username = ?", []any{username}, true)
-	if !isNil(user_id) {
+	if !IsNil(user_id) {
 		userID := user_id.(map[any]any)
 		user_id_val := userID["user_id"]
 		return user_id_val, err
@@ -134,10 +138,28 @@ func GetMessagesForUser(args []any, one bool) []model.FilteredMessage {
 }
 
 // ChatGPT
-func isNil(i interface{}) bool {
+func IsNil(i interface{}) bool {
+
 	if i == nil || i == interface{}(nil) {
 		return true
 	} else {
 		return false
+	}
+}
+
+func HashPassword(password string) (string, error) {
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
+	return string(bytes), err
+}
+
+func UpdateLatest(r *http.Request) {
+	r.ParseForm()
+	parsedCommandID := -1
+	latest := r.Form.Get("latest")
+	if latest != "" {
+		parsedCommandID, _ = strconv.Atoi(latest)
+	}
+	if parsedCommandID != -1 {
+		_ = os.WriteFile("./latest_processed_sim_action_id.txt", []byte(strconv.Itoa(parsedCommandID)), 0644)
 	}
 }
