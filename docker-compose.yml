@@ -6,6 +6,11 @@ services:
     ports:
       - '15000:15000'
 
+  minitwit_api:
+    build: ./minitwit-api
+    ports:
+      - '15001:15001'
+
   legacy_tests:
     build:
       context: ./tests/legacy_tests
