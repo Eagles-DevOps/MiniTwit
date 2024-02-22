@@ -24,7 +24,7 @@ func main() {
 	r := mux.NewRouter()
 	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 
-	r.HandleFunc("/", messages)
+	r.HandleFunc("/messages", messages)
 
 	fmt.Println("Listening on port 15001...")
 	err := http.ListenAndServe(":15001", r)
