@@ -1,6 +1,6 @@
 module minitwit-api
 
-go 1.22.0
+go 1.21.0
 
 replace minitwit.com/api => ./api
 
@@ -16,5 +16,6 @@ require (
 
 require (
 	github.com/mattn/go-sqlite3 v1.14.22 // indirect
+	golang.org/x/crypto v0.19.0 // indirect
 	minitwit.com/model v0.0.0 // indirect
 )

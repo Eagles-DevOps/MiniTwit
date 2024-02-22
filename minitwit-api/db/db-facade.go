@@ -3,7 +3,11 @@ package db
 import (
 	"database/sql"
 	"fmt"
+	"net/http"
+	"os"
+	"strconv"
 
+	"golang.org/x/crypto/bcrypt"
 	"minitwit.com/model"
 )
 
@@ -48,4 +52,90 @@ func GetMessages(args []any, one bool) []model.FilteredMessage {
 		fmt.Println("result: ", Filtered)
 	}
 	return Filtered
+}
+
+// """Convenience method to look up the id for a username."""
+func Get_user_id(username string) (any, error) {
+	user_id, err := Query_db("SELECT user_id FROM user WHERE username = ?", []any{username}, true)
+	fmt.Println("user_id", user_id)
+	if !IsNil(user_id) {
+		fmt.Println("not nil")
+		userID := user_id.(map[any]any)
+		fmt.Println("userID: ", userID)
+		user_id_val := userID["user_id"]
+		return user_id_val, err
+	}
+	return nil, err
+}
+
+// """Queries the database and returns a list of dictionaries."""
+func Query_db(query string, args []any, one bool) (any, error) {
+	db, _ := Connect_db()
+	cur, err := db.Query(query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("error executing query: %w", err)
+	}
+	defer cur.Close()
+
+	var rv []map[any]any
+	cols, err := cur.Columns()
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving columns: %w", err)
+	}
+	for cur.Next() {
+		row := make([]any, len(cols))
+		for i := range row {
+			row[i] = new(any)
+		}
+		err = cur.Scan(row...)
+		if err != nil {
+			return nil, fmt.Errorf("error scanning row: %w", err)
+		}
+		dict := make(map[any]any)
+		for i, col := range cols {
+			dict[col] = *(row[i].(*any))
+		}
+		rv = append(rv, dict)
+		if one {
+			break
+		}
+	}
+
+	if err = cur.Err(); err != nil {
+		return nil, fmt.Errorf("error during rows iteration: %w", err)
+	}
+
+	if len(rv) != 0 {
+		if one {
+			return rv[0], nil
+		}
+		return rv, nil
+	}
+	return nil, nil
+}
+
+// ChatGPT
+func IsNil(i interface{}) bool {
+	if i == nil || i == interface{}(nil) {
+		return true
+	} else {
+		return false
+	}
+}
+
+func HashPassword(password string) (string, error) {
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
+	return string(bytes), err
+}
+
+func UpdateLatest(r *http.Request) {
+	r.ParseForm()
+	parsedCommandID := -1
+	latest := r.Form.Get("latest")
+	if latest != "" {
+		parsedCommandID, _ = strconv.Atoi(latest)
+	}
+	if parsedCommandID != -1 {
+		_ = os.WriteFile("./latest_processed_sim_action_id.txt", []byte(strconv.Itoa(parsedCommandID)), 0644)
+	}
 }

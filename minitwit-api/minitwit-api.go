@@ -13,7 +13,7 @@ func main() {
 
 	r := mux.NewRouter()
 
-	//r.HandleFunc("/register", api.Register)
+	r.HandleFunc("/register", api.Register)
 	r.HandleFunc("/msgs", api.Messages)
 
 	fmt.Println("Listening on port 15001...")
