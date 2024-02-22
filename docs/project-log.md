@@ -24,3 +24,7 @@ docker compose up -d --build
 docker logs minitwit-tests-1
 
 tests are failing as of now (to be expected)
+
+
+## 22/02/2024
+DigitalOcean was picked due to its free trial we have had access to. As well DO provides an easy learning curve and easy set up. UI is simple and clean and no specialised knowledge is needed to spin up droplets.
