@@ -19,10 +19,10 @@
       {{end}}
     </div>
 
-    {{if not .User}}
+    {{if eq .Req (print "/public")}}
       <h2>Public timeline</h2>
     {{else}}
-      <h2>{{.User.username}}'s timeline</h2>
+      <h2>{{.Profileuser.username}}'s timeline</h2>
     {{end}}
 
     {{if .FlashMessages}}
@@ -34,34 +34,32 @@
     {{end}}
 
     <div>
-      {{if .USERID}}
-        {{if eq .Req (print "/" (formatUsernameUrl .User.username))}}
-          <div class="followstatus">
-            {{if eq .USERID .User.user_id}}
-              This is you!
-            {{else if .Followed}}
-              You are currently following this user
-              <a class="unfollow" href="{{url_for "unfollow" (formatUsernameUrl .User.username)}}">Unfollow user</a>
-            {{else}}
-              You are not yet following this user
-              <a class="follow" href="{{url_for "follow" (formatUsernameUrl .User.username)}}">Follow user</a>
-            {{end}}
-          </div>
-          {{if eq .Req (print "/" (formatUsernameUrl .User.username))}}
-            <div class="twitbox">
-              <h3>What's on your mind, {{.User.username}}?</h3>
-              <form action="{{url_for "add_message" ""}}" method="POST">
-                <p>
-                  <input type="text" name="text" size="60">
-                  <input type="submit" value="Share">
-                </p>
-              </form>
-            </div>
+      {{if ne .Req (print "/public")}}
+        <div class="followstatus">
+          {{if eq .User.user_id .Profileuser.user_id}}
+            This is you!
+          {{else if .Followed}}
+            You are currently following this user
+            <a class="unfollow" href="{{url_for "unfollow" (formatUsernameUrl .Profileuser.username)}}">Unfollow user</a>
+          {{else}}
+            You are not yet following this user
+            <a class="follow" href="{{url_for "follow" (formatUsernameUrl .Profileuser.username)}}">Follow user</a>
           {{end}}
+        </div>
+        {{if eq .User.user_id .Profileuser.user_id}}
+          <div class="twitbox">
+            <h3>What's on your mind, {{.User.username}}?</h3>
+            <form action="{{url_for "add_message" ""}}" method="POST">
+              <p>
+                <input type="text" name="text" size="60">
+                <input type="submit" value="Share">
+              </p>
+            </form>
+          </div>
         {{end}}
       {{end}}
     </div>
-
+    
     <ul class="messages">
       {{range $fields := .Message}}
         <li>

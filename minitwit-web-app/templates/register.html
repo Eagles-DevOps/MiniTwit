@@ -19,6 +19,14 @@
       {{end}}
     </div>
 
+    {{if .FlashMessages}}
+      <div class="flashes">
+        {{range .FlashMessages}}
+          <div>{{.}}</div>
+        {{end}}
+      </div>
+    {{end}}
+
     <h2>Sign Up</h2>
     <form action="" method="post">
       <dl>
@@ -35,15 +43,6 @@
         <input type="submit" value="Sign Up">
       </div>
     </form>
-
-    {{if .FlashMessages}}
-      <div class="flashes">
-        {{range .FlashMessages}}
-          <div>{{.}}</div>
-        {{end}}
-      </div>
-    {{end}}
-  </div>
 
   <div class="footer">
     <!-- Footer content here -->
