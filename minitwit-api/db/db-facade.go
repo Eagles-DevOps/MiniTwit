@@ -107,6 +107,27 @@ func GetMessages(args []any, one bool) []model.FilteredMessage {
 	return Filtered
 }
 
+func GetFollowers(args []any, one bool) []string {
+	query := `SELECT user.username FROM user
+			INNER JOIN follower ON follower.whom_id=user.user_id
+			WHERE follower.who_id=?
+			LIMIT ?`
+
+	db, _ := Connect_db()
+	cur, _ := db.Query(query, args...)
+	defer cur.Close()
+	var Filtered []string
+
+	for cur.Next() {
+		var username string
+		_ = cur.Scan(&username)
+
+		println("values: ", username)
+		Filtered = append(Filtered, username)
+	}
+	return Filtered
+}
+
 func GetMessagesForUser(args []any, one bool) []model.FilteredMessage {
 	query := `SELECT message.*, user.* FROM message, user
 	WHERE message.flagged = 0 AND
