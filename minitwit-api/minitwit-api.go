@@ -13,7 +13,7 @@ func main() {
 
 	r := mux.NewRouter()
 
-	//r.HandleFunc("/register", api.Register)
+	r.HandleFunc("/register", api.Register)
 	r.HandleFunc("/msgs", api.Messages)
 	r.HandleFunc("/latest", api.Get_latest).Methods("GET")
 	r.HandleFunc("/fllws/{username}", api.Follow)
