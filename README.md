@@ -9,6 +9,9 @@
 # Ways of working
 [docs/working-process.md](docs/working-process.md)
 
+# How to: 
+[docs/how-to.md](docs/how-to.md)
+
 *Authors:*
 Daniel Grønbjerg
 Roman Zvoda
