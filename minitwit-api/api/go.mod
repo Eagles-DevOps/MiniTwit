@@ -1,6 +1,6 @@
 module minitwit.com/api
 
-go 1.21.0
+go 1.21
 
 require minitwit.com/db v0.0.0
 require minitwit.com/model v0.0.0
