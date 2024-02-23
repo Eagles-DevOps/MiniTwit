@@ -1,0 +1,107 @@
+puts "Running vagrant ..."
+Vagrant.configure('2') do |config|
+  config.vm.define "Main-app" do |config| 
+    config.vm.provider :digital_ocean do |provider, override|
+      #replace the key name with your own SSH key name
+      provider.ssh_key_name = "test-key"
+      override.ssh.private_key_path = "~/.ssh/id_rsa"  # Path to your SSH private key
+      override.vm.box = 'digital_ocean'
+      override.vm.box_url = "https://github.com/devopsgroup-io/vagrant-digitalocean/raw/master/box/digital_ocean.box"
+
+      #generate a new token and insert it here
+      provider.token = ""
+    
+      provider.image = 'ubuntu-22-04-x64'
+      provider.region = 'ams3'
+      provider.size = 's-1vcpu-1gb'
+      provider.vm.hostname = 'Vagrant-created'  # Set the droplet name
+    end
+
+    puts "SSH Key Name: #{ENV['SSH_KEY_NAME']}"
+    puts "Token: #{ENV['DIGITALOCEAN_TOKEN']}"
+
+    config.vm.synced_folder ".", "/vagrant", disabled: true
+
+    config.vm.provision "shell", inline: <<-SHELL
+      # Update package list and install Goal
+      apt -y update
+      apt -y install golang
+
+      echo "-----------------------------------"
+      echo "         Golang installed"
+      echo "-----------------------------------"
+
+
+      # Set GOPATH; adjust this as needed
+      echo "export GOPATH=$HOME/go" >> $HOME/.profile
+      source $HOME/.profile
+
+      # Copy or clone your application files to the VM
+      git clone https://github.com/Eagles-DevOps/MiniTwit.git
+
+      echo "-----------------------------------"
+      echo "          Repo clonned"
+      echo "-----------------------------------"
+
+      # Navigate to your app directory and build/run your Go app
+      cd MiniTwit/minitwit-web-app
+      
+
+      echo "-----------------------------------"
+      echo "   Downloading / Running app .... "
+      echo "-----------------------------------"
+      go run minitwit.go
+    SHELL
+  end
+
+  config.vm.define "API-app" do |config| 
+    config.vm.provider :digital_ocean do |provider, override|
+      #replace the key name with your own SSH key name
+      provider.ssh_key_name = "test-key"
+      override.ssh.private_key_path = "~/.ssh/id_rsa"  # Path to your SSH private key
+      override.vm.box = 'digital_ocean'
+      override.vm.box_url = "https://github.com/devopsgroup-io/vagrant-digitalocean/raw/master/box/digital_ocean.box"
+
+      #generate a new token and insert it here
+      provider.token = ""
+    
+      provider.image = 'ubuntu-22-04-x64'
+      provider.region = 'ams3'
+      provider.size = 's-1vcpu-1gb'
+      provider.vm.hostname = 'Vagrant-created'  # Set the droplet name
+    end
+
+    config.vm.synced_folder ".", "/vagrant", disabled: true
+
+    config.vm.provision "shell", inline: <<-SHELL
+      # Update package list and install Go
+      apt -y update
+      apt -y install golang
+
+      echo "-----------------------------------"
+      echo "         Golang installed"
+      echo "-----------------------------------"
+
+
+      # Set GOPATH; adjust this as needed
+      echo "export GOPATH=$HOME/go" >> $HOME/.profile
+      source $HOME/.profile
+
+      # Copy or clone your application files to the VM
+      git clone https://github.com/Eagles-DevOps/MiniTwit.git
+
+      echo "-----------------------------------"
+      echo "          Repo clonned"
+      echo "-----------------------------------"
+
+      # Navigate to your app directory and build/run your Go app
+      cd MiniTwit/minitwit-api
+      
+
+      echo "-----------------------------------"
+      echo "   Downloading / Running app .... "
+      echo "-----------------------------------"
+      go run minitwit-api.go
+    SHELL
+  end
+end
