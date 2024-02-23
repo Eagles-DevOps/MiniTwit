@@ -34,7 +34,7 @@ Make sure to run 'docker compose down' and exit any running 'go' commands before
 
 
 ## Vagrant
-- create API in digital ocean.
+- create API token in digital ocean.
 - place it in the code
 - generate SSH-KEY localy (guide in digital Ocean how to set this up)-- needs to be done only once
 - reference the SSH-KEY name in the action
