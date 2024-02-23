@@ -1,5 +1,12 @@
 # Welcome to the new MiniTwit app!
 
+## Apps live here:
+### Main app: 
+http://167.99.37.119:15000
+
+### API service: 
+http://159.223.239.98:15001
+
 ## Folders
 * **docs** documentation
 * **legacy_tests** Python tests as provided from the legacy setup.
