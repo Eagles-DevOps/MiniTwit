@@ -17,9 +17,8 @@ import (
 func Register(w http.ResponseWriter, r *http.Request) {
 	db.UpdateLatest(r)
 	body, _ := io.ReadAll(r.Body)
-	bodyStr := strings.Replace(string(body), "'", `"`, -1)
 	var rv model.RequestRegisterData
-	err := json.Unmarshal([]byte(bodyStr), &rv)
+	err := json.Unmarshal([]byte(body), &rv)
 	if err != nil {
 		http.Error(w, "Error decoding JSON data", http.StatusBadRequest)
 		return
@@ -73,6 +72,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 			json.NewEncoder(w).Encode(Error)
 		} else {
 			w.WriteHeader(http.StatusNoContent)
+			fmt.Println("Queried")
 		}
 	}
 }
