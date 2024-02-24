@@ -136,6 +136,7 @@ func Messages_per_user(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		sqlite_db, err := db.Connect_db()
+		defer sqlite_db.Close()
 		query := `INSERT INTO message (author_id, text, pub_date, flagged)
 		VALUES (?, ?, ?, 0)`
 
