@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -15,9 +16,13 @@ import (
 
 func Register(w http.ResponseWriter, r *http.Request) {
 	db.UpdateLatest(r)
-	dec := json.NewDecoder(r.Body)
+	body, _ := io.ReadAll(r.Body)
 	var rv model.RequestRegisterData
-	err := dec.Decode(&rv)
+	err := json.Unmarshal([]byte(body), &rv)
+	if err != nil {
+		http.Error(w, "Error decoding JSON data", http.StatusBadRequest)
+		return
+	}
 	fmt.Println("requestData: ", rv)
 
 	if err != nil {
@@ -26,47 +31,49 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	errMsg := ""
 
 	if r.Method == "POST" {
+		user_id, _ := db.Get_user_id(rv.Username)
+		w.Header().Set("Content-Type", "application/json")
 
 		if rv.Username == "" {
 			errMsg = "You have to enter a username"
-		}
-		if rv.Email == "" || !strings.Contains(rv.Email, "@") {
+		} else if rv.Email == "" || !strings.Contains(rv.Email, "@") {
 			errMsg = "You have to enter a valid email address"
-		}
-		if rv.Pwd == "" {
+		} else if rv.Pwd == "" {
 			errMsg = "You have to enter a password"
-		}
-		user_id, _ := db.Get_user_id(rv.Username)
-		if !db.IsNil(user_id) {
+		} else if !db.IsNil(user_id) {
 			errMsg = "The username is already taken"
+		} else {
+			sqlite_db, err := db.Connect_db()
+			if err != nil {
+				fmt.Println("Error when connecting to the database")
+				return
+			}
+			hash_pw, err := db.HashPassword(rv.Pwd)
+			if err != nil {
+				fmt.Println("Error hashing the password")
+				return
+			}
+			query := "INSERT INTO user (username, email, pw_hash) VALUES (?, ?, ?)"
+			_, err = sqlite_db.Exec(query, rv.Username, rv.Email, hash_pw)
+			if err != nil {
+				fmt.Println("Error when trying to insert data into the database")
+				return
+			}
 		}
-		hash_pw, err := db.HashPassword(rv.Pwd)
-		if err != nil {
-			fmt.Println("Error hashing the password")
-			return
+		if errMsg != "" {
+			Error := struct {
+				Status int    `json:"status"`
+				Msg    string `json:"error_msg"`
+			}{
+				Status: http.StatusBadRequest,
+				Msg:    errMsg,
+			}
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(Error)
+		} else {
+			w.WriteHeader(http.StatusNoContent)
+			fmt.Println("Queried")
 		}
-		db, err := db.Connect_db()
-		query := "INSERT INTO user (username, email, pw_hash) VALUES (?, ?, ?)"
-		_, err = db.Exec(query, rv.Username, rv.Email, hash_pw)
-		if err != nil {
-			fmt.Println("Error when trying to insert data into the database")
-			return
-		}
-
-	}
-	if errMsg != "" {
-		Error := struct {
-			Status int    `json:"status"`
-			Msg    string `json:"error_msg"`
-		}{
-			Status: http.StatusBadRequest,
-			Msg:    errMsg,
-		}
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(Error)
-	} else {
-		w.WriteHeader(http.StatusNoContent)
 	}
 }
 
@@ -123,8 +130,8 @@ func Follow(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		query := `INSERT INTO follower (who_id, whom_id) VALUES (?, ?)`
-		db, _ := db.Connect_db()
-		_, err := db.Exec(query, user_id, follows_user_id)
+		sqlite_db, _ := db.Connect_db()
+		_, err := sqlite_db.Exec(query, user_id, follows_user_id)
 
 		if err != nil {
 			fmt.Println("Error querying the database")
@@ -144,8 +151,8 @@ func Follow(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		query := `DELETE FROM follower WHERE who_id=? and WHOM_id=?`
-		db, _ := db.Connect_db()
-		_, err = db.Exec(query, user_id, unfollows_user_id)
+		sqlite_db, _ := db.Connect_db()
+		_, err = sqlite_db.Exec(query, user_id, unfollows_user_id)
 
 		json.NewEncoder(w).Encode(http.StatusOK)
 
