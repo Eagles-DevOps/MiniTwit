@@ -45,6 +45,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 			errMsg = "The username is already taken"
 		} else {
 			sqlite_db, err := db.Connect_db()
+			defer sqlite_db.Close()
 			if err != nil {
 				fmt.Println("Error when connecting to the database")
 				return
@@ -127,6 +128,7 @@ func Follow(w http.ResponseWriter, r *http.Request) {
 		}
 		query := `INSERT INTO follower (who_id, whom_id) VALUES (?, ?)`
 		sqlite_db, _ := db.Connect_db()
+		defer sqlite_db.Close()
 		_, err := sqlite_db.Exec(query, user_id, follows_user_id)
 
 		if err != nil {
@@ -153,6 +155,7 @@ func Follow(w http.ResponseWriter, r *http.Request) {
 		}
 		query := `DELETE FROM follower WHERE who_id=? and WHOM_id=?`
 		sqlite_db, _ := db.Connect_db()
+		defer sqlite_db.Close()
 		_, err = sqlite_db.Exec(query, user_id, unfollows_user_id)
 
 		w.Header().Set("Content-Type", "application/json")
