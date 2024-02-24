@@ -52,6 +52,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 			fmt.Println("Error when trying to insert data into the database")
 			return
 		}
+
 	}
 	if errMsg != "" {
 		Error := struct {
@@ -93,7 +94,12 @@ func Follow(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	username := vars["username"]
 	db.UpdateLatest(r)
-
+	dec := json.NewDecoder(r.Body)
+	var rt model.Follow_resp
+	err := dec.Decode(&rt)
+	if err != nil {
+		fmt.Println("Error in requestData")
+	}
 	from_sim_response := Is_req_from_simulator(w, r)
 	if !from_sim_response {
 		fmt.Println("inside")
@@ -107,10 +113,9 @@ func Follow(w http.ResponseWriter, r *http.Request) {
 	}
 	no_flws := no_followers(r, "no", 100)
 
-	if r.Method == "POST" && r.URL.Query().Get("follow") != "" {
+	if r.Method == "POST" && rt.Follow != "" {
 
-		follows_username := r.URL.Query().Get("follow")
-		fmt.Println(follows_username)
+		follows_username := rt.Follow
 		follows_user_id, _ := db.Get_user_id(follows_username)
 
 		if db.IsNil(follows_user_id) {
@@ -123,20 +128,15 @@ func Follow(w http.ResponseWriter, r *http.Request) {
 
 		if err != nil {
 			fmt.Println("Error querying the database")
+			w.WriteHeader(http.StatusNotFound)
 			return
 		}
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusNoContent)
-		json.NewEncoder(w).Encode(struct {
-			Status int `json:"status"`
-		}{
-			Status: 204,
-		})
 
-	} else if r.Method == "POST" && r.URL.Query().Get("unfollow") != "" {
+		json.NewEncoder(w).Encode(http.StatusOK)
 
-		unfollows_username := r.URL.Query().Get("unfollow")
-		fmt.Println(unfollows_username)
+	} else if r.Method == "POST" && rt.Unfollow != "" {
+
+		unfollows_username := rt.Unfollow
 		unfollows_user_id, err := db.Get_user_id(unfollows_username)
 
 		if err != nil {
@@ -147,23 +147,15 @@ func Follow(w http.ResponseWriter, r *http.Request) {
 		db, _ := db.Connect_db()
 		_, err = db.Exec(query, user_id, unfollows_user_id)
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusNoContent)
-		json.NewEncoder(w).Encode(struct {
-			Status int `json:"status"`
-		}{
-			Status: 204,
-		})
+		json.NewEncoder(w).Encode(http.StatusOK)
 
 	} else if r.Method == "GET" {
 		followers := db.GetFollowers([]any{user_id, no_flws}, false)
-		fmt.Println("Followers: ", followers)
 		var followers_response model.Followers_response
 		followers_response.Follows = followers
-		fmt.Println("Followers_response: ", followers_response)
 
 		json.NewEncoder(w).Encode(struct {
-			Followers []string `json:"content"`
+			Followers []string `json:"follows"`
 		}{
 			Followers: followers_response.Follows,
 		})
