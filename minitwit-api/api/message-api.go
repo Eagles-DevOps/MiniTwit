@@ -79,18 +79,19 @@ func Messages(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		responseData := struct {
+		/*responseData := struct {
 			Msgs []map[string]any `json:"content"`
 		}{
 			Msgs: messages,
 		}
+		*/
 		w.Header().Set("Content-Type", "application/json")
 
 		w.WriteHeader(http.StatusOK)
 
 		encoder := json.NewEncoder(w)
 
-		if err := encoder.Encode(responseData); err != nil {
+		if err := encoder.Encode(messages); err != nil {
 			http.Error(w, "Error encoding JSON data", http.StatusInternalServerError)
 			return
 		}
@@ -126,11 +127,13 @@ func Messages_per_user(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		responseData := struct {
-			Msgs []map[string]any `json:"content"`
-		}{
-			Msgs: messages,
-		}
+		/*
+			responseData := struct {
+				Msgs []map[string]any `json:"content"`
+			}{
+				Msgs: messages,
+			}
+		*/
 
 		w.Header().Set("Content-Type", "application/json")
 
@@ -138,7 +141,7 @@ func Messages_per_user(w http.ResponseWriter, r *http.Request) {
 
 		encoder := json.NewEncoder(w)
 
-		if err := encoder.Encode(responseData); err != nil {
+		if err := encoder.Encode(messages); err != nil {
 			http.Error(w, "Error encoding JSON data", http.StatusInternalServerError)
 			return
 		}
