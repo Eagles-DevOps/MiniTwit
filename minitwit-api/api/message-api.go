@@ -3,9 +3,11 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -114,15 +116,19 @@ func Messages_per_user(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("error: ", err)
 
 	} else if r.Method == "POST" {
-		dec := json.NewDecoder(r.Body)
+
+		body, _ := io.ReadAll(r.Body)
+		bodyStr := strings.ReplaceAll(string(body), "'", `"`)
 
 		var rv model.RequestMessageData
-		err := dec.Decode(&rv)
-		fmt.Println("requestData: ", rv)
 
+		err := json.Unmarshal([]byte(bodyStr), &rv)
 		if err != nil {
-			fmt.Println("Error in requestData")
+			fmt.Println("Error decoding JSON data:", err)
+			http.Error(w, "Error decoding JSON data", http.StatusBadRequest)
+			return
 		}
+
 		user_id, err := db.Get_user_id(username)
 		if err != nil {
 			fmt.Println("Error getting the user_id")
@@ -133,11 +139,13 @@ func Messages_per_user(w http.ResponseWriter, r *http.Request) {
 		query := `INSERT INTO message (author_id, text, pub_date, flagged)
 		VALUES (?, ?, ?, 0)`
 
-		_, err = sqlite_db.Exec(query, user_id, rv.Text, int(time.Now().Unix()))
+		_, err = sqlite_db.Exec(query, user_id, rv.Content, int(time.Now().Unix()))
 		if err != nil {
 			fmt.Println("Error when trying to insert data into the database")
+			fmt.Println(err)
 			return
 		}
+		w.Header().Set("Content-Type", "application/json")
 		fmt.Println("Executed query")
 		w.WriteHeader(http.StatusNoContent)
 	}
