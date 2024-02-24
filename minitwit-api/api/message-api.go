@@ -72,8 +72,8 @@ func Messages(w http.ResponseWriter, r *http.Request) {
 		println("msgs: ", messages)
 
 		err := json.NewEncoder(w).Encode(struct {
-			Status int                     `json:"status"`
-			Msgs   []model.FilteredMessage `json:"content"`
+			Status int              `json:"status"`
+			Msgs   []map[string]any `json:"content"`
 		}{
 			Status: 200,
 			Msgs:   messages,
@@ -106,8 +106,8 @@ func Messages_per_user(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("msgs: ", messages)
 
 		err = json.NewEncoder(w).Encode(struct {
-			Status int                     `json:"status"`
-			Msgs   []model.FilteredMessage `json:"content"`
+			Status int              `json:"status"`
+			Msgs   []map[string]any `json:"content"`
 		}{
 			Status: 200,
 			Msgs:   messages,

@@ -77,7 +77,7 @@ func Get_user_id(username string) (any, error) {
 	return nil, err
 }
 
-func GetMessages(args []any, one bool) []model.FilteredMessage {
+func GetMessages(args []any, one bool) []map[string]any {
 	query := `SELECT message.*, user.* FROM message, user
         WHERE message.flagged = 0 AND message.author_id = user.user_id
         ORDER BY message.pub_date DESC LIMIT ?`
@@ -87,7 +87,7 @@ func GetMessages(args []any, one bool) []model.FilteredMessage {
 	cur, _ := db.Query(query, args...)
 	defer cur.Close()
 
-	var Filtered []model.FilteredMessage
+	var Filtered []map[string]any
 
 	// TODO handle empty db
 
@@ -97,13 +97,12 @@ func GetMessages(args []any, one bool) []model.FilteredMessage {
 
 		println("values: ", rv.Message_id, rv.Author_id, rv.Text, rv.Pub_date, rv.Flagged, rv.User_id, rv.Username, rv.Email, rv.Pw_hash)
 
-		filteredMsg := model.FilteredMessage{
-			Content:  rv.Text,
-			Pub_date: rv.Pub_date,
-			User:     rv.Username,
-		}
-		println("flitered: ", filteredMsg.Content, filteredMsg.Pub_date, filteredMsg.User)
-		Filtered = append(Filtered, filteredMsg)
+		dict := make(map[string]any)
+		dict["content"] = rv.Text
+		dict["pub_date"] = rv.Pub_date
+		dict["user"] = rv.Username
+
+		Filtered = append(Filtered, dict)
 		fmt.Println("result: ", Filtered)
 	}
 	return Filtered
@@ -131,7 +130,7 @@ func GetFollowers(args []any, one bool) []string {
 	return Filtered
 }
 
-func GetMessagesForUser(args []any, one bool) []model.FilteredMessage {
+func GetMessagesForUser(args []any, one bool) []map[string]any {
 	query := `SELECT message.*, user.* FROM message, user
 	WHERE message.flagged = 0 AND
 	user.user_id = message.author_id AND user.user_id = ?
@@ -142,7 +141,7 @@ func GetMessagesForUser(args []any, one bool) []model.FilteredMessage {
 	cur, _ := db.Query(query, args...)
 	defer cur.Close()
 
-	var Filtered []model.FilteredMessage
+	var Filtered []map[string]any
 
 	for cur.Next() {
 		var rv model.UserMessageRow
@@ -150,13 +149,12 @@ func GetMessagesForUser(args []any, one bool) []model.FilteredMessage {
 
 		println("values: ", rv.Message_id, rv.Author_id, rv.Text, rv.Pub_date, rv.Flagged, rv.User_id, rv.Username, rv.Email, rv.Pw_hash)
 
-		filteredMsg := model.FilteredMessage{
-			Content:  rv.Text,
-			Pub_date: rv.Pub_date,
-			User:     rv.Username,
-		}
-		println("flitered: ", filteredMsg.Content, filteredMsg.Pub_date, filteredMsg.User)
-		Filtered = append(Filtered, filteredMsg)
+		dict := make(map[string]any)
+		dict["content"] = rv.Text
+		dict["pub_date"] = rv.Pub_date
+		dict["user"] = rv.Username
+
+		Filtered = append(Filtered, dict)
 		fmt.Println("result: ", Filtered)
 	}
 	return Filtered
