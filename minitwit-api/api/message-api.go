@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -118,11 +117,10 @@ func Messages_per_user(w http.ResponseWriter, r *http.Request) {
 	} else if r.Method == "POST" {
 
 		body, _ := io.ReadAll(r.Body)
-		bodyStr := strings.ReplaceAll(string(body), "'", `"`)
 
 		var rv model.RequestMessageData
 
-		err := json.Unmarshal([]byte(bodyStr), &rv)
+		err := json.Unmarshal(body, &rv)
 		if err != nil {
 			fmt.Println("Error decoding JSON data:", err)
 			http.Error(w, "Error decoding JSON data", http.StatusBadRequest)
