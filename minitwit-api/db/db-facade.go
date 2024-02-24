@@ -77,7 +77,7 @@ func Get_user_id(username string) (any, error) {
 	return nil, err
 }
 
-func GetMessages(args []any, one bool) []model.FilteredMessage {
+func GetMessages(args []any, one bool) []map[string]any {
 	query := `SELECT message.*, user.* FROM message, user
         WHERE message.flagged = 0 AND message.author_id = user.user_id
         ORDER BY message.pub_date DESC LIMIT ?`
@@ -87,7 +87,7 @@ func GetMessages(args []any, one bool) []model.FilteredMessage {
 	cur, _ := db.Query(query, args...)
 	defer cur.Close()
 
-	var Filtered []model.FilteredMessage
+	var Filtered []map[string]any
 
 	// TODO handle empty db
 
@@ -95,16 +95,12 @@ func GetMessages(args []any, one bool) []model.FilteredMessage {
 		var rv model.UserMessageRow
 		_ = cur.Scan(&rv.Message_id, &rv.Author_id, &rv.Text, &rv.Pub_date, &rv.Flagged, &rv.User_id, &rv.Username, &rv.Email, &rv.Pw_hash)
 
-		println("values: ", rv.Message_id, rv.Author_id, rv.Text, rv.Pub_date, rv.Flagged, rv.User_id, rv.Username, rv.Email, rv.Pw_hash)
+		dict := make(map[string]any)
+		dict["content"] = rv.Text
+		dict["pub_date"] = rv.Pub_date
+		dict["user"] = rv.Username
 
-		filteredMsg := model.FilteredMessage{
-			Text:     rv.Text,
-			Pub_date: rv.Pub_date,
-			Username: rv.Username,
-		}
-		println("flitered: ", filteredMsg.Text, filteredMsg.Pub_date, filteredMsg.Username)
-		Filtered = append(Filtered, filteredMsg)
-		fmt.Println("result: ", Filtered)
+		Filtered = append(Filtered, dict)
 	}
 	return Filtered
 }
@@ -125,13 +121,12 @@ func GetFollowers(args []any, one bool) []string {
 		var username string
 		_ = cur.Scan(&username)
 
-		println("values: ", username)
 		Filtered = append(Filtered, username)
 	}
 	return Filtered
 }
 
-func GetMessagesForUser(args []any, one bool) []model.FilteredMessage {
+func GetMessagesForUser(args []any, one bool) []map[string]any {
 	query := `SELECT message.*, user.* FROM message, user
 	WHERE message.flagged = 0 AND
 	user.user_id = message.author_id AND user.user_id = ?
@@ -142,22 +137,18 @@ func GetMessagesForUser(args []any, one bool) []model.FilteredMessage {
 	cur, _ := db.Query(query, args...)
 	defer cur.Close()
 
-	var Filtered []model.FilteredMessage
+	var Filtered []map[string]any
 
 	for cur.Next() {
 		var rv model.UserMessageRow
 		_ = cur.Scan(&rv.Message_id, &rv.Author_id, &rv.Text, &rv.Pub_date, &rv.Flagged, &rv.User_id, &rv.Username, &rv.Email, &rv.Pw_hash)
 
-		println("values: ", rv.Message_id, rv.Author_id, rv.Text, rv.Pub_date, rv.Flagged, rv.User_id, rv.Username, rv.Email, rv.Pw_hash)
+		dict := make(map[string]any)
+		dict["content"] = rv.Text
+		dict["pub_date"] = rv.Pub_date
+		dict["user"] = rv.Username
 
-		filteredMsg := model.FilteredMessage{
-			Text:     rv.Text,
-			Pub_date: rv.Pub_date,
-			Username: rv.Username,
-		}
-		println("flitered: ", filteredMsg.Text, filteredMsg.Pub_date, filteredMsg.Username)
-		Filtered = append(Filtered, filteredMsg)
-		fmt.Println("result: ", Filtered)
+		Filtered = append(Filtered, dict)
 	}
 	return Filtered
 }

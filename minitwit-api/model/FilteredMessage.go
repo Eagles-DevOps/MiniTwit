@@ -1,7 +1,7 @@
 package model
 
 type FilteredMessage struct {
-	Text     string
-	Pub_date int
-	Username string
+	Content  string `json:"content"`
+	Pub_date int    `json:"pub_date"`
+	User     string `json:"user"`
 }
