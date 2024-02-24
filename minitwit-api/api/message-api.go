@@ -69,22 +69,6 @@ func Messages(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		messages := db.GetMessages([]any{no_msg}, false)
 
-		for _, msg := range messages {
-			if content, exists := msg["content"]; exists {
-				if user, exists := msg["user"]; exists {
-					if content == "Hello!" && user == "Viktoria" {
-						fmt.Println("jackpot")
-					}
-				}
-			}
-		}
-
-		/*responseData := struct {
-			Msgs []map[string]any `json:"content"`
-		}{
-			Msgs: messages,
-		}
-		*/
 		w.Header().Set("Content-Type", "application/json")
 
 		w.WriteHeader(http.StatusOK)
@@ -116,24 +100,6 @@ func Messages_per_user(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		messages := db.GetMessagesForUser([]any{user_id, no_msg}, false)
-
-		for _, msg := range messages {
-			fmt.Println("msg: ", msg)
-			content, contentExists := msg["content"].(string)
-			user, userExists := msg["user"].(string)
-
-			if contentExists && userExists && content == "Hello!" && user == "Viktoria" {
-				fmt.Println("jackpot")
-			}
-		}
-
-		/*
-			responseData := struct {
-				Msgs []map[string]any `json:"content"`
-			}{
-				Msgs: messages,
-			}
-		*/
 
 		w.Header().Set("Content-Type", "application/json")
 
