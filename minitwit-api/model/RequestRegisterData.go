@@ -1,7 +1,7 @@
 package model
 
 type RequestRegisterData struct {
-	Username string
-	Email    string
-	Pwd      string
+	Username string `json:"username"`
+	Email    string `json:"email"`
+	Pwd      string `json:"pwd"`
 }
