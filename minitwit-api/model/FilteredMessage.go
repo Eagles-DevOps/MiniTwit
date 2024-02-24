@@ -1,7 +1,7 @@
 package model
 
 type FilteredMessage struct {
-	Text     string
+	Content  string
 	Pub_date int
-	Username string
+	User     string
 }

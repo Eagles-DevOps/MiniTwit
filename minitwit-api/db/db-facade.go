@@ -98,11 +98,11 @@ func GetMessages(args []any, one bool) []model.FilteredMessage {
 		println("values: ", rv.Message_id, rv.Author_id, rv.Text, rv.Pub_date, rv.Flagged, rv.User_id, rv.Username, rv.Email, rv.Pw_hash)
 
 		filteredMsg := model.FilteredMessage{
-			Text:     rv.Text,
+			Content:  rv.Text,
 			Pub_date: rv.Pub_date,
-			Username: rv.Username,
+			User:     rv.Username,
 		}
-		println("flitered: ", filteredMsg.Text, filteredMsg.Pub_date, filteredMsg.Username)
+		println("flitered: ", filteredMsg.Content, filteredMsg.Pub_date, filteredMsg.User)
 		Filtered = append(Filtered, filteredMsg)
 		fmt.Println("result: ", Filtered)
 	}
@@ -151,11 +151,11 @@ func GetMessagesForUser(args []any, one bool) []model.FilteredMessage {
 		println("values: ", rv.Message_id, rv.Author_id, rv.Text, rv.Pub_date, rv.Flagged, rv.User_id, rv.Username, rv.Email, rv.Pw_hash)
 
 		filteredMsg := model.FilteredMessage{
-			Text:     rv.Text,
+			Content:  rv.Text,
 			Pub_date: rv.Pub_date,
-			Username: rv.Username,
+			User:     rv.Username,
 		}
-		println("flitered: ", filteredMsg.Text, filteredMsg.Pub_date, filteredMsg.Username)
+		println("flitered: ", filteredMsg.Content, filteredMsg.Pub_date, filteredMsg.User)
 		Filtered = append(Filtered, filteredMsg)
 		fmt.Println("result: ", Filtered)
 	}
