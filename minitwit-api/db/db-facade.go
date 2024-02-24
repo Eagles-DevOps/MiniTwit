@@ -23,6 +23,7 @@ func Connect_db() (db *sql.DB, err error) {
 
 func Query_db(query string, args []any, one bool) (any, error) {
 	db, _ := Connect_db()
+	defer db.Close()
 	cur, err := db.Query(query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("error executing query: %w", err)
@@ -82,6 +83,7 @@ func GetMessages(args []any, one bool) []model.FilteredMessage {
         ORDER BY message.pub_date DESC LIMIT ?`
 
 	db, _ := Connect_db()
+	defer db.Close()
 	cur, _ := db.Query(query, args...)
 	defer cur.Close()
 
@@ -114,6 +116,7 @@ func GetFollowers(args []any, one bool) []string {
 			LIMIT ?`
 
 	db, _ := Connect_db()
+	defer db.Close()
 	cur, _ := db.Query(query, args...)
 	defer cur.Close()
 	var Filtered []string
@@ -135,6 +138,7 @@ func GetMessagesForUser(args []any, one bool) []model.FilteredMessage {
 	ORDER BY message.pub_date DESC LIMIT ?`
 
 	db, _ := Connect_db()
+	defer db.Close()
 	cur, _ := db.Query(query, args...)
 	defer cur.Close()
 
