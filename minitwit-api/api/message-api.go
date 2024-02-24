@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"strconv"
@@ -61,23 +62,23 @@ func Messages(w http.ResponseWriter, r *http.Request) {
 
 	from_sim_response := is_req_from_simulator(w, r)
 	if !from_sim_response {
-		fmt.Println("inside")
 		return
 	}
 	no_msg := no_msgs(r, "no", 100)
 
 	if r.Method == "GET" {
 		messages := db.GetMessages([]any{no_msg}, false)
-		println("msgs: ", messages)
 
-		err := json.NewEncoder(w).Encode(struct {
-			Status int                     `json:"status"`
-			Msgs   []model.FilteredMessage `json:"content"`
-		}{
-			Status: 200,
-			Msgs:   messages,
-		})
-		fmt.Println("error: ", err)
+		w.Header().Set("Content-Type", "application/json")
+
+		w.WriteHeader(http.StatusOK)
+
+		encoder := json.NewEncoder(w)
+
+		if err := encoder.Encode(messages); err != nil {
+			http.Error(w, "Error encoding JSON data", http.StatusInternalServerError)
+			return
+		}
 	}
 }
 
@@ -88,41 +89,41 @@ func Messages_per_user(w http.ResponseWriter, r *http.Request) {
 
 	from_sim_response := is_req_from_simulator(w, r)
 	if !from_sim_response {
-		fmt.Println("inside")
 		return
 	}
 	no_msg := no_msgs(r, "no", 100)
 
 	if r.Method == "GET" {
-		fmt.Println("GET GET GET: ")
 		user_id, err := db.Get_user_id(username)
 		if err != nil {
 			http.Error(w, "Error getting the user_id", http.StatusNotFound)
 			return
 		}
-		fmt.Println("userid: ", user_id)
 		messages := db.GetMessagesForUser([]any{user_id, no_msg}, false)
-		fmt.Println("msgs: ", messages)
 
-		err = json.NewEncoder(w).Encode(struct {
-			Status int                     `json:"status"`
-			Msgs   []model.FilteredMessage `json:"content"`
-		}{
-			Status: 200,
-			Msgs:   messages,
-		})
-		fmt.Println("error: ", err)
+		w.Header().Set("Content-Type", "application/json")
 
+		w.WriteHeader(http.StatusOK)
+
+		encoder := json.NewEncoder(w)
+
+		if err := encoder.Encode(messages); err != nil {
+			http.Error(w, "Error encoding JSON data", http.StatusInternalServerError)
+			return
+		}
 	} else if r.Method == "POST" {
-		dec := json.NewDecoder(r.Body)
+
+		body, _ := io.ReadAll(r.Body)
 
 		var rv model.RequestMessageData
-		err := dec.Decode(&rv)
-		fmt.Println("requestData: ", rv)
 
+		err := json.Unmarshal(body, &rv)
 		if err != nil {
-			fmt.Println("Error in requestData")
+			fmt.Println("Error decoding JSON data:", err)
+			http.Error(w, "Error decoding JSON data", http.StatusBadRequest)
+			return
 		}
+
 		user_id, err := db.Get_user_id(username)
 		if err != nil {
 			fmt.Println("Error getting the user_id")
@@ -130,14 +131,17 @@ func Messages_per_user(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		sqlite_db, err := db.Connect_db()
+		defer sqlite_db.Close()
 		query := `INSERT INTO message (author_id, text, pub_date, flagged)
 		VALUES (?, ?, ?, 0)`
 
-		_, err = sqlite_db.Exec(query, user_id, rv.Text, int(time.Now().Unix()))
+		_, err = sqlite_db.Exec(query, user_id, rv.Content, int(time.Now().Unix()))
 		if err != nil {
 			fmt.Println("Error when trying to insert data into the database")
+			fmt.Println(err)
 			return
 		}
+		w.Header().Set("Content-Type", "application/json")
 		fmt.Println("Executed query")
 		w.WriteHeader(http.StatusNoContent)
 	}
