@@ -95,15 +95,12 @@ func GetMessages(args []any, one bool) []map[string]any {
 		var rv model.UserMessageRow
 		_ = cur.Scan(&rv.Message_id, &rv.Author_id, &rv.Text, &rv.Pub_date, &rv.Flagged, &rv.User_id, &rv.Username, &rv.Email, &rv.Pw_hash)
 
-		println("values: ", rv.Message_id, rv.Author_id, rv.Text, rv.Pub_date, rv.Flagged, rv.User_id, rv.Username, rv.Email, rv.Pw_hash)
-
 		dict := make(map[string]any)
 		dict["content"] = rv.Text
 		dict["pub_date"] = rv.Pub_date
 		dict["user"] = rv.Username
 
 		Filtered = append(Filtered, dict)
-		fmt.Println("result: ", Filtered)
 	}
 	return Filtered
 }
@@ -124,7 +121,6 @@ func GetFollowers(args []any, one bool) []string {
 		var username string
 		_ = cur.Scan(&username)
 
-		println("values: ", username)
 		Filtered = append(Filtered, username)
 	}
 	return Filtered
@@ -147,15 +143,12 @@ func GetMessagesForUser(args []any, one bool) []map[string]any {
 		var rv model.UserMessageRow
 		_ = cur.Scan(&rv.Message_id, &rv.Author_id, &rv.Text, &rv.Pub_date, &rv.Flagged, &rv.User_id, &rv.Username, &rv.Email, &rv.Pw_hash)
 
-		println("values: ", rv.Message_id, rv.Author_id, rv.Text, rv.Pub_date, rv.Flagged, rv.User_id, rv.Username, rv.Email, rv.Pw_hash)
-
 		dict := make(map[string]any)
 		dict["content"] = rv.Text
 		dict["pub_date"] = rv.Pub_date
 		dict["user"] = rv.Username
 
 		Filtered = append(Filtered, dict)
-		fmt.Println("result: ", Filtered)
 	}
 	return Filtered
 }

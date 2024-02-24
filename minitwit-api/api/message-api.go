@@ -62,23 +62,38 @@ func Messages(w http.ResponseWriter, r *http.Request) {
 
 	from_sim_response := is_req_from_simulator(w, r)
 	if !from_sim_response {
-		fmt.Println("inside")
 		return
 	}
 	no_msg := no_msgs(r, "no", 100)
 
 	if r.Method == "GET" {
 		messages := db.GetMessages([]any{no_msg}, false)
-		println("msgs: ", messages)
 
-		err := json.NewEncoder(w).Encode(struct {
-			Status int              `json:"status"`
-			Msgs   []map[string]any `json:"content"`
+		for _, msg := range messages {
+			if content, exists := msg["content"]; exists {
+				if user, exists := msg["user"]; exists {
+					if content == "Hello!" && user == "Viktoria" {
+						fmt.Println("jackpot")
+					}
+				}
+			}
+		}
+
+		responseData := struct {
+			Msgs []map[string]any `json:"content"`
 		}{
-			Status: 200,
-			Msgs:   messages,
-		})
-		fmt.Println("error: ", err)
+			Msgs: messages,
+		}
+		w.Header().Set("Content-Type", "application/json")
+
+		w.WriteHeader(http.StatusOK)
+
+		encoder := json.NewEncoder(w)
+
+		if err := encoder.Encode(responseData); err != nil {
+			http.Error(w, "Error encoding JSON data", http.StatusInternalServerError)
+			return
+		}
 	}
 }
 
@@ -89,31 +104,44 @@ func Messages_per_user(w http.ResponseWriter, r *http.Request) {
 
 	from_sim_response := is_req_from_simulator(w, r)
 	if !from_sim_response {
-		fmt.Println("inside")
 		return
 	}
 	no_msg := no_msgs(r, "no", 100)
 
 	if r.Method == "GET" {
-		fmt.Println("GET GET GET: ")
 		user_id, err := db.Get_user_id(username)
 		if err != nil {
 			http.Error(w, "Error getting the user_id", http.StatusNotFound)
 			return
 		}
-		fmt.Println("userid: ", user_id)
 		messages := db.GetMessagesForUser([]any{user_id, no_msg}, false)
-		fmt.Println("msgs: ", messages)
 
-		err = json.NewEncoder(w).Encode(struct {
-			Status int              `json:"status"`
-			Msgs   []map[string]any `json:"content"`
+		for _, msg := range messages {
+			fmt.Println("msg: ", msg)
+			content, contentExists := msg["content"].(string)
+			user, userExists := msg["user"].(string)
+
+			if contentExists && userExists && content == "Hello!" && user == "Viktoria" {
+				fmt.Println("jackpot")
+			}
+		}
+
+		responseData := struct {
+			Msgs []map[string]any `json:"content"`
 		}{
-			Status: 200,
-			Msgs:   messages,
-		})
-		fmt.Println("error: ", err)
+			Msgs: messages,
+		}
 
+		w.Header().Set("Content-Type", "application/json")
+
+		w.WriteHeader(http.StatusOK)
+
+		encoder := json.NewEncoder(w)
+
+		if err := encoder.Encode(responseData); err != nil {
+			http.Error(w, "Error encoding JSON data", http.StatusInternalServerError)
+			return
+		}
 	} else if r.Method == "POST" {
 
 		body, _ := io.ReadAll(r.Body)
