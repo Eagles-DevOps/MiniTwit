@@ -18,12 +18,7 @@ func Follow(w http.ResponseWriter, r *http.Request) {
 	username := vars["username"]
 	sim.UpdateLatest(r)
 
-	var rv model.FollowData
-	err := json.NewDecoder(r.Body).Decode(&rv)
-	if err != nil {
-		fmt.Println("Error in decoding the JSON", err)
-	}
-	is_auth := db.Is_authenticated(w, r)
+	is_auth := sim.Is_authenticated(w, r)
 	if !is_auth {
 		return
 	}
@@ -33,6 +28,14 @@ func Follow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	no_flws := no_followees(r, 100)
+
+	var rv model.FollowData
+	if r.Method == "POST" {
+		err := json.NewDecoder(r.Body).Decode(&rv)
+		if err != nil {
+			fmt.Println("Error in decoding the JSON, follow", err)
+		}
+	}
 
 	if r.Method == "POST" && rv.Follow != "" {
 

@@ -8,10 +8,13 @@ replace minitwit.com/model => ./model
 
 replace minitwit.com/db => ./db
 
+replace minitwit.com/sim => ./sim
+
 require (
 	github.com/gorilla/mux v1.8.1
 	minitwit.com/api v0.0.0
 	minitwit.com/db v0.0.0
+	minitwit.com/sim v0.0.0
 )
 
 require (

@@ -69,7 +69,7 @@ func Messages_per_user(w http.ResponseWriter, r *http.Request) {
 
 		err := json.NewDecoder(r.Body).Decode(&rv)
 		if err != nil {
-			fmt.Println("Error in decoding the JSON", err)
+			fmt.Println("Error in decoding the JSON, message", err)
 		}
 
 		sqlite_db, err := db.Connect_db()

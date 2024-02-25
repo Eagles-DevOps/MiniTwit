@@ -1,6 +1,6 @@
 package model
 
-type Deletion_resp struct {
+type DeleteData struct {
 	User    string
 	Message string
 }

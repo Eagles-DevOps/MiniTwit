@@ -18,7 +18,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	var rv model.RegisterData
 	err := json.NewDecoder(r.Body).Decode(&rv)
 	if err != nil {
-		fmt.Println("Error in decoding the JSON", err)
+		fmt.Println("Error in decoding the JSON, register", err)
 	}
 
 	if r.Method == "POST" {
