@@ -4,7 +4,7 @@ import base64
 import requests
 import unittest
 
-BASE_URL = "http://localhost:15001"
+BASE_URL = os.environ["MT_BASEURL"]
 USERNAME = 'simulator'
 PWD = 'super_safe!'
 CREDENTIALS = ':'.join([USERNAME, PWD]).encode('ascii')
