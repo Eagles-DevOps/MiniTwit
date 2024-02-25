@@ -16,7 +16,7 @@ HEADERS = {'Connection': 'close',
 class MiniTwitSimApi(unittest.TestCase):
     
     def test_aa(self):
-        url = f"{BASE_URL}/delete"
+        url = f"{BASE_URL}/cleandb"
         response = requests.post(url, headers=HEADERS)
         assert response.ok
 
