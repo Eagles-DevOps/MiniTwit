@@ -4,7 +4,7 @@ import base64
 import requests
 import unittest
 
-BASE_URL = os.environ["MT_BASEURL"]
+BASE_URL = "http://localhost:15001"
 USERNAME = 'simulator'
 PWD = 'super_safe!'
 CREDENTIALS = ':'.join([USERNAME, PWD]).encode('ascii')
@@ -15,7 +15,7 @@ HEADERS = {'Connection': 'close',
 
 class MiniTwitSimApi(unittest.TestCase):
 
-    def test_latest(self):
+    def test_a_latest(self):
         # post something to updaet LATEST
         url = f"{BASE_URL}/register"
         data = {'username': 'test', 'email': 'test@test', 'pwd': 'foo'}
@@ -31,7 +31,7 @@ class MiniTwitSimApi(unittest.TestCase):
         assert response.json()['latest'] == 1337
 
 
-    def test_register(self):
+    def test_b_register(self):
         username = 'a'
         email = 'a@a.a'
         pwd = 'a'
@@ -47,7 +47,7 @@ class MiniTwitSimApi(unittest.TestCase):
         assert response.json()['latest'] == 1
 
 
-    def test_create_msg(self):
+    def test_c_create_msg(self):
         username = 'a'
         data = {'content': 'Blub!'}
         url = f'{BASE_URL}/msgs/{username}'
@@ -61,7 +61,7 @@ class MiniTwitSimApi(unittest.TestCase):
         assert response.json()['latest'] == 2
 
 
-    def test_get_latest_user_msgs(self):
+    def test_d_get_latest_user_msgs(self):
         username = 'a'
 
         query = {'no': 20, 'latest': 3}
@@ -81,7 +81,7 @@ class MiniTwitSimApi(unittest.TestCase):
         assert response.json()['latest'] == 3
 
 
-    def test_get_latest_msgs(self):
+    def test_e_get_latest_msgs(self):
         username = 'a'
         query = {'no': 20, 'latest': 4}
         url = f'{BASE_URL}/msgs'
@@ -100,7 +100,7 @@ class MiniTwitSimApi(unittest.TestCase):
         assert response.json()['latest'] == 4
 
 
-    def test_register_b(self):
+    def test_f_register_b(self):
         username = 'b'
         email = 'b@b.b'
         pwd = 'b'
@@ -116,7 +116,7 @@ class MiniTwitSimApi(unittest.TestCase):
         assert response.json()['latest'] == 5
 
 
-    def test_register_c(self):
+    def test_g_register_c(self):
         username = 'c'
         email = 'c@c.c'
         pwd = 'c'
@@ -131,7 +131,7 @@ class MiniTwitSimApi(unittest.TestCase):
         assert response.json()['latest'] == 6
 
 
-    def test_follow_user(self):
+    def test_h_follow_user(self):
         username = 'a'
         url = f'{BASE_URL}/fllws/{username}'
         data = {'follow': 'b'}
@@ -159,7 +159,7 @@ class MiniTwitSimApi(unittest.TestCase):
         assert response.json()['latest'] == 9
 
 
-    def test_a_unfollows_b(self):
+    def test_i_a_unfollows_b(self):
         username = 'a'
         url = f'{BASE_URL}/fllws/{username}'
 
