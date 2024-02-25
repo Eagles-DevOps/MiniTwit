@@ -87,7 +87,7 @@ func GetMessages(args []any, one bool) []map[string]any {
 	cur, _ := db.Query(query, args...)
 	defer cur.Close()
 
-	var Filtered []map[string]any
+	var Messages []map[string]any
 
 	// TODO handle empty db
 
@@ -95,14 +95,14 @@ func GetMessages(args []any, one bool) []map[string]any {
 		var rv model.UserMessageRow
 		_ = cur.Scan(&rv.Message_id, &rv.Author_id, &rv.Text, &rv.Pub_date, &rv.Flagged, &rv.User_id, &rv.Username, &rv.Email, &rv.Pw_hash)
 
-		dict := make(map[string]any)
-		dict["content"] = rv.Text
-		dict["pub_date"] = rv.Pub_date
-		dict["user"] = rv.Username
+		msg := make(map[string]any)
+		msg["content"] = rv.Text
+		msg["pub_date"] = rv.Pub_date
+		msg["user"] = rv.Username
 
-		Filtered = append(Filtered, dict)
+		Messages = append(Messages, msg)
 	}
-	return Filtered
+	return Messages
 }
 
 func GetFollowers(args []any, one bool) []string {
@@ -115,15 +115,15 @@ func GetFollowers(args []any, one bool) []string {
 	defer db.Close()
 	cur, _ := db.Query(query, args...)
 	defer cur.Close()
-	var Filtered []string
+	var Followers []string
 
 	for cur.Next() {
 		var username string
 		_ = cur.Scan(&username)
 
-		Filtered = append(Filtered, username)
+		Followers = append(Followers, username)
 	}
-	return Filtered
+	return Followers
 }
 
 func GetMessagesForUser(args []any, one bool) []map[string]any {
@@ -137,20 +137,20 @@ func GetMessagesForUser(args []any, one bool) []map[string]any {
 	cur, _ := db.Query(query, args...)
 	defer cur.Close()
 
-	var Filtered []map[string]any
+	var Messages []map[string]any
 
 	for cur.Next() {
 		var rv model.UserMessageRow
 		_ = cur.Scan(&rv.Message_id, &rv.Author_id, &rv.Text, &rv.Pub_date, &rv.Flagged, &rv.User_id, &rv.Username, &rv.Email, &rv.Pw_hash)
 
-		dict := make(map[string]any)
-		dict["content"] = rv.Text
-		dict["pub_date"] = rv.Pub_date
-		dict["user"] = rv.Username
+		msg := make(map[string]any)
+		msg["content"] = rv.Text
+		msg["pub_date"] = rv.Pub_date
+		msg["user"] = rv.Username
 
-		Filtered = append(Filtered, dict)
+		Messages = append(Messages, msg)
 	}
-	return Filtered
+	return Messages
 }
 
 // ChatGPT

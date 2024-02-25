@@ -17,7 +17,6 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	db.UpdateLatest(r)
 	var rv model.RequestRegisterData
 	err := json.NewDecoder(r.Body).Decode(&rv)
-	fmt.Println(rv)
 	if err != nil {
 		fmt.Println("Error in decoding the JSON", err)
 	}
@@ -66,7 +65,6 @@ func Register(w http.ResponseWriter, r *http.Request) {
 			json.NewEncoder(w).Encode(Response)
 		} else {
 			w.WriteHeader(http.StatusNoContent)
-			fmt.Println("Queried")
 		}
 	}
 }
@@ -94,18 +92,15 @@ func Follow(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	username := vars["username"]
 	db.UpdateLatest(r)
-	dec := json.NewDecoder(r.Body)
 	var rt model.Follow_resp
-	err := dec.Decode(&rt)
+	err := json.NewDecoder(r.Body).Decode(&rt)
 	if err != nil {
-		fmt.Println("Error in requestData")
+		fmt.Println("Error in decoding the JSON", err)
 	}
-	from_sim_response := Is_authenticated(w, r)
-	if !from_sim_response {
-		fmt.Println("inside")
+	is_auth := Is_authenticated(w, r)
+	if !is_auth {
 		return
 	}
-
 	user_id, _ := db.Get_user_id(username)
 	if db.IsNil(user_id) {
 		http.Error(w, "User not found", http.StatusNotFound)
