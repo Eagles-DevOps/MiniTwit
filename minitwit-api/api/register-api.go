@@ -71,15 +71,14 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func Is_req_from_simulator(w http.ResponseWriter, r *http.Request) bool {
+func Is_authenticated(w http.ResponseWriter, r *http.Request) bool {
 	from_simulator := r.Header.Get("Authorization")
 	errMsg := ""
 	if from_simulator != "Basic c2ltdWxhdG9yOnN1cGVyX3NhZmUh" {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusForbidden)
 		errMsg = "You are not authorized to use this resource!"
+		w.WriteHeader(http.StatusForbidden)
 
-		_ = json.NewEncoder(w).Encode(struct {
+		json.NewEncoder(w).Encode(struct {
 			Status   int    `json:"status"`
 			ErrorMsg string `json:"error_msg"`
 		}{
@@ -101,7 +100,7 @@ func Follow(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Println("Error in requestData")
 	}
-	from_sim_response := Is_req_from_simulator(w, r)
+	from_sim_response := Is_authenticated(w, r)
 	if !from_sim_response {
 		fmt.Println("inside")
 		return
