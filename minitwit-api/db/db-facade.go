@@ -91,6 +91,16 @@ func GetFollowees(args []any, one bool) []string {
 	return Followees
 }
 
+func Get_user_id(username string) (any, error) {
+	user_id, err := Query_db("SELECT user_id FROM user WHERE username = ?", []any{username}, true)
+	if !IsNil(user_id) {
+		userID := user_id.(map[any]any)
+		user_id_val := userID["user_id"]
+		return user_id_val, err
+	}
+	return nil, err
+}
+
 func Query_db(query string, args []any, one bool) (any, error) {
 	db, _ := Connect_db()
 	defer db.Close()
@@ -135,16 +145,6 @@ func Query_db(query string, args []any, one bool) (any, error) {
 		return rv, nil
 	}
 	return nil, nil
-}
-
-func Get_user_id(username string) (any, error) {
-	user_id, err := Query_db("SELECT user_id FROM user WHERE username = ?", []any{username}, true)
-	if !IsNil(user_id) {
-		userID := user_id.(map[any]any)
-		user_id_val := userID["user_id"]
-		return user_id_val, err
-	}
-	return nil, err
 }
 
 func HashPassword(password string) (string, error) {

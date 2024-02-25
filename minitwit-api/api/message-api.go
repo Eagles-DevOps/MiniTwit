@@ -3,7 +3,6 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"strconv"
 	"time"
@@ -23,16 +22,15 @@ func Messages(w http.ResponseWriter, r *http.Request) {
 	if !is_auth {
 		return
 	}
-	no_msg := no_msgs(r, "no", 100)
+	no_msg := no_msgs(r, 100)
 
 	if r.Method == "GET" {
 		messages := db.GetMessages([]any{no_msg}, false)
 
 		w.WriteHeader(http.StatusOK)
+		err := json.NewEncoder(w).Encode(messages)
 
-		encoder := json.NewEncoder(w)
-
-		if err := encoder.Encode(messages); err != nil {
+		if err != nil {
 			http.Error(w, "Error encoding JSON data", http.StatusInternalServerError)
 			return
 		}
@@ -48,62 +46,52 @@ func Messages_per_user(w http.ResponseWriter, r *http.Request) {
 	if !is_auth {
 		return
 	}
-	no_msg := no_msgs(r, "no", 100)
+	no_msg := no_msgs(r, 100)
+
+	user_id, err := db.Get_user_id(username)
+	if err != nil {
+		http.Error(w, "Error getting the user_id", http.StatusNotFound)
+		return
+	}
 
 	if r.Method == "GET" {
-		user_id, err := db.Get_user_id(username)
-		if err != nil {
-			http.Error(w, "Error getting the user_id", http.StatusNotFound)
-			return
-		}
 		messages := db.GetMessagesForUser([]any{user_id, no_msg}, false)
 
 		w.WriteHeader(http.StatusOK)
-
-		encoder := json.NewEncoder(w)
-
-		if err := encoder.Encode(messages); err != nil {
+		err = json.NewEncoder(w).Encode(messages)
+		if err != nil {
 			http.Error(w, "Error encoding JSON data", http.StatusInternalServerError)
 			return
 		}
+
 	} else if r.Method == "POST" {
+		var rv model.MessageData
 
-		body, _ := io.ReadAll(r.Body)
-
-		var rv model.RequestMessageData
-
-		err := json.Unmarshal(body, &rv)
+		err := json.NewDecoder(r.Body).Decode(&rv)
 		if err != nil {
-			fmt.Println("Error decoding JSON data:", err)
-			http.Error(w, "Error decoding JSON data", http.StatusBadRequest)
-			return
+			fmt.Println("Error in decoding the JSON", err)
 		}
 
-		user_id, err := db.Get_user_id(username)
-		if err != nil {
-			fmt.Println("Error getting the user_id")
-			http.Error(w, "Error getting the user_id", http.StatusNotFound)
-			return
-		}
 		sqlite_db, err := db.Connect_db()
 		defer sqlite_db.Close()
+
 		query := `INSERT INTO message (author_id, text, pub_date, flagged)
 		VALUES (?, ?, ?, 0)`
 
 		_, err = sqlite_db.Exec(query, user_id, rv.Content, int(time.Now().Unix()))
 		if err != nil {
 			fmt.Println("Error when trying to insert data into the database")
-			fmt.Println(err)
 			return
 		}
-		fmt.Println("Executed query")
 		w.WriteHeader(http.StatusNoContent)
 	}
 }
 
-func no_msgs(r *http.Request, key string, defaultValue int) int {
-	if value := r.URL.Query().Get(key); value != "" {
-		if intValue, err := strconv.Atoi(value); err == nil {
+func no_msgs(r *http.Request, defaultValue int) int {
+	value := r.URL.Query().Get("no")
+	if value != "" {
+		intValue, err := strconv.Atoi(value)
+		if err == nil {
 			return intValue
 		}
 	}

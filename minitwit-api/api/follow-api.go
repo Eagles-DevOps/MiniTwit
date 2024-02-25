@@ -18,8 +18,8 @@ func Follow(w http.ResponseWriter, r *http.Request) {
 	username := vars["username"]
 	sim.UpdateLatest(r)
 
-	var rt model.Follow_resp
-	err := json.NewDecoder(r.Body).Decode(&rt)
+	var rv model.FollowData
+	err := json.NewDecoder(r.Body).Decode(&rv)
 	if err != nil {
 		fmt.Println("Error in decoding the JSON", err)
 	}
@@ -34,19 +34,19 @@ func Follow(w http.ResponseWriter, r *http.Request) {
 	}
 	no_flws := no_followees(r, 100)
 
-	if r.Method == "POST" && rt.Follow != "" {
+	if r.Method == "POST" && rv.Follow != "" {
 
-		follows_username := rt.Follow
-		follows_user_id, _ := db.Get_user_id(follows_username)
+		follow_username := rv.Follow
+		follow_user_id, _ := db.Get_user_id(follow_username)
 
-		if db.IsNil(follows_user_id) {
+		if db.IsNil(follow_user_id) {
 			http.Error(w, "user not found", http.StatusNotFound)
 			return
 		}
 		query := `INSERT INTO follower (who_id, whom_id) VALUES (?, ?)`
 		sqlite_db, _ := db.Connect_db()
 		defer sqlite_db.Close()
-		_, err := sqlite_db.Exec(query, user_id, follows_user_id)
+		_, err := sqlite_db.Exec(query, user_id, follow_user_id)
 
 		if err != nil {
 			fmt.Println("Error querying the database")
@@ -56,10 +56,10 @@ func Follow(w http.ResponseWriter, r *http.Request) {
 
 		json.NewEncoder(w).Encode(http.StatusOK)
 
-	} else if r.Method == "POST" && rt.Unfollow != "" {
+	} else if r.Method == "POST" && rv.Unfollow != "" {
 
-		unfollows_username := rt.Unfollow
-		unfollows_user_id, err := db.Get_user_id(unfollows_username)
+		unfollow_username := rv.Unfollow
+		unfollow_user_id, err := db.Get_user_id(unfollow_username)
 
 		if err != nil {
 			http.Error(w, "user not found", http.StatusNotFound)
@@ -68,7 +68,7 @@ func Follow(w http.ResponseWriter, r *http.Request) {
 		query := `DELETE FROM follower WHERE who_id=? and WHOM_id=?`
 		sqlite_db, _ := db.Connect_db()
 		defer sqlite_db.Close()
-		_, err = sqlite_db.Exec(query, user_id, unfollows_user_id)
+		_, err = sqlite_db.Exec(query, user_id, unfollow_user_id)
 
 		json.NewEncoder(w).Encode(http.StatusOK)
 
