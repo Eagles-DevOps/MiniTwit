@@ -19,8 +19,7 @@ func main() {
 	r.HandleFunc("/fllws/{username}", api.Follow)
 
 	r.HandleFunc("/delete", api.Delete)
-	r.HandleFunc("/{username}", api.Messages_per_user).Methods("GET", "POST")
-
+	r.HandleFunc("/msgs/{username}", api.Messages_per_user).Methods("GET", "POST")
 
 	fmt.Println("Listening on port 15001...")
 	err := http.ListenAndServe(":15001", r)

@@ -3,7 +3,6 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -16,23 +15,17 @@ import (
 
 func Register(w http.ResponseWriter, r *http.Request) {
 	db.UpdateLatest(r)
-	body, _ := io.ReadAll(r.Body)
 	var rv model.RequestRegisterData
-	err := json.Unmarshal([]byte(body), &rv)
+	err := json.NewDecoder(r.Body).Decode(&rv)
+	fmt.Println(rv)
 	if err != nil {
-		http.Error(w, "Error decoding JSON data", http.StatusBadRequest)
-		return
+		fmt.Println("Error in decoding the JSON", err)
 	}
-	fmt.Println("requestData: ", rv)
 
-	if err != nil {
-		fmt.Println("Error in requestData")
-	}
 	errMsg := ""
 
 	if r.Method == "POST" {
 		user_id, _ := db.Get_user_id(rv.Username)
-		w.Header().Set("Content-Type", "application/json")
 
 		if rv.Username == "" {
 			errMsg = "You have to enter a username"
@@ -62,7 +55,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		if errMsg != "" {
-			Error := struct {
+			Response := struct {
 				Status int    `json:"status"`
 				Msg    string `json:"error_msg"`
 			}{
@@ -70,7 +63,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 				Msg:    errMsg,
 			}
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(Error)
+			json.NewEncoder(w).Encode(Response)
 		} else {
 			w.WriteHeader(http.StatusNoContent)
 			fmt.Println("Queried")
