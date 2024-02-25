@@ -4,7 +4,7 @@ import base64
 import requests
 import unittest
 
-BASE_URL = os.environ["MT_BASEURL"]
+BASE_URL = "http://localhost:15001"
 USERNAME = 'simulator'
 PWD = 'super_safe!'
 CREDENTIALS = ':'.join([USERNAME, PWD]).encode('ascii')
@@ -14,6 +14,11 @@ HEADERS = {'Connection': 'close',
            f'Authorization': f'Basic {ENCODED_CREDENTIALS}'}
 
 class MiniTwitSimApi(unittest.TestCase):
+    
+    def test_aa(self):
+        url = f"{BASE_URL}/cleandb"
+        response = requests.post(url, headers=HEADERS)
+        assert response.ok
 
     def test_a_latest(self):
         # post something to updaet LATEST

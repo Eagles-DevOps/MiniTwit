@@ -1,5 +1,5 @@
 package model
 
-type RequestMessageData struct {
+type MessageData struct {
 	Content string `json:"content"`
 }

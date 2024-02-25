@@ -15,11 +15,11 @@ func main() {
 
 	r.HandleFunc("/register", api.Register)
 	r.HandleFunc("/msgs", api.Messages)
-	r.HandleFunc("/latest", api.Get_latest).Methods("GET")
-	r.HandleFunc("/fllws/{username}", api.Follow)
-
-	r.HandleFunc("/delete", api.Delete)
 	r.HandleFunc("/msgs/{username}", api.Messages_per_user).Methods("GET", "POST")
+	r.HandleFunc("/fllws/{username}", api.Follow)
+	r.HandleFunc("/latest", api.Get_latest).Methods("GET")
+	r.HandleFunc("/cleandb", api.Cleandb)
+	r.HandleFunc("/delete", api.Delete)
 
 	fmt.Println("Listening on port 15001...")
 	err := http.ListenAndServe(":15001", r)
