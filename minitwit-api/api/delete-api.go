@@ -20,7 +20,6 @@ func Delete(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Println("Error in requestData")
 	}
-	fmt.Println("yeeeeet")
 	is_auth := sim.Is_authenticated(w, r)
 	if !is_auth {
 		return
