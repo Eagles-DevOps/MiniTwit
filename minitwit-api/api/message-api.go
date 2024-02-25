@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"strconv"
 	"time"
 
@@ -14,62 +13,20 @@ import (
 
 	"minitwit.com/db"
 	"minitwit.com/model"
+	"minitwit.com/sim"
 )
 
-func updateLatest(r *http.Request) {
-	r.ParseForm()
-	parsedCommandID := -1
-	latest := r.Form.Get("latest")
-	if latest != "" {
-		parsedCommandID, _ = strconv.Atoi(latest)
-	}
-	if parsedCommandID != -1 {
-		_ = os.WriteFile("./latest_processed_sim_action_id.txt", []byte(strconv.Itoa(parsedCommandID)), 0644)
-	}
-}
-
-func is_req_from_simulator(w http.ResponseWriter, r *http.Request) bool {
-	from_simulator := r.Header.Get("Authorization")
-	errMsg := ""
-	if from_simulator != "Basic c2ltdWxhdG9yOnN1cGVyX3NhZmUh" {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusForbidden)
-		errMsg = "You are not authorized to use this resource!"
-
-		_ = json.NewEncoder(w).Encode(struct {
-			Status   int    `json:"status"`
-			ErrorMsg string `json:"error_msg"`
-		}{
-			Status:   403,
-			ErrorMsg: errMsg,
-		})
-		return false
-	}
-	return true
-}
-
-func no_msgs(r *http.Request, key string, defaultValue int) int {
-	if value := r.URL.Query().Get(key); value != "" {
-		if intValue, err := strconv.Atoi(value); err == nil {
-			return intValue
-		}
-	}
-	return defaultValue
-}
-
 func Messages(w http.ResponseWriter, r *http.Request) {
-	updateLatest(r)
+	sim.UpdateLatest(r)
 
-	from_sim_response := is_req_from_simulator(w, r)
-	if !from_sim_response {
+	is_auth := sim.Is_authenticated(w, r)
+	if !is_auth {
 		return
 	}
 	no_msg := no_msgs(r, "no", 100)
 
 	if r.Method == "GET" {
 		messages := db.GetMessages([]any{no_msg}, false)
-
-		w.Header().Set("Content-Type", "application/json")
 
 		w.WriteHeader(http.StatusOK)
 
@@ -85,10 +42,10 @@ func Messages(w http.ResponseWriter, r *http.Request) {
 func Messages_per_user(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	username := vars["username"]
-	updateLatest(r)
+	sim.UpdateLatest(r)
 
-	from_sim_response := is_req_from_simulator(w, r)
-	if !from_sim_response {
+	is_auth := sim.Is_authenticated(w, r)
+	if !is_auth {
 		return
 	}
 	no_msg := no_msgs(r, "no", 100)
@@ -100,8 +57,6 @@ func Messages_per_user(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		messages := db.GetMessagesForUser([]any{user_id, no_msg}, false)
-
-		w.Header().Set("Content-Type", "application/json")
 
 		w.WriteHeader(http.StatusOK)
 
@@ -141,23 +96,16 @@ func Messages_per_user(w http.ResponseWriter, r *http.Request) {
 			fmt.Println(err)
 			return
 		}
-		w.Header().Set("Content-Type", "application/json")
 		fmt.Println("Executed query")
 		w.WriteHeader(http.StatusNoContent)
 	}
 }
 
-// TODO refactor out
-func Get_latest(w http.ResponseWriter, r *http.Request) {
-	content, _ := os.ReadFile("./latest_processed_sim_action_id.txt")
-	latest_processed_command_id, err := strconv.Atoi(string(content))
-	if err != nil {
-		latest_processed_command_id = -1
+func no_msgs(r *http.Request, key string, defaultValue int) int {
+	if value := r.URL.Query().Get(key); value != "" {
+		if intValue, err := strconv.Atoi(value); err == nil {
+			return intValue
+		}
 	}
-	err = json.NewEncoder(w).Encode(struct {
-		Latest int `json:"latest"`
-	}{
-		Latest: latest_processed_command_id,
-	})
-
+	return defaultValue
 }
