@@ -26,7 +26,7 @@ func Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if rv.User != "" && r.Method == "POST" {
+	if !db.IsNil(rv.User) && r.Method == "POST" {
 		toDeleteUsername := rv.User
 		toDeleteUser_id, _ := db.Get_user_id(toDeleteUsername)
 		query := `DELETE FROM user WHERE user_id = ?`
