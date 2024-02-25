@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"strconv"
 
 	"golang.org/x/crypto/bcrypt"
 	"minitwit.com/model"
@@ -155,7 +154,6 @@ func GetMessagesForUser(args []any, one bool) []map[string]any {
 
 // ChatGPT
 func IsNil(i interface{}) bool {
-
 	if i == nil || i == interface{}(nil) {
 		return true
 	} else {
@@ -170,12 +168,8 @@ func HashPassword(password string) (string, error) {
 
 func UpdateLatest(r *http.Request) {
 	r.ParseForm()
-	parsedCommandID := -1
 	latest := r.Form.Get("latest")
 	if latest != "" {
-		parsedCommandID, _ = strconv.Atoi(latest)
-	}
-	if parsedCommandID != -1 {
-		_ = os.WriteFile("./latest_processed_sim_action_id.txt", []byte(strconv.Itoa(parsedCommandID)), 0644)
+		_ = os.WriteFile("./latest_processed_sim_action_id.txt", []byte((latest)), 0644)
 	}
 }
