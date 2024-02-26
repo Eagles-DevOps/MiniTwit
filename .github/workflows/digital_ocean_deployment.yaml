@@ -1,0 +1,90 @@
+name: Digital Ocean deployment
+
+on:
+  push:
+    branches:
+      - CI/CD-Pipeline
+
+  #workflow_dispatch:
+    #manual: true
+
+
+# SSH_USER
+# SSH_KEY
+# SSH_HOST
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
+
+      - name: Build and push Main app - UI included
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./Dockerfile.minitwit_main
+          push: true
+          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/minitwit_main:latest
+          cache-from: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/minitwit_main:minitwit_main_cache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/minitwit_main:minitwit_main_cache,mode=max
+
+      - name: Build and push API service
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./Dockerfile.minitwit_api
+          push: true
+          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/minitwit_api:latest
+          cache-from: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/minitwit_api:minitwit_api_cache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/minitwit_api:minitwit_api_cache,mode=max
+
+      #- name: Test minitwit
+      # run: |
+        # docker build -t $DOCKER_HUB_USERNAME/minitwittestimage -f Dockerfile-minitwit-tests .
+        # yes 2>/dev/null | docker-compose up -d
+        # docker run --rm --network=itu-minitwit-network $DOCKER_HUB_USERNAME/minitwittestimage
+      # env:
+      #   DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
+
+    - name: Set up Terraform
+      uses: hashicorp/setup-terraform@v1
+
+    - name: Terraform init
+      run : |
+        terraform init
+
+    - name: Terraform plan
+      run : |
+        terraform plan
+
+    - name: Terraform Apply
+      run: terraform apply -auto-approve
+      env:
+        TF_VAR_do_token: ${{ secrets.DIGITALOCEAN_TOKEN }}
+
+
+      # - name: Configure SSH
+      #   run: |
+      #     mkdir -p ~/.ssh/
+      #     echo "$SSH_KEY" > ~/.ssh/do_ssh_key
+      #     chmod 600 ~/.ssh/do_ssh_key
+      #   env:
+      #     SSH_KEY: ${{ secrets.SSH_KEY }}
+
+      # - name: Deploy to server
+      #   # Configure the ~./bash_profile and deploy.sh file on the Vagrantfile
+      #   run: >
+      #     ssh $SSH_USER@$SSH_HOST
+      #     -i ~/.ssh/do_ssh_key -o StrictHostKeyChecking=no
+      #     '/minitwit/deploy.sh'
+      #   env:
+      #     SSH_USER: ${{ secrets.SSH_USER }}
+      #     SSH_HOST: ${{ secrets.SSH_HOST }}
