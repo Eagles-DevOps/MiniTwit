@@ -2,7 +2,7 @@
 FROM golang:1.17 as builder
 
 # Set the Current Working Directory inside the container
-WORKDIR /minitwit-web-app
+WORKDIR /minitwit
 
 # Copy go.mod and go.sum files (if they exist) to the container
 # These commands are optional if you are not using Go modules
