@@ -3,13 +3,13 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"minitwit-api/db"
+	"minitwit-api/model"
+	"minitwit-api/sim"
 	"net/http"
 	"strings"
 
 	_ "github.com/mattn/go-sqlite3"
-	"minitwit.com/db"
-	"minitwit.com/model"
-	"minitwit.com/sim"
 )
 
 func Register(w http.ResponseWriter, r *http.Request) {

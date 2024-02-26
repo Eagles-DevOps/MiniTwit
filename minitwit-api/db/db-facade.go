@@ -3,9 +3,9 @@ package db
 import (
 	"database/sql"
 	"fmt"
+	"minitwit-api/model"
 
 	"golang.org/x/crypto/bcrypt"
-	"minitwit.com/model"
 )
 
 const (

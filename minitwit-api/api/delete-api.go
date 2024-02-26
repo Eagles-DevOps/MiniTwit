@@ -7,9 +7,9 @@ import (
 
 	_ "github.com/mattn/go-sqlite3"
 
-	"minitwit.com/db"
-	"minitwit.com/model"
-	"minitwit.com/sim"
+	"minitwit-api/db"
+	"minitwit-api/model"
+	"minitwit-api/sim"
 )
 
 func Delete(w http.ResponseWriter, r *http.Request) {
