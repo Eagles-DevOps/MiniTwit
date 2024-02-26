@@ -1,0 +1,30 @@
+# Start from the official Go image to build our application
+FROM golang:1.17 as builder
+
+# Set the Current Working Directory inside the container
+WORKDIR /minitwit-api
+
+# Copy go.mod and go.sum files (if they exist) to the container
+# These commands are optional if you are not using Go modules
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copy the source code from the current directory to the Working Directory inside the container
+COPY . .
+
+# Build the Go app
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o minitwit minitwit.go
+
+# Start a new stage from scratch for a smaller final image
+FROM alpine:latest  
+
+# Copy the Pre-built binary file from the previous stage
+WORKDIR /root/
+COPY --from=builder /app/minitwit .
+
+# Expose port 8080 to the outside world
+# Change the port if your app listens on a different port
+EXPOSE 15001
+
+# Command to run the executable
+CMD ["./minitwit"]
