@@ -19,6 +19,7 @@ provider "digitalocean" {
 }
  
 resource "digitalocean_droplet" "main-app" {
+
   image  = "ubuntu-22-04-x64"
   name   = "main-app"
   region = "ams3"
