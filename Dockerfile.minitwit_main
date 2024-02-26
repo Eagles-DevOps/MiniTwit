@@ -13,17 +13,16 @@ RUN go mod download
 COPY . .
 
 # Build the Go app
-RUN go build -v -o /minitwit-web-app/minitwit.go /minitwit-web-app/minitwit.go
+RUN go build -v -o minitwit ./minitwit-web-app/minitwit.go
 
 # Start a new stage from scratch for a smaller final image
 FROM alpine:latest  
 
 # Copy the Pre-built binary file from the previous stage
-WORKDIR /root/
-COPY --from=builder /app/minitwit .
+WORKDIR /minitwit
+COPY --from=builder /minitwit/minitwit .
 
-# Expose port 8080 to the outside world
-# Change the port if your app listens on a different port
+# Expose port 15000 to the outside world
 EXPOSE 15000
 
 # Command to run the executable
