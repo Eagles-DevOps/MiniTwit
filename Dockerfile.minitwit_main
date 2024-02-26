@@ -2,7 +2,7 @@
 FROM golang:1.17 as builder
 
 # Set the Current Working Directory inside the container
-WORKDIR /minitwit/minitwit-web-app
+WORKDIR /minitwit
 
 # Copy go.mod and go.sum files (if they exist) to the container
 # These commands are optional if you are not using Go modules
@@ -13,14 +13,14 @@ RUN go mod download
 COPY . .
 
 # Build the Go app
-RUN go build -v -o minitwit minitwit.go
+RUN go build -v -o minitwit /minitwit-api/minitwit-api.go
 
 # Start a new stage from scratch for a smaller final image
 FROM alpine:latest  
 
 # Copy the Pre-built binary file from the previous stage
-WORKDIR /minitwit/minitwit-web-app
-COPY --from=builder /minitwit/minitwit-web-app/minitwit .
+WORKDIR /minitwit
+COPY --from=builder /minitwit/minitwit-api/minitwit .
 
 # Expose port 8080 to the outside world
 # Change the port if your app listens on a different port
