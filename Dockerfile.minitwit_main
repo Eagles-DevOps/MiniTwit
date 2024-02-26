@@ -2,27 +2,28 @@
 FROM golang:1.17 as builder
 
 # Set the Current Working Directory inside the container
-WORKDIR /minitwit
+WORKDIR /minitwit/minitwit-web-app
 
 # Copy go.mod and go.sum files (if they exist) to the container
 # These commands are optional if you are not using Go modules
 COPY go.mod go.sum ./
-RUN go mod download 
+RUN go mod download
 
 # Copy the source code from the current directory to the Working Directory inside the container
 COPY . .
 
 # Build the Go app
-RUN go build -v -o minitwit ./minitwit-web-app/minitwit.go
+RUN go build -v -o minitwit minitwit.go
 
 # Start a new stage from scratch for a smaller final image
 FROM alpine:latest  
 
 # Copy the Pre-built binary file from the previous stage
-WORKDIR /minitwit
-COPY --from=builder /minitwit/minitwit .
+WORKDIR /minitwit/minitwit-web-app
+COPY --from=builder /minitwit/minitwit-web-app/minitwit .
 
-# Expose port 15000 to the outside world
+# Expose port 8080 to the outside world
+# Change the port if your app listens on a different port
 EXPOSE 15000
 
 # Command to run the executable
