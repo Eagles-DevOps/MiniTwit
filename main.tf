@@ -18,15 +18,15 @@ provider "digitalocean" {
   token = var.do_token
 }
  
-resource "digitalocean_droplet" "main-app-terraform-test" {
+resource "digitalocean_droplet" "main-app" {
   image  = "ubuntu-22-04-x64"
-  name   = "main-app-terraform-test"
+  name   = "main-app"
   region = "ams3"
   size   = "s-1vcpu-1gb"
 }
 
 output "droplet_ip" {
-  value = digitalocean_droplet.main-app-terraform-test.ipv4_address
+  value = digitalocean_droplet.main-app.ipv4_address
   description = "The public IP address of the droplet."
 }
 
