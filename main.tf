@@ -19,7 +19,6 @@ provider "digitalocean" {
 }
  
 resource "digitalocean_droplet" "main-app" {
-
   image  = "ubuntu-22-04-x64"
   name   = "main-app"
   region = "ams3"
@@ -27,7 +26,7 @@ resource "digitalocean_droplet" "main-app" {
 }
 
 output "droplet_ip" {
-  value = digitalocean_droplet.main-app.ipv4_address
+  value       = digitalocean_droplet.main-app.ipv4_address
   description = "The public IP address of the droplet."
 }
 
