@@ -1,4 +1,4 @@
-module minitwit
+module minitwit.com
 
 go 1.21
 
