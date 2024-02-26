@@ -50,21 +50,21 @@ jobs:
       # env:
       #   DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
 
-    - name: Set up Terraform
-      uses: hashicorp/setup-terraform@v1
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v1
 
-    - name: Terraform init
-      run : |
-        terraform init
+      - name: Terraform init
+        run : |
+          terraform init
 
-    - name: Terraform plan
-      run : |
-        terraform plan
+      - name: Terraform plan
+        run : |
+          terraform plan
 
-    - name: Terraform Apply
-      run: terraform apply -auto-approve
-      env:
-        TF_VAR_do_token: ${{ secrets.DIGITALOCEAN_TOKEN }}
+      - name: Terraform Apply
+        run: terraform apply -auto-approve
+        env:
+          TF_VAR_do_token: ${{ secrets.DIGITALOCEAN_TOKEN }}
 
 
       # - name: Configure SSH
