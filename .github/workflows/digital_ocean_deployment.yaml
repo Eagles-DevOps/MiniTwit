@@ -8,13 +8,9 @@ on:
   #workflow_dispatch:
     #manual: true
 
-
-# SSH_USER
-# SSH_KEY
-# SSH_HOST
-
 jobs:
-  build:
+  deploy:
+    name: Deployment
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
