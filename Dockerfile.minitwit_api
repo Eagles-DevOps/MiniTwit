@@ -24,7 +24,7 @@ COPY --from=builder /minitwit/minitwit-api/minitwit .
 
 # Expose port 8080 to the outside world
 # Change the port if your app listens on a different port
-EXPOSE 15000
+EXPOSE 15001
 
 # Command to run the executable
 CMD ["./minitwit"]
