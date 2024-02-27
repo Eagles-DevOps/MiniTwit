@@ -5,8 +5,8 @@ on:
     branches:
       - CI/CD-Pipeline
 
-  #workflow_dispatch:
-    #manual: true
+  workflow_dispatch:
+    manual: true
 
 jobs:
   deploy:
@@ -51,17 +51,11 @@ jobs:
 
       - name: Terraform init
         run : |
+          echo "Terraform init ..."
           terraform init
 
-      - name: Terraform plan
-        run : |
-          terraform plan
-        env:
-          TF_VAR_digital_ocean_token: ${{ secrets.DIGITALOCEAN_TOKEN }}
-        
-
       - name: Terraform Apply
-        run: terraform apply
+        run: terraform apply -var digital_ocean_token=${{ secrets.DIGITALOCEAN_TOKEN }} -auto-approve
         env:
           TF_VAR_digital_ocean_token: ${{ secrets.DIGITALOCEAN_TOKEN }}
         

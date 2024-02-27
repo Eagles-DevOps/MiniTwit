@@ -9,12 +9,10 @@ terraform {
   }
 }
 
-variable "do_token" {
-  description = "DigitalOcean API Token"
-  type        = string
+variable "digital_ocean_token" {
+   description = "DigitalOcean API Token"
+   type = string
 }
-
-variable "digital_ocean_token" {}
  
 provider "digitalocean" {
   token = var.digital_ocean_token
@@ -29,7 +27,7 @@ resource "digitalocean_droplet" "main-app" {
 
 resource "digitalocean_droplet" "api" {
   image  = "ubuntu-22-04-x64"
-  name   = "api"
+  name   = "API service"
   region = "ams3"
   size   = "s-1vcpu-1gb"
 }
