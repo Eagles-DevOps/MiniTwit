@@ -24,7 +24,7 @@ jobs:
         run: go get .
         working-directory: ./minitwit-api
       - name: build
-        run: go build . -o ../app
+        run: go build -o ../app .
         working-directory: ./minitwit-api
       - name: run
         run: ./app&
