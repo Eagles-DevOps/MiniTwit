@@ -15,11 +15,6 @@ jobs:
           sudo apt update
           sudo apt install -y golang
 
-      - name: Clone repo 
-        run: | 
-          git clone https://github.com/Eagles-DevOps/MiniTwit.git
-          cd Minitwit 
-
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -47,14 +42,6 @@ jobs:
           file: ./minitwit-api/Dockerfile
           push: true
           tags: ${{ secrets.VIKTORIA_DOCKER_USERNAME }}/minitwit_api:latest
-
-      #- name: Test minitwit # 
-      # run: |
-        # docker build -t $DOCKER_HUB_USERNAME/minitwittestimage -f Dockerfile-minitwit-tests .
-        # yes 2>/dev/null | docker-compose up -d
-        # docker run --rm --network=itu-minitwit-network $DOCKER_HUB_USERNAME/minitwittestimage
-      # env:
-      #   DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
 
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v1
