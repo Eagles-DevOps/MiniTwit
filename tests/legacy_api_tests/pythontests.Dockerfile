@@ -4,3 +4,4 @@ WORKDIR /tests/
 COPY 'minitwit_sim_api_test.py' './'
 
 RUN pip install requests
+RUN pip install -U pytest

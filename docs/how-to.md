@@ -26,6 +26,12 @@ If vs-code is opened in Minitwit/ you should now be able to debug the program by
 Make sure to run 'docker compose down' and exit any running 'go' commands beforehand to ensure the port is open.
 
 
+## Running tests
+Tests can be manually run, assuming you have pytest installed, by going to tests/legacy_api_tests and running
+```pytest minitwit_sim_api_test.py```
+If no envvar is set for MT_BASEURL it defaults to localhost:15001
+
+
 ## Testing API service
 - Get the location of the service. Should be linked in main README.md file
 - Paste the link into Postman (or other similar software)
