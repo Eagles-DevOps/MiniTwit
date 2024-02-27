@@ -12,6 +12,7 @@ jobs:
 
 # https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
 # https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
+# https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstepsworking-directory
     steps:
       - name: Setup Go 1.21.x
         uses: actions/setup-go@v4
@@ -20,9 +21,11 @@ jobs:
           go-version: '1.21.x'
       - uses: actions/checkout@v4
       - name: Install dependencies
-        run: go get ./minitwit-api
+        run: go get .
+        working-directory: ./minitwit-api
       - name: build
-        run: go build ./minitwit-api -o app
+        run: go build . -o ../app
+        working-directory: ./minitwit-api
       - name: run
         run: ./app&
 
