@@ -33,7 +33,7 @@ resource "digitalocean_droplet" "api" {
 }
 
 output "droplet_ip_main_app" {
-  value       = digitalocean_droplet.main-app-terraform.ipv4_address
+  value       = digitalocean_droplet.main-app.ipv4_address
   description = "The public IP address of the droplet."
 }
 
