@@ -25,11 +25,6 @@ resource "digitalocean_droplet" "main-app" {
   size   = "s-1vcpu-1gb"
 }
 
-output "droplet_ip_main-app" {
-  value       = digitalocean_droplet.main-app.ipv4_address
-  description = "The public IP address of the droplet."
-}
-
 resource "digitalocean_droplet" "api" {
   image  = "ubuntu-22-04-x64"
   name   = "api"
@@ -37,9 +32,12 @@ resource "digitalocean_droplet" "api" {
   size   = "s-1vcpu-1gb"
 }
 
+output "droplet_ip_main_app" {
+  value       = digitalocean_droplet.main-app.ipv4_address
+  description = "The public IP address of the droplet."
+}
+
 output "droplet_ip_api" {
   value       = digitalocean_droplet.api.ipv4_address 
   description = "The public IP address of the droplet."
 }
-
-
