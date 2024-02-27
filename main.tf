@@ -18,7 +18,7 @@ provider "digitalocean" {
   token = var.digital_ocean_token
 }
  
-resource "digitalocean_droplet" "main-app-terraform " {
+resource "digitalocean_droplet" "main-app " {
   image  = "ubuntu-22-04-x64"
   name   = "main-app"
   region = "ams3"
