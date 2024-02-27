@@ -55,13 +55,13 @@ jobs:
 
       - name: Terraform plan
         run : |
-          terraform plan -auto-approve
+          terraform apply
         env:
           TF_VAR_digital_ocean_token: ${{ secrets.DIGITALOCEAN_TOKEN }}
         
 
       - name: Terraform Apply
-        run: terraform apply -auto-approve
+        run: terraform apply
         env:
           TF_VAR_digital_ocean_token: ${{ secrets.DIGITALOCEAN_TOKEN }}
         
