@@ -54,6 +54,9 @@ jobs:
           echo "Terraform init ..."
           terraform init
 
+          echo "Terraform plan ..."
+          terraform plan -var digital_ocean_token=${{ secrets.DIGITALOCEAN_TOKEN }}
+
       - name: Terraform Apply
         run: terraform apply -var digital_ocean_token=${{ secrets.DIGITALOCEAN_TOKEN }} -auto-approve
         env:
