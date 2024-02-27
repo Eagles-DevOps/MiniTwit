@@ -24,7 +24,7 @@ jobs:
         run: go get .
         working-directory: ./minitwit-api
       - name: build
-        run: go build -o ../app .
+        run: go build -o ./app .
         working-directory: ./minitwit-api
 
       - name: Set up Python
@@ -35,6 +35,6 @@ jobs:
       - name: Test with pytest
         working-directory: ./tests/legacy_api_tests
         run: |
-          nohup ../../app&
+          nohup ../../minitwit-api/app&
           pip install pytest pytest-cov requests
           pytest minitwit_sim_api_test.py --doctest-modules --junitxml=junit/test-results.xml --cov=com --cov-report=xml --cov-report=html
