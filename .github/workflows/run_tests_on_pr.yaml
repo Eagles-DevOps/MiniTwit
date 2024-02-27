@@ -1,0 +1,36 @@
+name: Run tests on PR
+
+on:
+  push:
+    branches:
+      - 107-create-action-to-run-tests
+  
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+# https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
+# https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
+    steps:
+      - name: Setup Go 1.21.x
+        uses: actions/setup-go@v4
+        with:
+          # Semantic version range syntax or exact version of Go
+          go-version: '1.21.x'
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: go get ./minitwit-api
+      - name: build
+        run: go build ./minitwit-api -o app
+      - name: run
+        run: ./app&
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+      - name: Test with pytest
+        run: |
+          pip install pytest pytest-cov
+          pytest minitwit_sim_api_test.py --doctest-modules --junitxml=junit/test-results.xml --cov=com --cov-report=xml --cov-report=html
