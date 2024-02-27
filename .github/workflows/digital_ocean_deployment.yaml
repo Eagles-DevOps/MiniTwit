@@ -55,7 +55,7 @@ jobs:
 
       - name: Terraform plan
         run : |
-          terraform apply
+          terraform plan
         env:
           TF_VAR_digital_ocean_token: ${{ secrets.DIGITALOCEAN_TOKEN }}
         
