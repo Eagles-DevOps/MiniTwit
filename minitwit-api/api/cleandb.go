@@ -7,8 +7,8 @@ import (
 
 	_ "github.com/mattn/go-sqlite3"
 
-	"minitwit.com/db"
-	"minitwit.com/sim"
+	"minitwit-api/db"
+	"minitwit-api/sim"
 )
 
 func Cleandb(w http.ResponseWriter, r *http.Request) {

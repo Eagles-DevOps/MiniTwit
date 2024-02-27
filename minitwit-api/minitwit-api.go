@@ -5,8 +5,9 @@ import (
 	"log"
 	"net/http"
 
+	"minitwit-api/api"
+
 	"github.com/gorilla/mux"
-	"minitwit.com/api"
 )
 
 func main() {

@@ -3,14 +3,14 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"minitwit-api/db"
+	"minitwit-api/model"
 	"net/http"
 	"strconv"
 
+	"minitwit-api/sim"
+
 	"github.com/gorilla/mux"
-	_ "github.com/mattn/go-sqlite3"
-	"minitwit.com/db"
-	"minitwit.com/model"
-	"minitwit.com/sim"
 )
 
 func Follow(w http.ResponseWriter, r *http.Request) {
