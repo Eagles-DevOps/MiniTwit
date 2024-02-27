@@ -72,7 +72,7 @@ func Messages_per_user(w http.ResponseWriter, r *http.Request) {
 			fmt.Println("Error in decoding the JSON, message", err)
 		}
 
-		sqlite_db, err := db.Connect_db()
+		sqlite_db, _ := db.Connect_db()
 		defer sqlite_db.Close()
 
 		query := `INSERT INTO message (author_id, text, pub_date, flagged)
