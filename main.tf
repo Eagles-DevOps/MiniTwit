@@ -23,11 +23,10 @@ resource "digitalocean_droplet" "main-app" {
   name   = "main-app"
   region = "ams3"
   size   = "s-1vcpu-1gb"
-}
 
-connection {
-    type     = "ssh"
-    user     = "root"
+  connection {
+    type        = "ssh"
+    user        = "root"
     private_key = file("~/.ssh/id_rsa")  # Path to your SSH private key
   }
 
@@ -44,6 +43,7 @@ connection {
   }
 }
 
+
 output "droplet_ip_main_app" {
   value       = digitalocean_droplet.main-app.ipv4_address
   description = "The public IP address of the droplet."
@@ -51,14 +51,13 @@ output "droplet_ip_main_app" {
 
 resource "digitalocean_droplet" "api" {
   image  = "ubuntu-22-04-x64"
-  name   = "api"
+  name   = "main-app"
   region = "ams3"
   size   = "s-1vcpu-1gb"
-}
 
-connection {
-    type     = "ssh"
-    user     = "root"
+  connection {
+    type        = "ssh"
+    user        = "root"
     private_key = file("~/.ssh/id_rsa")  # Path to your SSH private key
   }
 
