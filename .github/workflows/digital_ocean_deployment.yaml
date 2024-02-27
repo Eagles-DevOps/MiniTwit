@@ -28,7 +28,7 @@ jobs:
       - name: Build and push Main app
         uses: docker/build-push-action@v2
         with:
-          context: .
+          context: ./minitwit-web-app
           file: ./minitwit-web-app/Dockerfile
           push: true
           tags: ${{ secrets.DOCKER_HUB_USERNAME }}/minitwit_main:latest
@@ -36,7 +36,7 @@ jobs:
       - name: Build and push API
         uses: docker/build-push-action@v2
         with:
-          context: .
+          context: ./minitwit-api
           file: ./minitwit-api/Dockerfile
           push: true
           tags: ${{ secrets.DOCKER_HUB_USERNAME }}/minitwit_api:latest
