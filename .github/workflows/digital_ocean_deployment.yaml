@@ -38,7 +38,7 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKER_HUB_USERNAME }}/minitwit_api:latest
 
-      #- name: Test minitwit # 
+      #- name: Test minitwit #
       # run: |
         # docker build -t $DOCKER_HUB_USERNAME/minitwittestimage -f Dockerfile-minitwit-tests .
         # yes 2>/dev/null | docker-compose up -d
@@ -51,6 +51,8 @@ jobs:
 
       - name: Terraform init
         run : |
+          cd iac
+
           echo "Terraform init ..."
           terraform init
 
@@ -61,7 +63,7 @@ jobs:
         run: terraform apply -var digital_ocean_token=${{ secrets.DIGITALOCEAN_TOKEN }} -auto-approve
         env:
           TF_VAR_digital_ocean_token: ${{ secrets.DIGITALOCEAN_TOKEN }}
-        
+
 
 
       # - name: Configure SSH
