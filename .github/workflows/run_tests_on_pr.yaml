@@ -33,9 +33,8 @@ jobs:
           python-version: '3.x'
 
       - name: Test with pytest
-        working-directory: ./tests/legacy_api_tests
+        working-directory: ./minitwit-api
         run: |
-          ls ../../minitwit-api
-          nohup ../../minitwit-api/app&
+          nohup app&
           pip install pytest pytest-cov requests
-          pytest minitwit_sim_api_test.py --doctest-modules --junitxml=junit/test-results.xml --cov=com --cov-report=xml --cov-report=html
+          pytest ../tests/legacy_api_tests/minitwit_sim_api_test.py --doctest-modules --junitxml=junit/test-results.xml --cov=com --cov-report=xml --cov-report=html
