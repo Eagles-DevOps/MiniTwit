@@ -3,7 +3,7 @@ name: Digital Ocean deployment
 on:
   push:
     branches:
-      - CI/CD-Pipeline
+      - dploy
 
   #workflow_dispatch:
     #manual: true

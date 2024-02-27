@@ -1,12 +1,12 @@
-FROM golang:1.18
+FROM golang:1.21
 
-WORKDIR ./
+WORKDIR /usr/src/app
 
 # pre-copy/cache go.mod for pre-downloading dependencies and only redownloading them in subsequent builds if they change
-COPY ./minitwit-web-app/*.go ./minitwit-web-app/go.mod ./minitwit-web-app/go.sum ./
+COPY *.go go.mod go.sum ./
 RUN go mod download && go mod verify
 
 COPY . .
-RUN go build -v -o app ./...
+RUN go build -v -o /minitwit/app .
 
-CMD ["./app"]
+CMD ["/minitwit/app"]
