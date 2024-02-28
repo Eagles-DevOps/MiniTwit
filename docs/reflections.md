@@ -35,9 +35,14 @@ considered: Jenkins, GitLab CI/CD, Bamboo
 - modern and easy to use UI
 
 ### Artifact registry
-choice: **DockerHub**
+choice: Github Container Registry due to 
+considered: **DockerHub**
 considered: GitHub Packages
 - largest docker registry
+
+**Github Container Registry**
+When using DockerHub we were only able to use an individual DockerHub account unless we were willing to pay for an organization.
+We chose Github Container Registry since it allowed us to publish container images directly in the the GitHub organization. It also did not require us to use PATs since we could use the GITHUB_TOKEN from the aciton itself.
 
 ### Infrastructure automation platforms
 choice: **terraform**
