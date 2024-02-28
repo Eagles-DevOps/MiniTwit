@@ -51,11 +51,11 @@ jobs:
       - name: Build Docker Image 
         run: | 
           cd ./minitwit-web-app/
-          docker build -t ghcr.io/minitwit-web-app:${{ github.sha }} .
+          docker build -t ghcr.io/eagles-devops/minitwit-web-app:${{ github.sha }} .
         
       - name: Push Docker Image 
         run : | 
-          docker push ghcr.io/minitwit-web-app:${{ github.sha }}
+          docker push ghcr.io/eagles-devops/minitwit-web-app:${{ github.sha }}
 
       # Extract metadata (tags, labels) for Docker
       # https://github.com/docker/metadata-action
