@@ -64,7 +64,7 @@ jobs:
         with:
           context: ./minitwit-web-app/
           push: ${{ github.event_name != 'pull_request' }} # Don't push on PR
-          tags: type=${{ github.job }}
+          tags: type=${{ github.sha }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
