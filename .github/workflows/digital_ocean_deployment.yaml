@@ -53,9 +53,6 @@ jobs:
       - name: Terraform plan
         run: |
           terraform plan
-        env:
-          TF_VAR_do_token: ${{ secrets.DIGITALOCEAN_TOKEN }}
-
 
       - name: Terraform Apply
         run: terraform apply -auto-approve
