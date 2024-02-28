@@ -56,10 +56,10 @@ jobs:
         run: |
           terraform plan
         env:
-          TF_VAR_do_token: ${{ secrets.VIKTORIA_DO_TOKEN }}
+          TF_VAR_do_token: ${{ secrets.DIGITALOCEAN_TOKEN }}
 
 
       - name: Terraform Apply
         run: terraform apply -auto-approve
         env:
-          TF_VAR_do_token: ${{ secrets.VIKTORIA_DO_TOKEN }}
+          TF_VAR_do_token: ${{ secrets.DIGITALOCEAN_TOKEN }}
