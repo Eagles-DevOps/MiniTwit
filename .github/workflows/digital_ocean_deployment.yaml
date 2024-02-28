@@ -1,7 +1,5 @@
 name: Digital Ocean deployment
 
-#comments here
-
 on:
   push:
     branches:
