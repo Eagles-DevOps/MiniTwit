@@ -1,0 +1,40 @@
+name: Run tests on PR
+
+on:
+  pull_request:
+    branches:
+      - main
+  
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+# https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
+# https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
+# https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstepsworking-directory
+    steps:
+      - name: Setup Go 1.21.x
+        uses: actions/setup-go@v4
+        with:
+          # Semantic version range syntax or exact version of Go
+          go-version: '1.21.x'
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: go get .
+        working-directory: ./minitwit-api
+      - name: build
+        run: go build -o ./app .
+        working-directory: ./minitwit-api
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Test with pytest
+        working-directory: ./minitwit-api
+        run: |
+          nohup ./app&
+          pip install pytest pytest-cov requests
+          pytest ../tests/legacy_api_tests/minitwit_sim_api_test.py --doctest-modules --junitxml=junit/test-results.xml --cov=com --cov-report=xml --cov-report=html
