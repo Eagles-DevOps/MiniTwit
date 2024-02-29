@@ -28,11 +28,10 @@ func Delete(w http.ResponseWriter, r *http.Request) {
 	if !db.IsNil(rv.User) && r.Method == "POST" {
 		toDeleteUsername := rv.User
 		toDeleteUser_id, _ := db.Get_user_id(toDeleteUsername)
+
 		query := `DELETE FROM user WHERE user_id = ?`
 
-		sqlite_db, _ := db.Connect_db()
-
-		_, err = sqlite_db.Exec(query, toDeleteUser_id)
+		err = db.DoExec(query, []any{toDeleteUser_id})
 
 		fmt.Println(err)
 	}
