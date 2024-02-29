@@ -1,6 +1,11 @@
 name: Create and publish a Docker image
 
-on: push
+on:
+  push:
+    branches:
+      - main
+  
+  workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io
@@ -55,8 +60,8 @@ jobs:
 
       # Build and push Docker image with Buildx (don't push on PR)
       # https://github.com/docker/build-push-action
-      - name: Build and push Docker image
-        id: build-and-push
+      - name: Build and push Docker api image
+        id: build-and-push-api
         uses: docker/build-push-action@v4
         with:
           context: "./minitwit-api/"
@@ -65,3 +70,30 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+        
+      - name: Build and push Docker web app image
+        id: build-and-push-web-app
+        uses: docker/build-push-action@v4
+        with:
+          context: "./minitwit-web-app/"
+          push: ${{ github.event_name != 'pull_request' }} # Don't push on PR
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh/
+          echo "$SSH_KEY" > ~/.ssh/do_ssh_key
+          chmod 600 ~/.ssh/do_ssh_key
+        env:
+          SSH_KEY: ${{ secrets.SSH_KEY_TERRAFORM }}
+
+      - name: Deploy to server
+        run: >
+          ssh root@$SSH_HOST
+          -i ~/.ssh/do_ssh_key -o StrictHostKeyChecking=no
+          '/tmp/provision.sh.sh'
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST_TERRAFORM }}
