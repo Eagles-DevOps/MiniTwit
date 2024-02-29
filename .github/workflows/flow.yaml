@@ -1,4 +1,4 @@
-name: ghcr build and publish
+name: flow
 
 on:
   push:
