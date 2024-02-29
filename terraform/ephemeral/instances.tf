@@ -73,8 +73,14 @@ resource "digitalocean_droplet" "prod" {
   }
 
   provisioner "remote-exec" {
-    script = "provision.sh"
-  }
+  inline = [
+    "chmod +x /tmp/provision.sh",  # Ensure the script is executable
+    "/tmp/provision.sh"            # Run the script
+  ]
+
+  # provisioner "remote-exec" {
+  #   script = "provision.sh"
+  # }
 }
 
 
