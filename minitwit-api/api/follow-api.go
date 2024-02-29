@@ -47,12 +47,9 @@ func Follow(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		query := `INSERT INTO follower (who_id, whom_id) VALUES (?, ?)`
-		sqlite_db, _ := db.Connect_db()
-		defer sqlite_db.Close()
-		_, err := sqlite_db.Exec(query, user_id, follow_user_id)
+		err := db.DoExec(query, []any{user_id, follow_user_id})
 
 		if err != nil {
-			fmt.Println("Error querying the database")
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
@@ -69,11 +66,11 @@ func Follow(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		query := `DELETE FROM follower WHERE who_id=? and WHOM_id=?`
-		sqlite_db, _ := db.Connect_db()
-		defer sqlite_db.Close()
-		_, err = sqlite_db.Exec(query, user_id, unfollow_user_id)
 
-		json.NewEncoder(w).Encode(http.StatusOK)
+		err = db.DoExec(query, []any{user_id, unfollow_user_id})
+		if err != nil {
+			json.NewEncoder(w).Encode(http.StatusOK)
+		}
 
 	} else if r.Method == "GET" {
 		followees := db.GetFollowees([]any{user_id, no_flws}, false)

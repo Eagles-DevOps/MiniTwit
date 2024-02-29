@@ -17,17 +17,17 @@ func Connect_db() (db *sql.DB, err error) {
 	return sql.Open("sqlite3", DATABASE)
 }
 
-func DoExec(query string, args []any) {
+func DoExec(query string, args []any) error { //used for all post request
 	db, _ := Connect_db()
 
-	db.Close()
+	defer db.Close()
 
-	_, err := db.Exec(query, args)
+	_, err := db.Exec(query, args...)
 	if err != nil {
 		fmt.Println("Error when trying to insert data into the database")
-		return
+		return err
 	}
-
+	return err
 }
 
 func GetMessages(args []any, one bool) []map[string]any {

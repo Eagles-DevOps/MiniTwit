@@ -75,9 +75,10 @@ func Messages_per_user(w http.ResponseWriter, r *http.Request) {
 		query := `INSERT INTO message (author_id, text, pub_date, flagged)
 		VALUES (?, ?, ?, 0)`
 
-		db.DoExec(query, []any{user_id, rv.Content, int(time.Now().Unix())})
-
-		w.WriteHeader(http.StatusNoContent)
+		dberr := db.DoExec(query, []any{user_id, rv.Content, int(time.Now().Unix())})
+		if dberr != nil {
+			w.WriteHeader(http.StatusNoContent)
+		}
 	}
 }
 
