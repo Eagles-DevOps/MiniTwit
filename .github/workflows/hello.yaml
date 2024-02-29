@@ -2,9 +2,9 @@ name: hello
 
 on:
   push:
-    branches: [ main ]
+    branches: [ ghcr ]
   pull_request:
-    branches: [ main ]
+    branches: [ ghcr ]
 
 jobs:
 
