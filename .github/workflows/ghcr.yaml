@@ -60,7 +60,6 @@ jobs:
           # flavor: |
           #   latest=true
           tags: |
-            latest=true
             type=sha
             type=ref,event=branch
             type=ref,event=pr
