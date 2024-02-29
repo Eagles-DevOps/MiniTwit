@@ -35,7 +35,7 @@ considered: Jenkins, GitLab CI/CD, Bamboo
 - modern and easy to use UI
 
 ### Artifact registry
-choice: Github Container Registry due to 
+choice: Github Container Registry
 considered: **DockerHub**
 considered: GitHub Packages
 - largest docker registry
