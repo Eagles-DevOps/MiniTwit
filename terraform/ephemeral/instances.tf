@@ -67,6 +67,11 @@ resource "digitalocean_droplet" "prod" {
     destination = "/tmp/docker-compose.yml"
   }
 
+  provisioner "file" {
+    source      = "provision.sh"
+    destination = "/tmp/provision.sh"
+  }
+
   provisioner "remote-exec" {
     script = "provision.sh"
   }
