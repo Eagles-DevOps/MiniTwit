@@ -17,6 +17,19 @@ func Connect_db() (db *sql.DB, err error) {
 	return sql.Open("sqlite3", DATABASE)
 }
 
+func DoExec(query string, args []any) {
+	db, _ := Connect_db()
+
+	db.Close()
+
+	_, err := db.Exec(query, args)
+	if err != nil {
+		fmt.Println("Error when trying to insert data into the database")
+		return
+	}
+
+}
+
 func GetMessages(args []any, one bool) []map[string]any {
 	query := `SELECT message.*, user.* FROM message, user
         WHERE message.flagged = 0 AND message.author_id = user.user_id
