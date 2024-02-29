@@ -2,7 +2,7 @@ name: Deployment to Digital Ocean
 
 on:
   push:
-      branches: ["main"]
+      branches: ["terra"]
 
 jobs: 
   deploy: 
@@ -27,6 +27,6 @@ jobs:
       - name: Terraform apply
         run: terraform apply -auto-approve 
         env: 
-          TF_VAR_do_token: ${{ secrets.DO_TOKEN }}
+          TF_VAR_do_token: ${{ secrets.VIKTORIA_DO_TOKEN }}
 
     
