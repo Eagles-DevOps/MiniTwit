@@ -29,7 +29,7 @@ provider "digitalocean" {
 }
 
 resource "digitalocean_droplet" "prod" {
-  image  = "ubuntu-22-04-x64"
+  image  = "docker-20-04"
   name   = "prod"
   region = "ams3"
   size   = "s-1vcpu-1gb"
@@ -38,21 +38,37 @@ resource "digitalocean_droplet" "prod" {
   ]
 
   connection {
-    host        = self.ipv4_address
-    user        = "root"
-    type        = "ssh"
+    host = self.ipv4_address
+    user = "root"
+    type = "ssh"
     # private_key = file(var.pvt_key_path)
     private_key = var.pvt_key
     timeout     = "2m"
   }
 
+  # provisioner "remote-exec" {
+  #   inline = [
+  #     "export PATH=$PATH:/usr/bin",
+  #     "sudo apt update",
+  #     "sudo apt install -y curl",
+  #     "curl -fsSL https://get.docker.com -o get-docker.sh",
+  #     "sudo sh get-docker.sh",
+  #     "sudo docker run hello-world"
+  #   ]
+  # }
+
+  # provisioner "file" {
+  #   source      = "provision.sh"
+  #   destination = "/tmp/provision.sh"
+  # }
+
+  provisioner "file" {
+    source      = "docker-compose.yml"
+    destination = "/tmp/docker-compose.yml"
+  }
+
   provisioner "remote-exec" {
-    inline = [
-      "export PATH=$PATH:/usr/bin",
-      # install nginx
-      "sudo apt update",
-      "sudo apt install -y nginx"
-    ]
+    script = "provision.sh"
   }
 }
 

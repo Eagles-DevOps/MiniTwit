@@ -1,0 +1,23 @@
+version: '3'
+services:
+  server:
+    container_name: minitwit-web-app
+    image: ghcr.io/eagles-devops/minitwit-web-app:251d1993f2c781321a20abf14c6513db391d624f
+    restart: always
+    ports:
+      - '15000:15000'
+
+  minitwit_api:
+    container_name: minitwit-api
+    image: ghcr.io/eagles-devops/minitwit:build-to-dockerhub
+    restart: always
+    ports:
+      - '15001:15001'
+
+  watchtower:
+    container_name: watchtower
+    image: containrrr/watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: always
+    command: --interval 60
