@@ -2,7 +2,8 @@ name: Deployment to Digital Ocean
 
 on:
   push:
-      branches: ["main"]
+      branches:
+        - main 
 
 env:
   TF_VAR_do_token: ${{ secrets.DIGITALOCEAN_TOKEN }}
