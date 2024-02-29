@@ -3,6 +3,7 @@ name: flow
 on:
   push:
     branches:
+      - ghcr
       - main
   workflow_dispatch:
 
