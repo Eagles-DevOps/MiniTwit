@@ -1,4 +1,4 @@
-name: flow
+name: ghcr
 
 on:
   push:
@@ -94,6 +94,6 @@ jobs:
         run: >
           ssh root@$SSH_HOST
           -i ~/.ssh/do_ssh_key -o StrictHostKeyChecking=no
-          '/tmp/provision.sh.sh'
+          '/tmp/provision.sh'
         env:
           SSH_HOST: ${{ secrets.SSH_HOST_TERRAFORM }}
