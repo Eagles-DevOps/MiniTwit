@@ -1,9 +1,11 @@
 name: Deployment to Digital Ocean 
 
+#comments
+
 on:
   push:
       branches:
-        - main 
+        - terra
 
 env:
   TF_VAR_do_token: ${{ secrets.DIGITALOCEAN_TOKEN }}
