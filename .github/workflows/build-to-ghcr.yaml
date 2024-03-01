@@ -2,7 +2,8 @@ name: Docker Image Publish
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - terra 
 
 env:
   # The Github container registry
@@ -35,11 +36,41 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       
-      - name: Build Docker Image 
+      - name: Build Docker Image main app
         run: | 
           cd ./minitwit-web-app/
-          docker build -t ghcr.io/eagles-devops/minitwit-web-app:${{ github.sha }} .
+          docker build -t ghcr.io/eagles-devops/minitwit-web-app:latest .
         
-      - name: Push Docker Image 
+      - name: Push Docker Image main app 
         run : | 
-          docker push ghcr.io/eagles-devops/minitwit-web-app:${{ github.sha }}
+          docker push ghcr.io/eagles-devops/minitwit-web-app:latest
+      
+      - name: Build Docker Image API
+        run: | 
+          cd ./minitwit-web-app/
+          docker build -t ghcr.io/eagles-devops/minitwit-web-app:latest .
+        
+      - name: Push Docker Image API 
+        run : | 
+          docker push ghcr.io/eagles-devops/minitwit-web-app:latest
+      
+            - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh/
+          echo "$SSH_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+        env:
+          SSH_KEY: ${{ secrets.VIKTORIA_PRIVATE_KEY }}
+
+      - name: Deploy to server main app
+        run: >
+          ssh root@161.35.88.22 -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no
+        # '/minitwit/deploy.sh'
+      
+      - name: Deploy to server API
+        run: >
+          ssh root@104.248.203.85 -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no
+        # '/minitwit/deploy.sh'
+      
+
+
