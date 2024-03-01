@@ -1,6 +1,6 @@
 terraform {
   required_version = ">= 1.0.0"
- 
+
   required_providers {
     digitalocean = {
       source  = "digitalocean/digitalocean"
@@ -10,19 +10,16 @@ terraform {
 }
 
 variable "do_token" {
-   description = "DigitalOcean API Token"
-   type = string
+  description = "DigitalOcean API Token"
+  type        = string
 }
 
-variable "private_key" {
-   description = "Private Key"
-   type = string
-}
- 
+variable "private_key" {}
+
 provider "digitalocean" {
   token = var.do_token
 }
- 
+
 resource "digitalocean_droplet" "app" {
   image  = "docker-20-04"
   name   = "app"
@@ -46,14 +43,14 @@ resource "digitalocean_droplet" "app" {
   }
 
   provisioner "file" {
-    source      = "deploy.sh"
-    destination = "/tmp/deploy.sh"
+    source      = "provision.sh"
+    destination = "/tmp/provision.sh"
   }
 
   provisioner "remote-exec" {
   inline = [
-    "chmod +x /tmp/deploy.sh",  
-    "/tmp/deploy.sh"          
+    "chmod +x /tmp/provision.sh", 
+    "/tmp/provision.sh"            
   ]
   }
 }
@@ -81,14 +78,14 @@ resource "digitalocean_droplet" "api" {
   }
 
   provisioner "file" {
-    source      = "deploy.sh"
-    destination = "/tmp/deploy.sh"
+    source      = "provision.sh"
+    destination = "/tmp/provision.sh"
   }
 
   provisioner "remote-exec" {
   inline = [
-    "chmod +x /tmp/deploy.sh",  
-    "/tmp/deploy.sh"          
+    "chmod +x /tmp/provision.sh", 
+    "/tmp/provision.sh"            
   ]
   }
 }
