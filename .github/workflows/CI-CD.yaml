@@ -88,15 +88,10 @@ jobs:
 
       - name: Deploy to server main app
         run: >
-          ssh $SSH_USER@161.35.88.22
-          -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no
+          ssh root@161.35.88.22 -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no
         # '/minitwit/deploy.sh'
       
       - name: Deploy to server API
         run: >
-          ssh $SSH_USER@104.248.203.85
-          -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no
+          ssh root@104.248.203.85 -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no
         # '/minitwit/deploy.sh'
-
-        env:
-          SSH_USER: ${{ secrets.VIKTORIA_SSH_USER }}
