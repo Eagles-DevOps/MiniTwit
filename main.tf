@@ -23,6 +23,9 @@ resource "digitalocean_droplet" "main-app" {
   name   = "Main-app"
   region = "ams3"
   size   = "s-1vcpu-1gb"
+  ssh_keys = [
+    data.digitalocean_ssh_key.Viktoria_key.id
+  ]
 }
 
 output "droplet_ip_main_app" {
@@ -35,9 +38,16 @@ resource "digitalocean_droplet" "api" {
   name   = "API-service"
   region = "ams3"
   size   = "s-1vcpu-1gb"
+  ssh_keys = [
+    data.digitalocean_ssh_key.Viktoria_key.id
+  ]
 }
 
 output "droplet_ip_api" {
   value       = digitalocean_droplet.api.ipv4_address 
   description = "The public IP address of the api droplet."
+}
+
+data "digitalocean_ssh_key" "Viktoria_key" {
+  name = "Viktoria_key"
 }
