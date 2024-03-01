@@ -41,18 +41,18 @@ resource "digitalocean_droplet" "app" {
 
   provisioner "file" {
     source = "deploy.sh"
-    destination = "/docker-project/deploy.sh"
+    destination = "/tmp/deploy.sh"
   }
 
   provisioner "file" {
     source = "docker_compose.yml"
-    destination = "/docker-project/docker_compose.yml"
+    destination = "/tmp/docker_compose.yml"
   }
 
   provisioner "remote-exec" {
   inline = [
-    "chmod +x /docker-project/deploy.sh",
-    "/docker-project/deploy.sh"
+    "chmod +x /tmp/deploy.sh",
+    "/tmp/deploy.sh"
   ]
   }
 }
@@ -75,18 +75,18 @@ resource "digitalocean_droplet" "api" {
 
   provisioner "file" {
     source = "deploy.sh"
-    destination = "/docker-project/deploy.sh"
+    destination = "/tmp/deploy.sh"
   }
 
   provisioner "file" {
     source = "docker_compose.yml"
-    destination = "/docker-project/docker_compose.yml"
+    destination = "/tmp/docker_compose.yml"
   }
 
   provisioner "remote-exec" {
   inline = [
-    "chmod +x /docker-project/deploy.sh",
-    "/docker-project/deploy.sh"
+    "chmod +x /tmp/deploy.sh",
+    "/tmp/deploy.sh"
   ]
   }
 }
