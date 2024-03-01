@@ -39,13 +39,13 @@ jobs:
       - name: Build and push docker image app
         run: | 
           cd ./minitwit-web-app/
-          docker build -t ghcr.io/eagles-devops/minitwit-web-app:latest .
+          docker build -t ghcr.io/eagles-devops/app:latest .
           docker push ghcr.io/eagles-devops/minitwit-web-app:latest
       
       - name: Build and push docker image api
         run: | 
           cd ./minitwit-web-app/
-          docker build -t ghcr.io/eagles-devops/minitwit-web-app:latest .
+          docker build -t ghcr.io/eagles-devops/api:latest .
           docker push ghcr.io/eagles-devops/minitwit-web-app:latest
       
       - name: Configure SSH
@@ -59,12 +59,12 @@ jobs:
       - name: Deploy to server app
         run: >
           ssh root@146.190.30.11 -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no
-          '/tmp/deploy.sh'
+          '/remote-files/deploy.sh'
       
       - name: Deploy to server api
         run: >
           ssh root@146.190.22.184 -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no
-          '/tmp/deploy.sh'
+          '/remote-files/deploy.sh'
       
 
 
