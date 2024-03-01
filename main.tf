@@ -19,7 +19,7 @@ provider "digitalocean" {
 }
  
 resource "digitalocean_droplet" "main-app" {
-  image  = "ubuntu-22-04-x64"
+  image  = "docker-20-04"
   name   = "Main-app"
   region = "ams3"
   size   = "s-1vcpu-1gb"
@@ -34,7 +34,7 @@ output "droplet_ip_main_app" {
 }
 
 resource "digitalocean_droplet" "api" {
-  image  = "ubuntu-22-04-x64"
+  image  = "docker-20-04"
   name   = "API-service"
   region = "ams3"
   size   = "s-1vcpu-1gb"
