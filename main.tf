@@ -13,6 +13,11 @@ variable "do_token" {
    description = "DigitalOcean API Token"
    type = string
 }
+
+variable "private_key" {
+   description = "Private Key"
+   type = string
+}
  
 provider "digitalocean" {
   token = var.do_token
@@ -31,7 +36,7 @@ resource "digitalocean_droplet" "app" {
     host = self.ipv4_address
     user = "root"
     type = "ssh"
-    private_key = data.digitalocean_ssh_key.Viktoria_key.id
+    private_key = var.private_key
   }
 
   provisioner "file" {
@@ -65,7 +70,7 @@ resource "digitalocean_droplet" "api" {
     host = self.ipv4_address
     user = "root"
     type = "ssh"
-    private_key = data.digitalocean_ssh_key.Viktoria_key.id
+    private_key = var.private_key
   }
 
   provisioner "file" {
