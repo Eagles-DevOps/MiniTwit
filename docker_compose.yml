@@ -1,0 +1,20 @@
+version: '3'
+
+services:
+  minitwit_app:
+    image: ghcr.io/eagles-devops/app:latest
+    restart: always 
+    container_name: app 
+    ports:
+        - '15000:15000'
+    volumes: ./sqlitedb-app/:/usr/src/app/sqlitedb/
+    environment: DBPATH=/usr/src/app/sqlitedb/minitwit.db  
+
+  minitwit_api:
+    image: ghcr.io/eagles-devops/api:latest
+    restart: always 
+    container_name: api
+    ports:
+      - '15001:15001'
+    volumes: ./sqlitedb-app/:/usr/src/app/sqlitedb/
+    environment: DBPATH=/usr/src/app/sqlitedb/minitwit.db  

@@ -28,11 +28,6 @@ resource "digitalocean_droplet" "app" {
   ]
 }
 
-output "droplet_ip_main_app" {
-  value       = digitalocean_droplet.main-app.ipv4_address
-  description = "The public IP address of the main-app droplet."
-}
-
 resource "digitalocean_droplet" "api" {
   image  = "docker-20-04"
   name   = "api"
@@ -41,11 +36,6 @@ resource "digitalocean_droplet" "api" {
   ssh_keys = [
     data.digitalocean_ssh_key.Viktoria_key.id
   ]
-}
-
-output "droplet_ip_api" {
-  value       = digitalocean_droplet.api.ipv4_address 
-  description = "The public IP address of the api droplet."
 }
 
 data "digitalocean_ssh_key" "Viktoria_key" {
@@ -59,5 +49,12 @@ provisioner "file" {
 
 provisioner "file" {
   source = "docker_compose.yml"
-  destination = "/tmp/docker_compose.yml/"
+  destination = "/docker-project/docker_compose.yml/"
+}
+
+provisioner "remote-exec" {
+  inline = [
+    "chmod 777 /tmp/deploy.sh/"
+    "/docker-project/deploy.sh/"
+  ]
 }

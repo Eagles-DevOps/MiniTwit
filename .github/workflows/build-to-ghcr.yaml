@@ -57,12 +57,12 @@ jobs:
       - name: Deploy to server app
         run: >
           ssh root@146.190.30.11 -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no
-          '/tmp/deploy.sh'
+          '/docker-project/deploy.sh'
       
       - name: Deploy to server api
         run: >
           ssh root@146.190.22.184 -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no
-          '/tmp/deploy.sh'
+          '/docker-project/deploy.sh'
       
 
 
