@@ -62,10 +62,11 @@ func DoExec(query string, args []any) error { //used for all post request
 
 	_, err := db.Exec(query, args...)
 	if err != nil {
-		fmt.Println("Error when trying to insert data into the database")
+		fmt.Println("Error when trying to execute query:", query)
+		fmt.Println("Error:", err)
 		return err
 	}
-	return err
+	return nil
 }
 
 func GetMessages(args []any, one bool) []map[string]any {
