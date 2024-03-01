@@ -4,17 +4,19 @@ import (
 	"database/sql"
 	"fmt"
 	"minitwit-api/model"
+	"os"
 
 	"golang.org/x/crypto/bcrypt"
 )
 
-const (
-	DATABASE = "./minitwit.db"
-)
-
 func Connect_db() (db *sql.DB, err error) {
+	dbPath := os.Getenv("SQLITEPATH")
+	if len(dbPath) == 0 {
+		dbPath = "./sqlite/minitwit.db"
+	}
+
 	fmt.Println("Connecting to database...")
-	return sql.Open("sqlite3", DATABASE)
+	return sql.Open("sqlite3", dbPath)
 }
 
 func DoExec(query string, args []any) error { //used for all post request
