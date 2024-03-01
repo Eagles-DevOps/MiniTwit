@@ -5,9 +5,37 @@ import (
 	"fmt"
 	"minitwit-api/model"
 	"os"
+	"path/filepath"
 
 	"golang.org/x/crypto/bcrypt"
 )
+
+func Init() {
+	fmt.Println("Initializing database...")
+	query := `create table if not exists user (
+		user_id integer primary key autoincrement,
+		username string not null,
+		email string not null,
+		pw_hash string not null
+	  );
+	  
+	  create table if not exists follower (
+		who_id integer,
+		whom_id integer
+	  );
+	  
+	  create table if not exists message (
+		message_id integer primary key autoincrement,
+		author_id integer not null,
+		text string not null,
+		pub_date integer,
+		flagged integer
+	  );`
+
+	db, _ := Connect_db()
+	db.Exec(query)
+	defer db.Close()
+}
 
 func Connect_db() (db *sql.DB, err error) {
 	dbPath := os.Getenv("SQLITEPATH")
@@ -15,7 +43,15 @@ func Connect_db() (db *sql.DB, err error) {
 		dbPath = "./sqlite/minitwit.db"
 	}
 
+	dir := filepath.Dir(dbPath)
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		if _ = os.MkdirAll(dir, 0755); err != nil {
+			fmt.Printf("Error creating directory: %v\n", err)
+		}
+	}
+
 	fmt.Println("Connecting to database...")
+	fmt.Println("dbPath:" + dbPath)
 	return sql.Open("sqlite3", dbPath)
 }
 
