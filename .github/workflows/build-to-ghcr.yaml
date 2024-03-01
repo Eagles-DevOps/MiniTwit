@@ -54,7 +54,7 @@ jobs:
         run : | 
           docker push ghcr.io/eagles-devops/minitwit-web-app:latest
       
-            - name: Configure SSH
+      - name: Configure SSH
         run: |
           mkdir -p ~/.ssh/
           echo "$SSH_KEY" > ~/.ssh/id_rsa
