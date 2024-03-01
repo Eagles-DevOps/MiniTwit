@@ -44,7 +44,7 @@ data "digitalocean_ssh_key" "Viktoria_key" {
 
 provisioner "file" {
   source = "deploy.sh"
-  destination = "/tmp/deploy.sh"
+  destination = "/docker-project/deploy.sh"
 }
 
 provisioner "file" {
