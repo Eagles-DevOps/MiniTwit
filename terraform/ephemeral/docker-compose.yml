@@ -6,6 +6,8 @@ services:
     restart: always
     ports:
       - '15000:15000'
+    volumes:
+      - ./sqlitedb/:/usr/src/app/sqlitedb/
 
   minitwit_api:
     container_name: api
@@ -13,6 +15,8 @@ services:
     restart: always
     ports:
       - '15001:15001'
+    volumes:
+      - ./sqlitedb/:/usr/src/app/sqlitedb/
 
   watchtower:
     container_name: watchtower
