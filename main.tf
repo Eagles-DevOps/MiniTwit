@@ -34,7 +34,6 @@ resource "digitalocean_droplet" "app" {
     user = "root"
     type = "ssh"
     private_key = var.private_key
-    timeout     = "2m"
   }
 
   provisioner "file" {
@@ -69,7 +68,6 @@ resource "digitalocean_droplet" "api" {
     user = "root"
     type = "ssh"
     private_key = var.private_key
-    timeout     = "2m"
   }
 
   provisioner "file" {
