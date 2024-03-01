@@ -1,9 +1,8 @@
-name: ghcr
+name: ci-cd
 
 on:
   push:
     branches:
-      - ghcr
       - main
   workflow_dispatch:
 
