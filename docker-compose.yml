@@ -10,6 +10,8 @@ services:
     build: ./minitwit-api
     ports:
       - '15001:15001'
+    environment:
+      - SQLITEPATH=./minitwit.db
 
   legacy_tests:
     build:
