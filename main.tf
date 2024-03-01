@@ -37,22 +37,23 @@ resource "digitalocean_droplet" "app" {
     user = "root"
     type = "ssh"
     private_key = var.private_key
+    timeout     = "2m"
   }
 
   provisioner "file" {
-    source = "deploy.sh"
+    source      = "docker-compose.yml"
+    destination = "/tmp/docker-compose.yml"
+  }
+
+  provisioner "file" {
+    source      = "deploy.sh"
     destination = "/tmp/deploy.sh"
-  }
-
-  provisioner "file" {
-    source = "docker_compose.yml"
-    destination = "/tmp/docker_compose.yml"
   }
 
   provisioner "remote-exec" {
   inline = [
-    "chmod +x /tmp/deploy.sh",
-    "/tmp/deploy.sh"
+    "chmod +x /tmp/deploy.sh",  
+    "/tmp/deploy.sh"          
   ]
   }
 }
@@ -71,22 +72,23 @@ resource "digitalocean_droplet" "api" {
     user = "root"
     type = "ssh"
     private_key = var.private_key
+    timeout     = "2m"
   }
 
   provisioner "file" {
-    source = "deploy.sh"
+    source      = "docker-compose.yml"
+    destination = "/tmp/docker-compose.yml"
+  }
+
+  provisioner "file" {
+    source      = "deploy.sh"
     destination = "/tmp/deploy.sh"
-  }
-
-  provisioner "file" {
-    source = "docker_compose.yml"
-    destination = "/tmp/docker_compose.yml"
   }
 
   provisioner "remote-exec" {
   inline = [
-    "chmod +x /tmp/deploy.sh",
-    "/tmp/deploy.sh"
+    "chmod +x /tmp/deploy.sh",  
+    "/tmp/deploy.sh"          
   ]
   }
 }
