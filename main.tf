@@ -26,12 +26,6 @@ resource "digitalocean_droplet" "app" {
   ssh_keys = [
     data.digitalocean_ssh_key.Viktoria_key.id
   ]
-  connection {
-    host = self.ipv4_address
-    user = "root"
-    type = "ssh"
-    private_key = data.digitalocean_ssh_key.Viktoria_key.id
-  }
 }
 
 resource "digitalocean_droplet" "api" {
@@ -42,13 +36,6 @@ resource "digitalocean_droplet" "api" {
   ssh_keys = [
     data.digitalocean_ssh_key.Viktoria_key.id
   ]
-
-  connection {
-    host = self.ipv4_address
-    user = "root"
-    type = "ssh"
-    private_key = data.digitalocean_ssh_key.Viktoria_key.id
-  }
 }
 
 data "digitalocean_ssh_key" "Viktoria_key" {
@@ -57,17 +44,17 @@ data "digitalocean_ssh_key" "Viktoria_key" {
 
 provisioner "file" {
   source = "deploy.sh"
-  destination = "/tmp/deploy.sh/"
+  destination = "/tmp/deploy.sh"
 }
 
 provisioner "file" {
   source = "docker_compose.yml"
-  destination = "/docker-project/docker_compose.yml/"
+  destination = "/docker-project/docker_compose.yml"
 }
 
 provisioner "remote-exec" {
   inline = [
-    "chmod 777 /tmp/deploy.sh/"
-    "/docker-project/deploy.sh/"
+    "chmod 777 /tmp/deploy.sh"
+    "/docker-project/deploy.sh"
   ]
 }
