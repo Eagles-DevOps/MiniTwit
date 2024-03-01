@@ -51,3 +51,13 @@ output "droplet_ip_api" {
 data "digitalocean_ssh_key" "Viktoria_key" {
   name = "Viktoria_key"
 }
+
+provisioner "file" {
+  source = "deploy.sh"
+  destination = "/tmp/deploy.sh/"
+}
+
+provisioner "file" {
+  source = "docker_compose.yml"
+  destination = "/tmp/docker_compose.yml/"
+}

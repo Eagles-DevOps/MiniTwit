@@ -1,6 +1,6 @@
 source ~/.bash_profile
 
-cd /tmp
+cd /tmp/
 
 docker compose down 
 docker compose -f docker-compose.yml pull
