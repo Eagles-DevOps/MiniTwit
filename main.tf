@@ -18,9 +18,9 @@ provider "digitalocean" {
   token = var.do_token
 }
  
-resource "digitalocean_droplet" "main-app" {
+resource "digitalocean_droplet" "app" {
   image  = "docker-20-04"
-  name   = "Main-app"
+  name   = "app"
   region = "ams3"
   size   = "s-1vcpu-1gb"
   ssh_keys = [
@@ -35,7 +35,7 @@ output "droplet_ip_main_app" {
 
 resource "digitalocean_droplet" "api" {
   image  = "docker-20-04"
-  name   = "API-service"
+  name   = "api"
   region = "ams3"
   size   = "s-1vcpu-1gb"
   ssh_keys = [

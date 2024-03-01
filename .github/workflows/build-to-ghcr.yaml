@@ -1,4 +1,4 @@
-name: Docker Image Publish
+name: Build and deploy 
 
 on:
   push:
@@ -36,22 +36,16 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       
-      - name: Build Docker Image main app
+      - name: Build and push docker image app
         run: | 
           cd ./minitwit-web-app/
           docker build -t ghcr.io/eagles-devops/minitwit-web-app:latest .
-        
-      - name: Push Docker Image main app 
-        run : | 
           docker push ghcr.io/eagles-devops/minitwit-web-app:latest
       
-      - name: Build Docker Image API
+      - name: Build and push docker image api
         run: | 
           cd ./minitwit-web-app/
           docker build -t ghcr.io/eagles-devops/minitwit-web-app:latest .
-        
-      - name: Push Docker Image API 
-        run : | 
           docker push ghcr.io/eagles-devops/minitwit-web-app:latest
       
       - name: Configure SSH
@@ -62,15 +56,15 @@ jobs:
         env:
           SSH_KEY: ${{ secrets.VIKTORIA_PRIVATE_KEY }}
 
-      - name: Deploy to server main app
+      - name: Deploy to server app
         run: >
           ssh root@161.35.88.22 -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no
-        # '/minitwit/deploy.sh'
+          '/tmp/deploy.sh'
       
-      - name: Deploy to server API
+      - name: Deploy to server api
         run: >
           ssh root@104.248.203.85 -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no
-        # '/minitwit/deploy.sh'
+          '/tmp/deploy.sh'
       
 
 
