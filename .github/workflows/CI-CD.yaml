@@ -61,8 +61,8 @@ jobs:
       - name: Build and push Docker Image for main app 
         uses: docker/build-push-action@v4
         with:
-          context: "./minitwit-web-app"
-          file: /Dockerfile
+          context: "./minitwit-web-app/"
+          file: Dockerfile
           push: true
           tags: ${{ steps.meta-api.outputs.tags }}
           labels: ${{ steps.meta-api.outputs.labels }}
@@ -72,8 +72,8 @@ jobs:
       - name: Build and push Docker Image for API
         uses: docker/build-push-action@v4
         with:
-          context: "./minitwit-api"
-          file: /Dockerfile
+          context: "./minitwit-api/"
+          file: Dockerfile
           push: true 
           tags: ${{ steps.meta-api.outputs.tags }}
           labels: ${{ steps.meta-api.outputs.labels }}
