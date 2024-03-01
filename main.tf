@@ -27,6 +27,13 @@ resource "digitalocean_droplet" "app" {
     data.digitalocean_ssh_key.Viktoria_key.id
   ]
 
+  connection {
+    host = self.ipv4_address
+    user = "root"
+    type = "ssh"
+    private_key = data.digitalocean_ssh_key.Viktoria_key.id
+  }
+
   provisioner "file" {
     source = "deploy.sh"
     destination = "/docker-project/deploy.sh"
@@ -53,6 +60,13 @@ resource "digitalocean_droplet" "api" {
   ssh_keys = [
     data.digitalocean_ssh_key.Viktoria_key.id
   ]
+
+  connection {
+    host = self.ipv4_address
+    user = "root"
+    type = "ssh"
+    private_key = data.digitalocean_ssh_key.Viktoria_key.id
+  }
 
   provisioner "file" {
     source = "deploy.sh"
