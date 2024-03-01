@@ -31,14 +31,35 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker Metadata for app
+        id: meta-app
+        uses: docker/metadata-action@98669ae865ea3cffbcbaa878cf57c20bbf1c6c38
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/app
+          flavor: |
+            latest=true
+          tags: |
+            type=sha
+
+      # https://github.com/docker/metadata-action
+      - name: Extract Docker metadata for api
+        id: meta-api
+        uses: docker/metadata-action@98669ae865ea3cffbcbaa878cf57c20bbf1c6c38
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/api
+          flavor: |
+            latest=true
+          tags: |
+            type=sha
       
-      - name: Build and push docker image app
+      - name: Build and push docker image for app
         run: | 
           cd ./minitwit-web-app
           docker build -t ghcr.io/eagles-devops/app:latest .
           docker push ghcr.io/eagles-devops/app:latest
       
-      - name: Build and push docker image api
+      - name: Build and push docker image for api
         run: | 
           cd ./minitwit-web-app
           docker build -t ghcr.io/eagles-devops/api:latest .
