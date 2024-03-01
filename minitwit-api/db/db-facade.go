@@ -150,7 +150,7 @@ func Get_user_id(username string) (any, error) {
 	}
 	userID := user_id.(map[any]any)
 	user_id_val := userID["user_id"]
-	return user_id_val, nil
+	return user_id_val, err
 }
 
 func Query_db(query string, args []any, one bool) (any, error) {
