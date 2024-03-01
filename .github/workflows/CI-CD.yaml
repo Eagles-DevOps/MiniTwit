@@ -25,7 +25,6 @@ jobs:
         uses: docker/setup-buildx-action@v1
 
       - name: Log into Registry
-        if: github.event_name != 'pull_request'
         uses: docker/login-action@28218f9b04b4f3f62068d7b6ce6ca5b26e35336c
         with: 
           registry: ${{ env.REGISTRY }}
@@ -62,9 +61,9 @@ jobs:
       - name: Build and push Docker Image for main app 
         uses: docker/build-push-action@v4
         with:
-          context: "./minitwit-web-app/"
-          file: ./Dockerfile
-          push: ${{ github.event_name != 'pull_request' }}
+          context: "./minitwit-web-app"
+          file: /Dockerfile
+          push: true
           tags: ${{ steps.meta-api.outputs.tags }}
           labels: ${{ steps.meta-api.outputs.labels }}
           cache-from: type=gha
@@ -73,9 +72,9 @@ jobs:
       - name: Build and push Docker Image for API
         uses: docker/build-push-action@v4
         with:
-          context: "./minitwit-api/"
-          file: ./Dockerfile
-          push: ${{ github.event_name != 'pull_request' }}
+          context: "./minitwit-api"
+          file: /Dockerfile
+          push: true 
           tags: ${{ steps.meta-api.outputs.tags }}
           labels: ${{ steps.meta-api.outputs.labels }}
           cache-from: type=gha
