@@ -54,7 +54,7 @@ provisioner "file" {
 
 provisioner "remote-exec" {
   inline = [
-    "chmod 777 /tmp/deploy.sh"
+    "chmod +x /tmp/deploy.sh"
     "/docker-project/deploy.sh"
   ]
 }
