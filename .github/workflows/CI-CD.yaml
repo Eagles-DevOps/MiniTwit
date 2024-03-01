@@ -62,7 +62,6 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: "./minitwit-web-app/"
-          file: Dockerfile
           push: true
           tags: ${{ steps.meta-api.outputs.tags }}
           labels: ${{ steps.meta-api.outputs.labels }}
@@ -73,7 +72,6 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: "./minitwit-api/"
-          file: Dockerfile
           push: true 
           tags: ${{ steps.meta-api.outputs.tags }}
           labels: ${{ steps.meta-api.outputs.labels }}
