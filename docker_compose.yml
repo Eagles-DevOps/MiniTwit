@@ -7,8 +7,10 @@ services:
     container_name: app 
     ports:
         - '15000:15000'
-    volumes: ./sqlitedb-app/:/usr/src/app/sqlitedb/
-    environment: DBPATH=/usr/src/app/sqlitedb/minitwit.db  
+    volumes: 
+      - ./sqlitedb-app/:/usr/src/app/sqlitedb/
+    environment: 
+      - DBPATH=/usr/src/app/sqlitedb/minitwit.db  
 
   minitwit_api:
     image: ghcr.io/eagles-devops/api:latest
@@ -16,5 +18,7 @@ services:
     container_name: api
     ports:
       - '15001:15001'
-    volumes: ./sqlitedb-app/:/usr/src/app/sqlitedb/
-    environment: DBPATH=/usr/src/app/sqlitedb/minitwit.db  
+    volumes: 
+      - ./sqlitedb-app/:/usr/src/app/sqlitedb/
+    environment: 
+      - DBPATH=/usr/src/app/sqlitedb/minitwit.db  
