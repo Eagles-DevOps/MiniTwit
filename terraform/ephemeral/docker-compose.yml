@@ -7,7 +7,9 @@ services:
     ports:
       - '15000:15000'
     volumes:
-      - ./sqlitedb/:/usr/src/app/sqlitedb/
+      - ./sqlitedb-app/:/usr/src/app/sqlitedb/
+    environment:
+      - SQLITEPATH=/usr/src/app/sqlitedb/minitwit.db
 
   minitwit_api:
     container_name: api
@@ -16,7 +18,9 @@ services:
     ports:
       - '15001:15001'
     volumes:
-      - ./sqlitedb/:/usr/src/app/sqlitedb/
+      - ./sqlitedb-api/:/usr/src/app/sqlitedb/
+    environment:
+      - SQLITEPATH=/usr/src/app/sqlitedb/minitwit.db
 
   watchtower:
     container_name: watchtower
