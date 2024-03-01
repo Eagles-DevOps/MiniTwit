@@ -8,10 +8,12 @@ import (
 	"minitwit-api/api"
 
 	"github.com/gorilla/mux"
+
+	"minitwit-api/db"
 )
 
 func main() {
-
+	db.Init()
 	r := mux.NewRouter()
 
 	r.HandleFunc("/register", api.Register)
