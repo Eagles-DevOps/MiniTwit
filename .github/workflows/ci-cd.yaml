@@ -1,0 +1,68 @@
+name: Build and deploy 
+
+on:
+  push:
+    branches:
+      - terra
+
+env:
+  # The Github container registry
+  REGISTRY: ghcr.io
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Docker buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Log into registry ${{ env.REGISTRY }}
+        uses: docker/login-action@28218f9b04b4f3f62068d7b6ce6ca5b26e35336c
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Build and push Docker image for app
+        uses: docker/build-push-action@v4
+        with:
+          context: ./minitwit-web-app
+          push: true
+          tags: ghcr.io/eagles-devops/api:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push Docker image for api
+        uses: docker/build-push-action@v4
+        with:
+          context: ./minitwit-web-app
+          push: true
+          tags: ghcr.io/eagles-devops/api:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh/
+          echo "$SSH_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+        env:
+          SSH_KEY: ${{ secrets.VIKTORIA_PRIVATE_KEY }}
+
+      - name: Deploy to server app
+        run: >
+          ssh root@164.90.205.60 -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no 'sh /tmp/provision.sh'
+      
+      - name: Deploy to server api
+        run: >
+          ssh root@68.183.13.240 -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no 'sh /tmp/provision.sh'
+      
+
+
