@@ -50,8 +50,6 @@ func Connect_db() (db *sql.DB, err error) {
 		}
 	}
 
-	fmt.Println("Connecting to database...")
-	fmt.Println("dbPath:" + dbPath)
 	return sql.Open("sqlite3", dbPath)
 }
 
