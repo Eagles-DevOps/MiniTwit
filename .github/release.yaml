@@ -17,10 +17,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v1.0.0  # Specify the tag name for the release
-          release_name: Release v1.0.0  # Specify the release name
+          tag_name: v4  # Specify the tag name for the release
+          release_name: Introduced an abstraction layer for our database  # Specify the release name
           body: |  # Specify the release notes
-            This is the release notes for v1.0.0.
-            You can include multiple lines here.
+            Authors: Jan, Rasmus, Daniel, Roman, Viktoria, Trond, ChatGPT
           draft: false  # Set to true if you want to create a draft release
           prerelease: false  # Set to true if this is a prerelease
