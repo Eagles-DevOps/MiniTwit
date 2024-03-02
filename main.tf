@@ -42,7 +42,7 @@ resource "digitalocean_droplet" "app" {
   }
 
   provisioner "file" {
-    source = "privision.sh"
+    source = "provision.sh"
     destination = "/tmp/provision.sh"
   }
 }
@@ -69,7 +69,7 @@ resource "digitalocean_droplet" "api" {
   }
 
   provisioner "file" {
-    source = "privision.sh"
+    source = "provision.sh"
     destination = "/tmp/provision.sh"
   }
 }
