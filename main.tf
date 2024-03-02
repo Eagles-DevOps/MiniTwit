@@ -35,16 +35,6 @@ resource "digitalocean_droplet" "app" {
     type = "ssh"
     private_key = var.private_key
   }
-
-  provisioner "file" {
-    source      = "docker-compose.yml"
-    destination = "/tmp/docker-compose.yml"
-  }
-
-  provisioner "file" {
-    source      = "provision.sh"
-    destination = "/tmp/provision.sh"
-  }
 }
 
 resource "digitalocean_droplet" "api" {
@@ -61,16 +51,6 @@ resource "digitalocean_droplet" "api" {
     user = "root"
     type = "ssh"
     private_key = var.private_key
-  }
-
-  provisioner "file" {
-    source      = "docker-compose.yml"
-    destination = "/tmp/docker-compose.yml"
-  }
-
-  provisioner "file" {
-    source      = "provision.sh"
-    destination = "/tmp/provision.sh"
   }
 }
 
