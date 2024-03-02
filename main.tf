@@ -45,13 +45,6 @@ resource "digitalocean_droplet" "app" {
     source      = "provision.sh"
     destination = "/tmp/provision.sh"
   }
-
-  provisioner "remote-exec" {
-  inline = [
-    "chmod +x /tmp/provision.sh", 
-    "/tmp/provision.sh"            
-  ]
-  }
 }
 
 resource "digitalocean_droplet" "api" {
@@ -78,13 +71,6 @@ resource "digitalocean_droplet" "api" {
   provisioner "file" {
     source      = "provision.sh"
     destination = "/tmp/provision.sh"
-  }
-
-  provisioner "remote-exec" {
-  inline = [
-    "chmod +x /tmp/provision.sh", 
-    "/tmp/provision.sh"            
-  ]
   }
 }
 
