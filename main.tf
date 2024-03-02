@@ -35,7 +35,7 @@ resource "digitalocean_droplet" "app" {
     type = "ssh"
     private_key = var.private_key
   }
-  
+
   provisioner "file" {
     source = "docker_compose.yml"
     destination = "/tmp/docker_compose.yml"
@@ -47,9 +47,11 @@ resource "digitalocean_droplet" "app" {
   }
 
   provisioner "remote-exec" {
+    inline = [
     "chmod +x /tmp/provision.sh",
     "chmod 644 /tmp/docker_compose.yml",
     "/tmp/provision.sh"
+    ]
   }
 }
 
@@ -80,9 +82,11 @@ resource "digitalocean_droplet" "api" {
   }
 
   provisioner "remote-exec" {
+    inline = [
     "chmod +x /tmp/provision.sh",
     "chmod 644 /tmp/docker_compose.yml",
     "/tmp/provision.sh"
+    ]
   }
 }
 
