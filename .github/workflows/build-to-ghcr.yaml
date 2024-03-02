@@ -58,12 +58,18 @@ jobs:
           cd ./minitwit-web-app
           docker build -t ghcr.io/eagles-devops/app:latest .
           docker push ghcr.io/eagles-devops/app:latest
+        with: 
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
       
       - name: Build and push docker image for api
         run: | 
           cd ./minitwit-web-app
           docker build -t ghcr.io/eagles-devops/api:latest .
           docker push ghcr.io/eagles-devops/api:latest
+        with: 
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
       
       - name: Configure SSH
         run: |
