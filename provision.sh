@@ -3,6 +3,6 @@
 export PATH=$PATH:/usr/bin
 cd /tmp/
 
-docker compose down 
-docker compose up -d 
-docker compose pull
+docker-compose -f /path/to/docker_compose.yml down 
+docker-compose -f /path/to/docker_compose.yml up -d 
+docker-compose -f /path/to/docker_compose.yml pull
