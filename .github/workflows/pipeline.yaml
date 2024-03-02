@@ -53,24 +53,25 @@ jobs:
           tags: |
             type=sha
       
-      - name: Build and push docker image for app
-        run: | 
-          cd ./minitwit-web-app
-          docker build -t ghcr.io/eagles-devops/app:latest .
-          docker push ghcr.io/eagles-devops/app:latest
-        with: 
+      - name: Build and push Docker image for app
+        uses: docker/build-push-action@v4
+        with:
+          context: ./minitwit-web-app
+          push: true
+          tags: ghcr.io/eagles-devops/api:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
-      
-      - name: Build and push docker image for api
-        run: | 
-          cd ./minitwit-web-app
-          docker build -t ghcr.io/eagles-devops/api:latest .
-          docker push ghcr.io/eagles-devops/api:latest
-        with: 
+
+
+      - name: Build and push Docker image for api
+        uses: docker/build-push-action@v4
+        with:
+          context: ./minitwit-web-app
+          push: true
+          tags: ghcr.io/eagles-devops/api:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
-      
+
       - name: Configure SSH
         run: |
           mkdir -p ~/.ssh/

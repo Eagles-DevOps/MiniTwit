@@ -4,17 +4,67 @@ import (
 	"database/sql"
 	"fmt"
 	"minitwit-api/model"
+	"os"
+	"path/filepath"
 
 	"golang.org/x/crypto/bcrypt"
 )
 
-const (
-	DATABASE = "./minitwit.db"
-)
+func Init() {
+	fmt.Println("Initializing database...")
+	query := `create table if not exists user (
+		user_id integer primary key autoincrement,
+		username string not null,
+		email string not null,
+		pw_hash string not null
+	  );
+	  
+	  create table if not exists follower (
+		who_id integer,
+		whom_id integer
+	  );
+	  
+	  create table if not exists message (
+		message_id integer primary key autoincrement,
+		author_id integer not null,
+		text string not null,
+		pub_date integer,
+		flagged integer
+	  );`
+
+	db, _ := Connect_db()
+	db.Exec(query)
+	defer db.Close()
+}
 
 func Connect_db() (db *sql.DB, err error) {
-	fmt.Println("Connecting to database...")
-	return sql.Open("sqlite3", DATABASE)
+	dbPath := os.Getenv("SQLITEPATH")
+	if len(dbPath) == 0 {
+		dbPath = "./sqlite/minitwit.db"
+	}
+
+	dir := filepath.Dir(dbPath)
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		if _ = os.MkdirAll(dir, 0755); err != nil {
+			fmt.Printf("Error creating directory: %v\n", err)
+		}
+	}
+
+	return sql.Open("sqlite3", dbPath)
+}
+
+func DoExec(query string, args []any) error { //used for all post request
+	db, _ := Connect_db()
+
+	defer db.Close()
+
+	_, err := db.Exec(query, args...)
+	if err != nil {
+		fmt.Println("Error when trying to execute query:", query)
+		fmt.Println("Error:", err)
+		return err
+	}
+	return nil
 }
 
 func GetMessages(args []any, one bool) []map[string]any {
@@ -93,12 +143,12 @@ func GetFollowees(args []any, one bool) []string {
 
 func Get_user_id(username string) (any, error) {
 	user_id, err := Query_db("SELECT user_id FROM user WHERE username = ?", []any{username}, true)
-	if !IsNil(user_id) {
-		userID := user_id.(map[any]any)
-		user_id_val := userID["user_id"]
-		return user_id_val, err
+	if IsNil(user_id) {
+		return nil, fmt.Errorf("user with username '%s' not found: %w", username, err)
 	}
-	return nil, err
+	userID := user_id.(map[any]any)
+	user_id_val := userID["user_id"]
+	return user_id_val, err
 }
 
 func Query_db(query string, args []any, one bool) (any, error) {

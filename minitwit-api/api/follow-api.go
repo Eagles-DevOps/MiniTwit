@@ -33,6 +33,7 @@ func Follow(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
 		err := json.NewDecoder(r.Body).Decode(&rv)
 		if err != nil {
+			http.Error(w, "error in decoding JSON, follow", http.StatusNotFound)
 			fmt.Println("Error in decoding the JSON, follow", err)
 		}
 	}
@@ -47,17 +48,14 @@ func Follow(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		query := `INSERT INTO follower (who_id, whom_id) VALUES (?, ?)`
-		sqlite_db, _ := db.Connect_db()
-		defer sqlite_db.Close()
-		_, err := sqlite_db.Exec(query, user_id, follow_user_id)
+		err := db.DoExec(query, []any{user_id, follow_user_id})
 
 		if err != nil {
-			fmt.Println("Error querying the database")
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
 
-		json.NewEncoder(w).Encode(http.StatusOK)
+		w.WriteHeader(http.StatusNoContent)
 
 	} else if r.Method == "POST" && rv.Unfollow != "" {
 
@@ -69,11 +67,14 @@ func Follow(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		query := `DELETE FROM follower WHERE who_id=? and WHOM_id=?`
-		sqlite_db, _ := db.Connect_db()
-		defer sqlite_db.Close()
-		_, err = sqlite_db.Exec(query, user_id, unfollow_user_id)
 
-		json.NewEncoder(w).Encode(http.StatusOK)
+		err = db.DoExec(query, []any{user_id, unfollow_user_id})
+		if err != nil {
+			w.WriteHeader(http.StatusForbidden)
+			return
+		} else {
+			w.WriteHeader(http.StatusNoContent)
+		}
 
 	} else if r.Method == "GET" {
 		followees := db.GetFollowees([]any{user_id, no_flws}, false)

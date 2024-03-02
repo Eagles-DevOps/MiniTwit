@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/cespare/xxhash"
+
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -35,23 +37,13 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		} else if !db.IsNil(user_id) {
 			errMsg = "The username is already taken"
 		} else {
-			sqlite_db, err := db.Connect_db()
-			defer sqlite_db.Close()
-			if err != nil {
-				fmt.Println("Error when connecting to the database")
-				return
-			}
-			hash_pw, err := db.HashPassword(rv.Pwd)
+			hash_pw := hashPassword(rv.Pwd)
 			if err != nil {
 				fmt.Println("Error hashing the password")
 				return
 			}
 			query := "INSERT INTO user (username, email, pw_hash) VALUES (?, ?, ?)"
-			_, err = sqlite_db.Exec(query, rv.Username, rv.Email, hash_pw)
-			if err != nil {
-				fmt.Println("Error when trying to insert data into the database")
-				return
-			}
+			db.DoExec(query, []any{rv.Username, rv.Email, hash_pw})
 		}
 		if errMsg != "" {
 			Response := struct {
@@ -67,4 +59,11 @@ func Register(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusNoContent)
 		}
 	}
+}
+
+func hashPassword(password string) string {
+	hashed := xxhash.Sum64([]byte(password))
+	hashedStr := fmt.Sprintf("%d", hashed)
+
+	return hashedStr
 }

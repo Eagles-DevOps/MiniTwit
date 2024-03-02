@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"minitwit-api/db"
 	"minitwit-api/model"
 	"net/http"
@@ -69,21 +68,21 @@ func Messages_per_user(w http.ResponseWriter, r *http.Request) {
 
 		err := json.NewDecoder(r.Body).Decode(&rv)
 		if err != nil {
-			fmt.Println("Error in decoding the JSON, message", err)
+			//fmt.Println("Error in decoding the JSON, message", err)
+			http.Error(w, "Error in decoding the JSON, message", http.StatusUnauthorized)
+			return
 		}
-
-		sqlite_db, err := db.Connect_db()
-		defer sqlite_db.Close()
 
 		query := `INSERT INTO message (author_id, text, pub_date, flagged)
 		VALUES (?, ?, ?, 0)`
 
-		_, err = sqlite_db.Exec(query, user_id, rv.Content, int(time.Now().Unix()))
-		if err != nil {
-			fmt.Println("Error when trying to insert data into the database")
-			return
+		dberr := db.DoExec(query, []any{user_id, rv.Content, int(time.Now().Unix())})
+		if dberr != nil {
+			http.Error(w, "Error inserting message", http.StatusForbidden)
+		} else {
+			w.WriteHeader(http.StatusNoContent)
+
 		}
-		w.WriteHeader(http.StatusNoContent)
 	}
 }
 
