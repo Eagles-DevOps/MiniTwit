@@ -45,14 +45,6 @@ resource "digitalocean_droplet" "app" {
     source = "provision.sh"
     destination = "/tmp/provision.sh"
   }
-
-  provisioner "remote-exec" {
-    inline = [
-    "chmod +x /tmp/provision.sh",
-    "chmod 644 /tmp/docker_compose.yml",
-    "/tmp/provision.sh"
-    ]
-  }
 }
 
 resource "digitalocean_droplet" "api" {
@@ -79,14 +71,6 @@ resource "digitalocean_droplet" "api" {
   provisioner "file" {
     source = "provision.sh"
     destination = "/tmp/provision.sh"
-  }
-
-  provisioner "remote-exec" {
-    inline = [
-    "chmod +x /tmp/provision.sh",
-    "chmod 644 /tmp/docker_compose.yml",
-    "/tmp/provision.sh"
-    ]
   }
 }
 
