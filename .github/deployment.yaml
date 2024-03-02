@@ -1,0 +1,31 @@
+name: Deployment to Digital Ocean 
+
+on:
+  workflow_dispatch: 
+
+env:
+  TF_VAR_do_token: ${{ secrets.DIGITALOCEAN_TOKEN }}
+  TF_VAR_private_key: ${{ secrets.SSH_KEY_TERRAFORM }}
+
+jobs: 
+  deploy: 
+    name: Deployment 
+    runs-on: ubuntu-latest
+    
+    steps: 
+      - name: Checkout repository 
+        uses: actions/checkout@v3 
+
+      - name: Set up terraform 
+        uses: hashicorp/setup-terraform@v1 
+        with: 
+          terraform_version: 1.7.4 
+      
+      - name: Terraform init 
+        run: terraform init 
+
+      - name: Terraform plan
+        run: terraform plan 
+
+      - name: Terraform apply
+        run: terraform apply -auto-approve 
