@@ -72,11 +72,12 @@ jobs:
           tags: |
             type=sha
 
-
-      - name: Debug meta outputs
+      - name: Print labels and tags
         run: |
-          echo "Labels: ${{ toJson(steps.meta.outputs.labels) }}"
-          echo "Tags: ${{ toJson(steps.meta.outputs.tags) }}"
+          echo "Labels (meta-api): ${{ toJson(steps.meta-api.outputs.labels) }}"
+          echo "Tags (meta-api): ${{ toJson(steps.meta-api.outputs.tags) }}"
+          echo "Labels (meta-app): ${{ toJson(steps.meta-app.outputs.labels) }}"
+          echo "Tags (meta-app): ${{ toJson(steps.meta-app.outputs.tags) }}"
 
       # Build and push Docker image with Buildx (don't push on PR)
       # https://github.com/docker/build-push-action
