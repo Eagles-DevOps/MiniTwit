@@ -145,12 +145,12 @@ func GetFollowees(args []any, one bool) []string {
 
 func Get_user_id(username string) (any, error) {
 	user_id, err := Query_db("SELECT user_id FROM user WHERE username = ?", []any{username}, true)
-	if !IsNil(user_id) {
-		userID := user_id.(map[any]any)
-		user_id_val := userID["user_id"]
-		return user_id_val, err
+	if IsNil(user_id) {
+		return nil, fmt.Errorf("user with username '%s' not found: %w", username, err)
 	}
-	return nil, err
+	userID := user_id.(map[any]any)
+	user_id_val := userID["user_id"]
+	return user_id_val, err
 }
 
 func Query_db(query string, args []any, one bool) (any, error) {
