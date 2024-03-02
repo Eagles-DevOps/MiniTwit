@@ -10,6 +10,8 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+var db *sql.DB
+
 func Init() {
 	fmt.Println("Initializing database...")
 	query := `create table if not exists user (
@@ -34,7 +36,6 @@ func Init() {
 
 	db, _ := Connect_db()
 	db.Exec(query)
-	defer db.Close()
 }
 
 func Connect_db() (db *sql.DB, err error) {
@@ -49,17 +50,12 @@ func Connect_db() (db *sql.DB, err error) {
 			fmt.Printf("Error creating directory: %v\n", err)
 		}
 	}
-
 	fmt.Println("Connecting to database...")
 	fmt.Println("dbPath:" + dbPath)
 	return sql.Open("sqlite3", dbPath)
 }
 
 func DoExec(query string, args []any) error { //used for all post request
-	db, _ := Connect_db()
-
-	defer db.Close()
-
 	_, err := db.Exec(query, args...)
 	if err != nil {
 		fmt.Println("Error when trying to execute query:", query)
@@ -74,8 +70,6 @@ func GetMessages(args []any, one bool) []map[string]any {
         WHERE message.flagged = 0 AND message.author_id = user.user_id
         ORDER BY message.pub_date DESC LIMIT ?`
 
-	db, _ := Connect_db()
-	defer db.Close()
 	cur, _ := db.Query(query, args...)
 	defer cur.Close()
 
@@ -101,8 +95,6 @@ func GetMessagesForUser(args []any, one bool) []map[string]any {
 	user.user_id = message.author_id AND user.user_id = ?
 	ORDER BY message.pub_date DESC LIMIT ?`
 
-	db, _ := Connect_db()
-	defer db.Close()
 	cur, _ := db.Query(query, args...)
 	defer cur.Close()
 
@@ -128,8 +120,6 @@ func GetFollowees(args []any, one bool) []string {
 			WHERE follower.who_id=?
 			LIMIT ?`
 
-	db, _ := Connect_db()
-	defer db.Close()
 	cur, _ := db.Query(query, args...)
 	defer cur.Close()
 	var Followees []string
@@ -154,8 +144,6 @@ func Get_user_id(username string) (any, error) {
 }
 
 func Query_db(query string, args []any, one bool) (any, error) {
-	db, _ := Connect_db()
-	defer db.Close()
 	cur, err := db.Query(query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("error executing query: %w", err)
