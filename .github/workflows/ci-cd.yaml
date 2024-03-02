@@ -11,109 +11,53 @@ env:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
-      # This is used to complete the identity challenge
-      # with sigstore/fulcio when running outside of PRs.
-      id-token: write
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # Install the cosign tool except on PR
-      # https://github.com/sigstore/cosign-installer
-      # - name: Install cosign
-      #   if: github.event_name != 'pull_request'
-      #   uses: sigstore/cosign-installer@f3c664df7af409cb4873aa5068053ba9d61a57b6 #v2.6.0
-      #   with:
-      #     cosign-release: 'v1.11.0'
-
-
-      # Workaround: https://github.com/docker/build-push-action/issues/461
-      - name: Setup Docker buildxo use for the build. The cache is used to speed up the build process.
-
+      - name: Setup Docker buildx
         uses: docker/setup-buildx-action@v2
 
-      # Login against a Docker registry except on PR
-      # https://github.com/docker/login-action
       - name: Log into registry ${{ env.REGISTRY }}
-        if: github.event_name != 'pull_request'
         uses: docker/login-action@28218f9b04b4f3f62068d7b6ce6ca5b26e35336c
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      # Extract metadata (tags, labels) for Docker
-      # https://github.com/docker/metadata-action
-      - name: Extract Docker Metadata for app
-        id: meta-app
-        uses: docker/metadata-action@98669ae865ea3cffbcbaa878cf57c20bbf1c6c38
-        with:
-          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/app
-          flavor: |
-            latest=true
-          tags: |
-            type=sha
-
-      # Extract metadata (tags, labels) for Docker
-      # https://github.com/docker/metadata-action
-      - name: Extract Docker metadata for API
-        id: meta-api
-        uses: docker/metadata-action@98669ae865ea3cffbcbaa878cf57c20bbf1c6c38
-        with:
-          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/api
-          flavor: |
-            latest=true
-          tags: |
-            type=sha
-
-
-      - name: Debug meta outputs
-        run: |
-          echo "Labels: ${{ toJson(steps.meta.outputs.labels) }}"
-          echo "Tags: ${{ toJson(steps.meta.outputs.tags) }}"
-
-      # Build and push Docker image with Buildx (don't push on PR)
-      # https://github.com/docker/build-push-action
-      - name: Build and push Docker api image
-        id: build-and-push-api
+      
+      - name: Build and push Docker image for app
         uses: docker/build-push-action@v4
         with:
-          context: "./minitwit-api/"
-          push: ${{ github.event_name != 'pull_request' }} # Don't push on PR
-          tags: ${{ steps.meta-api.outputs.tags }}
-          labels: ${{ steps.meta-api.outputs.labels }}
+          context: ./minitwit-web-app
+          push: true
+          tags: ghcr.io/eagles-devops/api:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
-        
-      - name: Build and push Docker web app image
-        id: build-and-push-web-app
+
+      - name: Build and push Docker image for api
         uses: docker/build-push-action@v4
         with:
-          context: "./minitwit-web-app/"
-          push: ${{ github.event_name != 'pull_request' }} # Don't push on PR
-          tags: ${{ steps.meta-app.outputs.tags }}
-          labels: ${{ steps.meta-app.outputs.labels }}
+          context: ./minitwit-web-app
+          push: true
+          tags: ghcr.io/eagles-devops/api:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
       - name: Configure SSH
         run: |
           mkdir -p ~/.ssh/
-          echo "$SSH_KEY" > ~/.ssh/do_ssh_key
-          chmod 600 ~/.ssh/do_ssh_key
+          echo "$SSH_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
         env:
-          SSH_KEY: ${{ secrets.SSH_KEY_TERRAFORM }}
-
-      - name: Deploy to server
+          SSH_KEY: ${{ secrets.VIKTORIA_PRIVATE_KEY }}
+      
+      - name: Deploy to server api
         run: >
-          ssh root@$SSH_HOST
-          -i ~/.ssh/do_ssh_key -o StrictHostKeyChecking=no
-          'sh /tmp/provision.sh'
+          ssh root@SSH_HOST -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no 'sh /tmp/provision.sh'
         env:
           SSH_HOST: ${{ secrets.SSH_HOST_TERRAFORM }}
