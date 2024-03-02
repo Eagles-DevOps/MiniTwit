@@ -33,6 +33,7 @@ func Follow(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
 		err := json.NewDecoder(r.Body).Decode(&rv)
 		if err != nil {
+			http.Error(w, "error in decoding JSON, follow", http.StatusNotFound)
 			fmt.Println("Error in decoding the JSON, follow", err)
 		}
 	}
@@ -54,7 +55,7 @@ func Follow(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		json.NewEncoder(w).Encode(http.StatusOK)
+		w.WriteHeader(http.StatusNoContent)
 
 	} else if r.Method == "POST" && rv.Unfollow != "" {
 
@@ -69,7 +70,10 @@ func Follow(w http.ResponseWriter, r *http.Request) {
 
 		err = db.DoExec(query, []any{user_id, unfollow_user_id})
 		if err != nil {
-			json.NewEncoder(w).Encode(http.StatusOK)
+			w.WriteHeader(http.StatusForbidden)
+			return
+		} else {
+			w.WriteHeader(http.StatusNoContent)
 		}
 
 	} else if r.Method == "GET" {
