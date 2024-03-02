@@ -54,7 +54,7 @@ jobs:
           echo "$SSH_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
         env:
-          SSH_KEY: ${{ secrets.VIKTORIA_PRIVATE_KEY }}
+          SSH_KEY: ${{ secrets.SSH_KEY_TERRAFORM }}
       
       - name: Deploy to server api
         run: >
