@@ -37,8 +37,8 @@ resource "digitalocean_droplet" "app" {
   }
 
   inline = [
-    "chmod 777 provision.sh"
-    "chmod +x /tmp/provision.sh" 
+    "chmod 777 provision.sh",
+    "chmod +x /tmp/provision.sh",
     "chmod 644 /tmp/docker_compose.yml"
   ]
 
@@ -70,8 +70,8 @@ resource "digitalocean_droplet" "api" {
   }
 
   inline = [
-    "chmod 777 provision.sh"
-    "chmod +x /tmp/provision.sh" 
+    "chmod 777 provision.sh",
+    "chmod +x /tmp/provision.sh",
     "chmod 644 /tmp/docker_compose.yml"
   ]
 
