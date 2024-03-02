@@ -35,13 +35,7 @@ resource "digitalocean_droplet" "app" {
     type = "ssh"
     private_key = var.private_key
   }
-
-  inline = [
-    "chmod 777 provision.sh",
-    "chmod +x /tmp/provision.sh",
-    "chmod 644 /tmp/docker_compose.yml"
-  ]
-
+  
   provisioner "file" {
     source = "docker_compose.yml"
     destination = "/tmp/docker_compose.yml"
@@ -50,6 +44,12 @@ resource "digitalocean_droplet" "app" {
   provisioner "file" {
     source = "provision.sh"
     destination = "/tmp/provision.sh"
+  }
+
+  provisioner "remote-exec" {
+    "chmod +x /tmp/provision.sh",
+    "chmod 644 /tmp/docker_compose.yml",
+    "/tmp/provision.sh"
   }
 }
 
@@ -69,12 +69,6 @@ resource "digitalocean_droplet" "api" {
     private_key = var.private_key
   }
 
-  inline = [
-    "chmod 777 provision.sh",
-    "chmod +x /tmp/provision.sh",
-    "chmod 644 /tmp/docker_compose.yml"
-  ]
-
   provisioner "file" {
     source = "docker_compose.yml"
     destination = "/tmp/docker_compose.yml"
@@ -86,6 +80,8 @@ resource "digitalocean_droplet" "api" {
   }
 
   provisioner "remote-exec" {
+    "chmod +x /tmp/provision.sh",
+    "chmod 644 /tmp/docker_compose.yml",
     "/tmp/provision.sh"
   }
 }
