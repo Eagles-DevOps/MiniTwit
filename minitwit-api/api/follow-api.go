@@ -33,7 +33,7 @@ func Follow(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
 		err := json.NewDecoder(r.Body).Decode(&rv)
 		if err != nil {
-			http.Error(w, "error in decoding JSON, follow", http.StatusNotFound)
+			http.Error(w, "error in decoding JSON, follow", http.StatusForbidden)
 			fmt.Println("Error in decoding the JSON, follow", err)
 		}
 	}
@@ -51,7 +51,7 @@ func Follow(w http.ResponseWriter, r *http.Request) {
 		err := db.DoExec(query, []any{user_id, follow_user_id})
 
 		if err != nil {
-			w.WriteHeader(http.StatusNotFound)
+			w.WriteHeader(http.StatusForbidden)
 			return
 		}
 
@@ -72,18 +72,20 @@ func Follow(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			w.WriteHeader(http.StatusForbidden)
 			return
-		} else {
-			w.WriteHeader(http.StatusNoContent)
 		}
+		w.WriteHeader(http.StatusNoContent)
 
 	} else if r.Method == "GET" {
 		followees := db.GetFollowees([]any{user_id, no_flws}, false)
 
-		json.NewEncoder(w).Encode(struct {
+		err := json.NewEncoder(w).Encode(struct {
 			Follows []string `json:"follows"`
 		}{
 			Follows: followees,
 		})
+		if err != nil {
+			http.Error(w, "FOLLOW GET: error in encoding the JSON", http.StatusForbidden)
+		}
 	}
 }
 
