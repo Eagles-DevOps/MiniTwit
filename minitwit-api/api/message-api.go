@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"minitwit-api/db"
 	"minitwit-api/model"
 	"net/http"
@@ -31,8 +30,7 @@ func Messages(w http.ResponseWriter, r *http.Request) {
 		err := json.NewEncoder(w).Encode(messages)
 
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusForbidden)
-			fmt.Println("GET MSGS: encode error")
+			w.WriteHeader(http.StatusForbidden)
 			return
 		}
 	}
@@ -51,7 +49,7 @@ func Messages_per_user(w http.ResponseWriter, r *http.Request) {
 
 	user_id, err := db.Get_user_id(username)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusForbidden)
+		w.WriteHeader(http.StatusForbidden)
 		return
 	}
 
@@ -61,7 +59,7 @@ func Messages_per_user(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNoContent)
 		err = json.NewEncoder(w).Encode(messages)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusForbidden)
+			w.WriteHeader(http.StatusForbidden)
 			return
 		}
 
@@ -70,7 +68,7 @@ func Messages_per_user(w http.ResponseWriter, r *http.Request) {
 
 		err := json.NewDecoder(r.Body).Decode(&rv)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusForbidden)
+			w.WriteHeader(http.StatusForbidden)
 			return
 		}
 		query := `INSERT INTO message (author_id, text, pub_date, flagged)
@@ -78,7 +76,7 @@ func Messages_per_user(w http.ResponseWriter, r *http.Request) {
 
 		err = db.DoExec(query, []any{user_id, rv.Content, int(time.Now().Unix())})
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusForbidden)
+			w.WriteHeader(http.StatusForbidden)
 			return
 		}
 		w.WriteHeader(http.StatusNoContent)
