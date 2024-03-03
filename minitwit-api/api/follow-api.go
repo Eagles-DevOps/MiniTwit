@@ -84,7 +84,7 @@ func Follow(w http.ResponseWriter, r *http.Request) {
 			Follows: followees,
 		})
 		if err != nil {
-			fmt.Println("FOLLOW GET: error in encoding JSON")
+			fmt.Println("FOLLOW GET: error in encoding the JSON")
 		}
 	}
 }
