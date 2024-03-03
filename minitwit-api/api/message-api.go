@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"minitwit-api/db"
 	"minitwit-api/model"
 	"net/http"
@@ -26,13 +27,14 @@ func Messages(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		messages := db.GetMessages([]any{no_msg}, false)
 
+		w.WriteHeader(http.StatusOK)
 		err := json.NewEncoder(w).Encode(messages)
 
 		if err != nil {
-			w.WriteHeader(http.StatusForbidden)
+			http.Error(w, err.Error(), http.StatusForbidden)
+			fmt.Println("GET MSGS: encode error")
 			return
 		}
-		w.WriteHeader(http.StatusOK)
 	}
 }
 
@@ -49,37 +51,37 @@ func Messages_per_user(w http.ResponseWriter, r *http.Request) {
 
 	user_id, err := db.Get_user_id(username)
 	if err != nil {
-		w.WriteHeader(http.StatusNotFound)
+		http.Error(w, err.Error(), http.StatusForbidden)
 		return
 	}
 
 	if r.Method == "GET" {
 		messages := db.GetMessagesForUser([]any{user_id, no_msg}, false)
 
+		w.WriteHeader(http.StatusNoContent)
 		err = json.NewEncoder(w).Encode(messages)
 		if err != nil {
-			w.WriteHeader(http.StatusForbidden)
+			http.Error(w, err.Error(), http.StatusForbidden)
 			return
 		}
-		w.WriteHeader(http.StatusOK)
 
 	} else if r.Method == "POST" {
 		var rv model.MessageData
 
 		err := json.NewDecoder(r.Body).Decode(&rv)
 		if err != nil {
-			w.WriteHeader(http.StatusForbidden) //due to simulation expecting a 403 on tweet failure
+			http.Error(w, err.Error(), http.StatusForbidden)
 			return
 		}
-
 		query := `INSERT INTO message (author_id, text, pub_date, flagged)
 		VALUES (?, ?, ?, 0)`
 
-		dberr := db.DoExec(query, []any{user_id, rv.Content, int(time.Now().Unix())})
-		if dberr != nil {
-			w.WriteHeader(http.StatusForbidden)
+		err = db.DoExec(query, []any{user_id, rv.Content, int(time.Now().Unix())})
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusForbidden)
+			return
 		}
-		w.WriteHeader(http.StatusOK)
+		w.WriteHeader(http.StatusNoContent)
 	}
 }
 
