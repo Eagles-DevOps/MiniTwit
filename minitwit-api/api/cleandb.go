@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -34,5 +33,5 @@ func Cleandb(w http.ResponseWriter, r *http.Request) {
 			fmt.Println(userID, err)
 		}
 	}
-	json.NewEncoder(w).Encode(http.StatusOK)
+	w.WriteHeader(http.StatusOK)
 }

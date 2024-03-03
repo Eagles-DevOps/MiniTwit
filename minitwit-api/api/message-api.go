@@ -28,7 +28,6 @@ func Messages(w http.ResponseWriter, r *http.Request) {
 
 		w.WriteHeader(http.StatusOK)
 		err := json.NewEncoder(w).Encode(messages)
-
 		if err != nil {
 			w.WriteHeader(http.StatusForbidden)
 			return

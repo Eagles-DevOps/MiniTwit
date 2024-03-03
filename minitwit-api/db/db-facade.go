@@ -55,13 +55,10 @@ func Connect_db() (db *sql.DB, err error) {
 
 func DoExec(query string, args []any) error { //used for all post request
 	db, _ := Connect_db()
-
 	defer db.Close()
 
 	_, err := db.Exec(query, args...)
 	if err != nil {
-		fmt.Println("Error when trying to execute query:", query)
-		fmt.Println("Error:", err)
 		return err
 	}
 	return nil

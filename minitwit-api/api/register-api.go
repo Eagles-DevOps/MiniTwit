@@ -20,9 +20,8 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	var rv model.RegisterData
 	err := json.NewDecoder(r.Body).Decode(&rv)
 	if err != nil {
-		fmt.Println("Error in decoding the JSON, register", err)
+		w.WriteHeader(http.StatusForbidden)
 	}
-
 	if r.Method == "POST" {
 		user_id, _ := db.Get_user_id(rv.Username)
 
@@ -46,15 +45,12 @@ func Register(w http.ResponseWriter, r *http.Request) {
 			db.DoExec(query, []any{rv.Username, rv.Email, hash_pw})
 		}
 		if errMsg != "" {
-			Response := struct {
-				Status int    `json:"status"`
-				Msg    string `json:"error_msg"`
-			}{
-				Status: http.StatusBadRequest,
-				Msg:    errMsg,
-			}
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(Response)
+			err := json.NewEncoder(w).Encode(errMsg)
+			if err != nil {
+				w.WriteHeader(http.StatusForbidden)
+				return
+			}
 		} else {
 			w.WriteHeader(http.StatusNoContent)
 		}

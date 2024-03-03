@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"minitwit-api/db"
 	"minitwit-api/model"
 	"net/http"
@@ -24,7 +23,7 @@ func Follow(w http.ResponseWriter, r *http.Request) {
 	}
 	user_id, _ := db.Get_user_id(username)
 	if db.IsNil(user_id) {
-		http.Error(w, "User not found", http.StatusNotFound)
+		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 	no_flws := no_followees(r, 100)
@@ -33,8 +32,7 @@ func Follow(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
 		err := json.NewDecoder(r.Body).Decode(&rv)
 		if err != nil {
-			http.Error(w, "error in decoding JSON, follow", http.StatusForbidden)
-			fmt.Println("Error in decoding the JSON, follow", err)
+			w.WriteHeader(http.StatusForbidden)
 		}
 	}
 
@@ -44,7 +42,7 @@ func Follow(w http.ResponseWriter, r *http.Request) {
 		follow_user_id, _ := db.Get_user_id(follow_username)
 
 		if db.IsNil(follow_user_id) {
-			http.Error(w, "user not found", http.StatusNotFound)
+			w.WriteHeader(http.StatusNotFound)
 			return
 		}
 		query := `INSERT INTO follower (who_id, whom_id) VALUES (?, ?)`
@@ -54,7 +52,6 @@ func Follow(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusForbidden)
 			return
 		}
-
 		w.WriteHeader(http.StatusNoContent)
 
 	} else if r.Method == "POST" && rv.Unfollow != "" {
@@ -63,7 +60,7 @@ func Follow(w http.ResponseWriter, r *http.Request) {
 		unfollow_user_id, err := db.Get_user_id(unfollow_username)
 
 		if err != nil {
-			http.Error(w, "user not found", http.StatusNotFound)
+			w.WriteHeader(http.StatusNotFound)
 			return
 		}
 		query := `DELETE FROM follower WHERE who_id=? and WHOM_id=?`
@@ -78,13 +75,10 @@ func Follow(w http.ResponseWriter, r *http.Request) {
 	} else if r.Method == "GET" {
 		followees := db.GetFollowees([]any{user_id, no_flws}, false)
 
-		err := json.NewEncoder(w).Encode(struct {
-			Follows []string `json:"follows"`
-		}{
-			Follows: followees,
-		})
+		w.WriteHeader(http.StatusNoContent)
+		err := json.NewEncoder(w).Encode(followees)
 		if err != nil {
-			http.Error(w, "FOLLOW GET: error in encoding the JSON", http.StatusForbidden)
+			w.WriteHeader(http.StatusForbidden)
 		}
 	}
 }
