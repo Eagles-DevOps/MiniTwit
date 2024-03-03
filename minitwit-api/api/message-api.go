@@ -26,7 +26,6 @@ func Messages(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		messages := db.GetMessages([]any{no_msg}, false)
 
-		w.WriteHeader(http.StatusOK)
 		err := json.NewEncoder(w).Encode(messages)
 
 		if err != nil {
