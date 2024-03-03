@@ -68,8 +68,7 @@ func Messages_per_user(w http.ResponseWriter, r *http.Request) {
 
 		err := json.NewDecoder(r.Body).Decode(&rv)
 		if err != nil {
-			//fmt.Println("Error in decoding the JSON, message", err)
-			http.Error(w, "Error in decoding the JSON, message", http.StatusUnauthorized)
+			http.Error(w, "Error in decoding the JSON, message", http.StatusForbidden) //due to simulation expecting a 403 on tweet failure
 			return
 		}
 
