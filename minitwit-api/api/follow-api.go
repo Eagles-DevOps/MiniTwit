@@ -47,8 +47,8 @@ func Follow(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "user not found", http.StatusNotFound)
 			return
 		}
-		query := `INSERT INTO follower (who_id, whom_id) VALUES (?, ?)`
-		err := db.DoExec(query, []any{user_id, follow_user_id})
+
+		err := db.DoExec("follow", []any{user_id, follow_user_id})
 
 		if err != nil {
 			w.WriteHeader(http.StatusForbidden)
@@ -66,9 +66,8 @@ func Follow(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "user not found", http.StatusNotFound)
 			return
 		}
-		query := `DELETE FROM follower WHERE who_id=? and WHOM_id=?`
 
-		err = db.DoExec(query, []any{user_id, unfollow_user_id})
+		err = db.DoExec("unfollow", []any{user_id, unfollow_user_id})
 		if err != nil {
 			w.WriteHeader(http.StatusForbidden)
 			return

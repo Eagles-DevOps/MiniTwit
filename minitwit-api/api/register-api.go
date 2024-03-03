@@ -42,8 +42,8 @@ func Register(w http.ResponseWriter, r *http.Request) {
 				fmt.Println("Error hashing the password")
 				return
 			}
-			query := "INSERT INTO user (username, email, pw_hash) VALUES (?, ?, ?)"
-			db.DoExec(query, []any{rv.Username, rv.Email, hash_pw})
+
+			db.DoExec("register", []any{rv.Username, rv.Email, hash_pw})
 		}
 		if errMsg != "" {
 			Response := struct {
