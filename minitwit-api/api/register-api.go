@@ -20,7 +20,8 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	var rv model.RegisterData
 	err := json.NewDecoder(r.Body).Decode(&rv)
 	if err != nil {
-		fmt.Println("Error in decoding the JSON, register", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
 
 	if r.Method == "POST" {
@@ -39,10 +40,9 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		} else {
 			hash_pw := hashPassword(rv.Pwd)
 			if err != nil {
-				fmt.Println("Error hashing the password")
+				w.WriteHeader(http.StatusBadRequest)
 				return
 			}
-
 			db.DoExec("register", []any{rv.Username, rv.Email, hash_pw})
 		}
 		if errMsg != "" {
@@ -53,7 +53,6 @@ func Register(w http.ResponseWriter, r *http.Request) {
 				Status: http.StatusBadRequest,
 				Msg:    errMsg,
 			}
-			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(Response)
 		} else {
 			w.WriteHeader(http.StatusNoContent)
@@ -62,8 +61,5 @@ func Register(w http.ResponseWriter, r *http.Request) {
 }
 
 func hashPassword(password string) string {
-	hashed := xxhash.Sum64([]byte(password))
-	hashedStr := fmt.Sprintf("%d", hashed)
-
-	return hashedStr
+	return fmt.Sprintf("%d", xxhash.Sum64([]byte(password)))
 }
