@@ -58,8 +58,5 @@ func Register(w http.ResponseWriter, r *http.Request) {
 }
 
 func hashPassword(password string) string {
-	hashed := xxhash.Sum64([]byte(password))
-	hashedStr := fmt.Sprintf("%d", hashed)
-
-	return hashedStr
+	return fmt.Sprint(xxhash.Sum64String(password))
 }
