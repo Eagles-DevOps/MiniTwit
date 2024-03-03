@@ -26,13 +26,13 @@ func Messages(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		messages := db.GetMessages([]any{no_msg}, false)
 
-		w.WriteHeader(http.StatusOK)
 		err := json.NewEncoder(w).Encode(messages)
 
 		if err != nil {
-			http.Error(w, "Error encoding JSON data", http.StatusInternalServerError)
+			http.Error(w, "Error encoding JSON data", http.StatusForbidden)
 			return
 		}
+		w.WriteHeader(http.StatusOK)
 	}
 }
 
@@ -56,12 +56,12 @@ func Messages_per_user(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		messages := db.GetMessagesForUser([]any{user_id, no_msg}, false)
 
-		w.WriteHeader(http.StatusOK)
 		err = json.NewEncoder(w).Encode(messages)
 		if err != nil {
-			http.Error(w, "Error encoding JSON data", http.StatusInternalServerError)
+			http.Error(w, "Error encoding JSON data", http.StatusForbidden)
 			return
 		}
+		w.WriteHeader(http.StatusOK)
 
 	} else if r.Method == "POST" {
 		var rv model.MessageData
@@ -78,10 +78,8 @@ func Messages_per_user(w http.ResponseWriter, r *http.Request) {
 		dberr := db.DoExec(query, []any{user_id, rv.Content, int(time.Now().Unix())})
 		if dberr != nil {
 			http.Error(w, "Error inserting message", http.StatusForbidden)
-		} else {
-			w.WriteHeader(http.StatusNoContent)
-
 		}
+		w.WriteHeader(http.StatusOK)
 	}
 }
 
