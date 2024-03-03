@@ -71,7 +71,7 @@ def test_get_latest_user_msgs():
         query = {'no': 20, 'latest': 3}
         url = f'{BASE_URL}/msgs/{username}'
         response = requests.get(url, headers=HEADERS, params=query)
-        assert response.status_code == 204, response
+        assert response.status_code == 200, response
 
         got_it_earlier = False
         for msg in response.json():
