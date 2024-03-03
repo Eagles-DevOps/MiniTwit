@@ -30,7 +30,7 @@ func Messages(w http.ResponseWriter, r *http.Request) {
 		err := json.NewEncoder(w).Encode(messages)
 
 		if err != nil {
-			http.Error(w, "Error encoding JSON data", http.StatusInternalServerError)
+			w.WriteHeader(http.StatusForbidden)
 			return
 		}
 	}
@@ -49,17 +49,17 @@ func Messages_per_user(w http.ResponseWriter, r *http.Request) {
 
 	user_id, err := db.Get_user_id(username)
 	if err != nil {
-		http.Error(w, "Error getting the user_id", http.StatusNotFound)
+		w.WriteHeader(http.StatusForbidden)
 		return
 	}
 
 	if r.Method == "GET" {
 		messages := db.GetMessagesForUser([]any{user_id, no_msg}, false)
 
-		w.WriteHeader(http.StatusOK)
+		w.WriteHeader(http.StatusNoContent)
 		err = json.NewEncoder(w).Encode(messages)
 		if err != nil {
-			http.Error(w, "Error encoding JSON data", http.StatusInternalServerError)
+			w.WriteHeader(http.StatusForbidden)
 			return
 		}
 
@@ -68,20 +68,18 @@ func Messages_per_user(w http.ResponseWriter, r *http.Request) {
 
 		err := json.NewDecoder(r.Body).Decode(&rv)
 		if err != nil {
-			http.Error(w, "Error in decoding the JSON, message", http.StatusForbidden) //due to simulation expecting a 403 on tweet failure
+			w.WriteHeader(http.StatusForbidden)
 			return
 		}
-
 		query := `INSERT INTO message (author_id, text, pub_date, flagged)
 		VALUES (?, ?, ?, 0)`
 
-		dberr := db.DoExec(query, []any{user_id, rv.Content, int(time.Now().Unix())})
-		if dberr != nil {
-			http.Error(w, "Error inserting message", http.StatusForbidden)
-		} else {
-			w.WriteHeader(http.StatusNoContent)
-
+		err = db.DoExec(query, []any{user_id, rv.Content, int(time.Now().Unix())})
+		if err != nil {
+			w.WriteHeader(http.StatusForbidden)
+			return
 		}
+		w.WriteHeader(http.StatusNoContent)
 	}
 }
 
