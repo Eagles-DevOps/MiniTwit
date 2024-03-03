@@ -56,7 +56,6 @@ func Messages_per_user(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		messages := db.GetMessagesForUser([]any{user_id, no_msg}, false)
 
-		w.WriteHeader(http.StatusNoContent)
 		err = json.NewEncoder(w).Encode(messages)
 		if err != nil {
 			w.WriteHeader(http.StatusForbidden)
