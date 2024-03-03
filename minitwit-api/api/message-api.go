@@ -71,10 +71,8 @@ func Messages_per_user(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusForbidden)
 			return
 		}
-		query := `INSERT INTO message (author_id, text, pub_date, flagged)
-		VALUES (?, ?, ?, 0)`
 
-		err = db.DoExec(query, []any{user_id, rv.Content, int(time.Now().Unix())})
+		err = db.DoExec("message", []any{user_id, rv.Content, int(time.Now().Unix())})
 		if err != nil {
 			w.WriteHeader(http.StatusForbidden)
 			return
