@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"minitwit-api/db"
 	"minitwit-api/model"
 	"net/http"
@@ -48,6 +49,7 @@ func Messages_per_user(w http.ResponseWriter, r *http.Request) {
 	user_id, err := db.Get_user_id(username)
 	if err != nil {
 		w.WriteHeader(http.StatusForbidden)
+		fmt.Println("error in user_id")
 		return
 	}
 
@@ -66,6 +68,7 @@ func Messages_per_user(w http.ResponseWriter, r *http.Request) {
 		err := json.NewDecoder(r.Body).Decode(&rv)
 		if err != nil {
 			w.WriteHeader(http.StatusForbidden)
+			fmt.Println("error decoding mesg")
 			return
 		}
 		db.QueryMessage([]any{user_id, rv.Content, int(time.Now().Unix())})

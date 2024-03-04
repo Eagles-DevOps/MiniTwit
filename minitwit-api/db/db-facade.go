@@ -1,17 +1,17 @@
 package db
 
 import (
-	"errors"
+	"database/sql"
 	"fmt"
+	"log"
 	"minitwit-api/model"
 	"os"
 	"path/filepath"
 
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
+	"github.com/go-gorp/gorp"
 )
 
-var db *gorm.DB
+var db *gorp.DbMap
 
 func Connect_db() {
 	dbPath := os.Getenv("SQLITEPATH")
@@ -24,13 +24,20 @@ func Connect_db() {
 			fmt.Printf("Error creating directory: %v\n", err)
 		}
 	}
-	var err error
-	db, err = gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
+	sqliteDb, err := sql.Open("sqlite3", dbPath)
 	if err != nil {
-		fmt.Println("Error connecting to the database ", err)
-		return
+		log.Fatalf("Error opening database: %v", err)
 	}
-	db.AutoMigrate(&model.User{}, &model.Follower{}, &model.Message{})
+
+	db = &gorp.DbMap{Db: sqliteDb, Dialect: gorp.SqliteDialect{}}
+
+	db.AddTableWithName(model.User{}, "user").SetKeys(true, "UserID")
+	db.AddTableWithName(model.Follower{}, "follower")
+	db.AddTableWithName(model.Message{}, "message").SetKeys(true, "MessageID")
+
+	if err := db.CreateTablesIfNotExists(); err != nil {
+		log.Fatalf("Error creating tables: %v", err)
+	}
 }
 
 func QueryRegister(args []any) {
@@ -39,7 +46,7 @@ func QueryRegister(args []any) {
 		Email:    args[1].(string),
 		PwHash:   args[2].(string),
 	}
-	db.Create(user)
+	db.Insert(user)
 }
 
 func QueryMessage(args []any) {
@@ -49,7 +56,7 @@ func QueryMessage(args []any) {
 		PubDate:  args[2].(int),
 		Flagged:  false,
 	}
-	db.Create(message)
+	db.Insert(message)
 }
 
 func QueryFollow(args []any) {
@@ -57,27 +64,34 @@ func QueryFollow(args []any) {
 		WhoID:  args[0].(uint),
 		WhomID: args[1].(uint),
 	}
-	db.Create(follower)
+	db.Insert(follower)
 }
 
 func QueryUnfollow(args []any) {
-	db.Where("who_id = ? AND whom_id = ?", args[0].(uint), args[1].(uint)).Delete(&model.Follower{})
+	db.Exec("DELETE FROM follower WHERE WhoID=? AND WhomID=?", args...)
 }
 
 func QueryDelete(args []any) {
-	db.Delete(&model.User{}, args[0].(uint))
+	db.Exec("DELETE FROM user WHERE UserID=?", args...)
 }
 
-func GetMessages(args []any, one bool) []map[string]any {
+func GetMessages(args []interface{}, one bool) []map[string]interface{} {
 	var messages []model.Message
-	db.Where("flagged = 0").Order("pub_date DESC").Limit(args[0].(int)).Find(&messages)
 
-	var Messages []map[string]any
+	_, err := db.Select(&messages, "SELECT * FROM message WHERE Flagged = 0 ORDER BY PubDate DESC LIMIT ?", args[0].(int))
+	if err != nil {
+		log.Fatalf("Error retrieving messages: %v", err)
+	}
+
+	var Messages []map[string]interface{}
 	for _, msg := range messages {
 		var user model.User
-		db.First(&user, msg.AuthorID)
+		err := db.SelectOne(&user, "SELECT * FROM user WHERE UserID=?", msg.AuthorID)
+		if err != nil {
+			log.Fatalf("Error retrieving user: %v", err)
+		}
 
-		message := make(map[string]any)
+		message := make(map[string]interface{})
 		message["content"] = msg.Text
 		message["pub_date"] = msg.PubDate
 		message["user"] = user.Username
@@ -87,17 +101,23 @@ func GetMessages(args []any, one bool) []map[string]any {
 	return Messages
 }
 
-func GetMessagesForUser(args []any, one bool) []map[string]any {
+func GetMessagesForUser(args []interface{}, one bool) []map[string]interface{} {
 	var messages []model.Message
-	db.Where("flagged = 0 AND author_id = ?", args[0].(uint)).Order("pub_date DESC").Limit(args[1].(int)).Find(&messages)
 
-	var Messages []map[string]any
+	_, err := db.Select(&messages, "SELECT * FROM message WHERE Flagged = 0 AND AuthorID = ? ORDER BY PubDate DESC LIMIT ?", args[0].(uint), args[1].(int))
+	if err != nil {
+		log.Fatalf("Error retrieving messages: %v", err)
+	}
 
+	var Messages []map[string]interface{}
 	for _, msg := range messages {
 		var user model.User
-		db.First(&user, msg.AuthorID)
+		err := db.SelectOne(&user, "SELECT * FROM user WHERE UserID=?", msg.AuthorID)
+		if err != nil {
+			log.Fatalf("Error retrieving user: %v", err)
+		}
 
-		message := make(map[string]any)
+		message := make(map[string]interface{})
 		message["content"] = msg.Text
 		message["pub_date"] = msg.PubDate
 		message["user"] = user.Username
@@ -107,28 +127,35 @@ func GetMessagesForUser(args []any, one bool) []map[string]any {
 	return Messages
 }
 
-func GetFollowees(args []any, one bool) []string {
+func GetFollowees(args []interface{}, one bool) []string {
 	var followees []string
-	db.Table("user").
-		Select("user.username").
-		Joins("inner join follower ON follower.whom_id=user.user_id").
-		Where("follower.who_id = ?", args[0].(uint)).
-		Limit(args[1].(int)).
-		Scan(&followees)
+
+	_, err := db.Select(&followees, `
+		SELECT user.Username 
+		FROM user 
+		INNER JOIN follower 
+		ON follower.WhomID = user.UserID 
+		WHERE follower.WhoID = ? 
+		LIMIT ?`, args[0].(uint), args[1].(int))
+	if err != nil {
+		log.Fatalf("Error retrieving followees: %v", err)
+	}
 
 	return followees
 }
 
 func Get_user_id(username string) (any, error) {
-	var user model.User
-	res := db.Where("username = ?", username).First(&user)
-	if res.Error != nil {
-		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
+	var userID interface{}
+
+	err := db.SelectOne(&userID, "SELECT UserID FROM user WHERE Username=?", username)
+	if err != nil {
+		if err == sql.ErrNoRows {
 			return nil, fmt.Errorf("user with username '%s' not found", username)
 		}
-		return nil, fmt.Errorf("error querying database: %v", res.Error)
+		return nil, fmt.Errorf("error querying database: %v", err)
 	}
-	return user.UserID, nil
+
+	return userID, nil
 }
 
 func IsNil(i interface{}) bool {
