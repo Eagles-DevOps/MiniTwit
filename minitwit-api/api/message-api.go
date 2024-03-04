@@ -25,7 +25,6 @@ func Messages(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == "GET" {
 		messages := db.GetMessages([]any{no_msg}, false)
-
 		err := json.NewEncoder(w).Encode(messages)
 
 		if err != nil {
@@ -69,12 +68,7 @@ func Messages_per_user(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusForbidden)
 			return
 		}
-
-		err = db.DoExec("message", []any{user_id, rv.Content, int(time.Now().Unix())})
-		if err != nil {
-			w.WriteHeader(http.StatusForbidden)
-			return
-		}
+		db.QueryMessage([]any{user_id, rv.Content, int(time.Now().Unix())})
 		w.WriteHeader(http.StatusNoContent)
 	}
 }

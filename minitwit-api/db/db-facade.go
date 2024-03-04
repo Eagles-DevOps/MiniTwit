@@ -1,223 +1,134 @@
 package db
 
 import (
-	"database/sql"
+	"errors"
 	"fmt"
 	"minitwit-api/model"
 	"os"
 	"path/filepath"
 
-	"golang.org/x/crypto/bcrypt"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
 )
 
-func Init() {
-	fmt.Println("Initializing database...")
-	query := `create table if not exists user (
-		user_id integer primary key autoincrement,
-		username string not null,
-		email string not null,
-		pw_hash string not null
-	  );
-	  
-	  create table if not exists follower (
-		who_id integer,
-		whom_id integer
-	  );
-	  
-	  create table if not exists message (
-		message_id integer primary key autoincrement,
-		author_id integer not null,
-		text string not null,
-		pub_date integer,
-		flagged integer
-	  );`
+var db *gorm.DB
 
-	db, _ := Connect_db()
-	db.Exec(query)
-	defer db.Close()
-}
-
-func Connect_db() (db *sql.DB, err error) {
+func Connect_db() {
 	dbPath := os.Getenv("SQLITEPATH")
 	if len(dbPath) == 0 {
 		dbPath = "./sqlite/minitwit.db"
 	}
-
 	dir := filepath.Dir(dbPath)
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		if _ = os.MkdirAll(dir, 0755); err != nil {
 			fmt.Printf("Error creating directory: %v\n", err)
 		}
 	}
-
-	return sql.Open("sqlite3", dbPath)
+	var err error
+	db, err = gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
+	if err != nil {
+		fmt.Println("Error connecting to the database ", err)
+		return
+	}
+	db.AutoMigrate(&model.User{}, &model.Follower{}, &model.Message{})
 }
 
-func DoExec(endpoint string, args []any) error { //used for all post request
-	db, _ := Connect_db()
-
-	defer db.Close()
-	query := ""
-	switch endpoint {
-	case "message":
-		query = `INSERT INTO message (author_id, text, pub_date, flagged)
-		VALUES (?, ?, ?, 0)`
-	case "follow":
-		query = `INSERT INTO follower (who_id, whom_id) VALUES (?, ?)`
-	case "unfollow":
-		query = `DELETE FROM follower WHERE who_id=? and WHOM_id=?`
-	case "delete":
-		query = `DELETE FROM user WHERE user_id = ?`
-	case "register":
-		query = "INSERT INTO user (username, email, pw_hash) VALUES (?, ?, ?)"
+func QueryRegister(args []any) {
+	user := &model.User{
+		Username: args[0].(string),
+		Email:    args[1].(string),
+		PwHash:   args[2].(string),
 	}
+	db.Create(user)
+}
 
-	if query == "" {
-		fmt.Println("Wrong endpoint given for POST request, can't fetch query")
+func QueryMessage(args []any) {
+	message := &model.Message{
+		AuthorID: args[0].(uint),
+		Text:     args[1].(string),
+		PubDate:  args[2].(int),
+		Flagged:  false,
 	}
+	db.Create(message)
+}
 
-	_, err := db.Exec(query, args...)
-	if err != nil {
-		fmt.Println("Error when trying to execute query:", query)
-		fmt.Println("Error:", err)
-		return err
+func QueryFollow(args []any) {
+	follower := &model.Follower{
+		WhoID:  args[0].(uint),
+		WhomID: args[1].(uint),
 	}
-	return nil
+	db.Create(follower)
+}
+
+func QueryUnfollow(args []any) {
+	db.Where("who_id = ? AND whom_id = ?", args[0].(uint), args[1].(uint)).Delete(&model.Follower{})
+}
+
+func QueryDelete(args []any) {
+	db.Delete(&model.User{}, args[0].(uint))
 }
 
 func GetMessages(args []any, one bool) []map[string]any {
-	query := `SELECT message.*, user.* FROM message, user
-        WHERE message.flagged = 0 AND message.author_id = user.user_id
-        ORDER BY message.pub_date DESC LIMIT ?`
-
-	db, _ := Connect_db()
-	defer db.Close()
-	cur, _ := db.Query(query, args...)
-	defer cur.Close()
+	var messages []model.Message
+	db.Where("flagged = 0").Order("pub_date DESC").Limit(args[0].(int)).Find(&messages)
 
 	var Messages []map[string]any
+	for _, msg := range messages {
+		var user model.User
+		db.First(&user, msg.AuthorID)
 
-	for cur.Next() {
-		var rv model.UserMessageRow
-		_ = cur.Scan(&rv.Message_id, &rv.Author_id, &rv.Text, &rv.Pub_date, &rv.Flagged, &rv.User_id, &rv.Username, &rv.Email, &rv.Pw_hash)
+		message := make(map[string]any)
+		message["content"] = msg.Text
+		message["pub_date"] = msg.PubDate
+		message["user"] = user.Username
 
-		msg := make(map[string]any)
-		msg["content"] = rv.Text
-		msg["pub_date"] = rv.Pub_date
-		msg["user"] = rv.Username
-
-		Messages = append(Messages, msg)
+		Messages = append(Messages, message)
 	}
 	return Messages
 }
 
 func GetMessagesForUser(args []any, one bool) []map[string]any {
-	query := `SELECT message.*, user.* FROM message, user
-	WHERE message.flagged = 0 AND
-	user.user_id = message.author_id AND user.user_id = ?
-	ORDER BY message.pub_date DESC LIMIT ?`
-
-	db, _ := Connect_db()
-	defer db.Close()
-	cur, _ := db.Query(query, args...)
-	defer cur.Close()
+	var messages []model.Message
+	db.Where("flagged = 0 AND author_id = ?", args[0].(uint)).Order("pub_date DESC").Limit(args[1].(int)).Find(&messages)
 
 	var Messages []map[string]any
 
-	for cur.Next() {
-		var rv model.UserMessageRow
-		_ = cur.Scan(&rv.Message_id, &rv.Author_id, &rv.Text, &rv.Pub_date, &rv.Flagged, &rv.User_id, &rv.Username, &rv.Email, &rv.Pw_hash)
+	for _, msg := range messages {
+		var user model.User
+		db.First(&user, msg.AuthorID)
 
-		msg := make(map[string]any)
-		msg["content"] = rv.Text
-		msg["pub_date"] = rv.Pub_date
-		msg["user"] = rv.Username
+		message := make(map[string]any)
+		message["content"] = msg.Text
+		message["pub_date"] = msg.PubDate
+		message["user"] = user.Username
 
-		Messages = append(Messages, msg)
+		Messages = append(Messages, message)
 	}
 	return Messages
 }
 
 func GetFollowees(args []any, one bool) []string {
-	query := `SELECT user.username FROM user
-			INNER JOIN follower ON follower.whom_id=user.user_id
-			WHERE follower.who_id=?
-			LIMIT ?`
+	var followees []string
+	db.Table("user").
+		Select("user.username").
+		Joins("inner join follower ON follower.whom_id=user.user_id").
+		Where("follower.who_id = ?", args[0].(uint)).
+		Limit(args[1].(int)).
+		Scan(&followees)
 
-	db, _ := Connect_db()
-	defer db.Close()
-	cur, _ := db.Query(query, args...)
-	defer cur.Close()
-	var Followees []string
-
-	for cur.Next() {
-		var username string
-		_ = cur.Scan(&username)
-
-		Followees = append(Followees, username)
-	}
-	return Followees
+	return followees
 }
 
 func Get_user_id(username string) (any, error) {
-	user_id, err := Query_db("SELECT user_id FROM user WHERE username = ?", []any{username}, true)
-	if IsNil(user_id) {
-		return nil, fmt.Errorf("user with username '%s' not found: %w", username, err)
-	}
-	userID := user_id.(map[any]any)
-	user_id_val := userID["user_id"]
-	return user_id_val, err
-}
-
-func Query_db(query string, args []any, one bool) (any, error) {
-	db, _ := Connect_db()
-	defer db.Close()
-	cur, err := db.Query(query, args...)
-	if err != nil {
-		return nil, fmt.Errorf("error executing query: %w", err)
-	}
-	defer cur.Close()
-
-	var rv []map[any]any
-	cols, err := cur.Columns()
-	if err != nil {
-		return nil, fmt.Errorf("error retrieving columns: %w", err)
-	}
-	for cur.Next() {
-		row := make([]any, len(cols))
-		for i := range row {
-			row[i] = new(any)
+	var user model.User
+	res := db.Where("username = ?", username).First(&user)
+	if res.Error != nil {
+		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
+			return nil, fmt.Errorf("user with username '%s' not found", username)
 		}
-		err = cur.Scan(row...)
-		if err != nil {
-			return nil, fmt.Errorf("error scanning row: %w", err)
-		}
-		dict := make(map[any]any)
-		for i, col := range cols {
-			dict[col] = *(row[i].(*any))
-		}
-		rv = append(rv, dict)
-		if one {
-			break
-		}
+		return nil, fmt.Errorf("error querying database: %v", res.Error)
 	}
-
-	if err = cur.Err(); err != nil {
-		return nil, fmt.Errorf("error during rows iteration: %w", err)
-	}
-
-	if len(rv) != 0 {
-		if one {
-			return rv[0], nil
-		}
-		return rv, nil
-	}
-	return nil, nil
-}
-
-func HashPassword(password string) (string, error) {
-	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
-	return string(bytes), err
+	return user.UserID, nil
 }
 
 func IsNil(i interface{}) bool {

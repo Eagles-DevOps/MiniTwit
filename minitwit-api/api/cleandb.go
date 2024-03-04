@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -12,9 +11,6 @@ import (
 )
 
 func Cleandb(w http.ResponseWriter, r *http.Request) {
-	sqlite_db, _ := db.Connect_db()
-	defer sqlite_db.Close()
-
 	is_auth := sim.Is_authenticated(w, r)
 	if !is_auth {
 		return
@@ -29,9 +25,7 @@ func Cleandb(w http.ResponseWriter, r *http.Request) {
 
 	for _, userID := range user_ids {
 		if !db.IsNil(userID) {
-			query := `DELETE FROM user WHERE user_id = ?`
-			_, err := sqlite_db.Exec(query, userID)
-			fmt.Println(userID, err)
+			db.QueryDelete([]any{userID})
 		}
 	}
 	json.NewEncoder(w).Encode(http.StatusOK)

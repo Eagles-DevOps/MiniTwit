@@ -45,12 +45,7 @@ func Follow(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
-		err := db.DoExec("follow", []any{user_id, follow_user_id})
-
-		if err != nil {
-			w.WriteHeader(http.StatusForbidden)
-			return
-		}
+		db.QueryFollow([]any{user_id, follow_user_id})
 		w.WriteHeader(http.StatusNoContent)
 
 	} else if r.Method == "POST" && rv.Unfollow != "" {
@@ -62,11 +57,7 @@ func Follow(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
-		err = db.DoExec("unfollow", []any{user_id, unfollow_user_id})
-		if err != nil {
-			w.WriteHeader(http.StatusForbidden)
-			return
-		}
+		db.QueryUnfollow([]any{user_id, unfollow_user_id})
 		w.WriteHeader(http.StatusNoContent)
 
 	} else if r.Method == "GET" {
