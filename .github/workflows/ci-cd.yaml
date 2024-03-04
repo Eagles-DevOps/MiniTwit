@@ -17,16 +17,17 @@ jobs:
       packages: write
 
     steps:
+        # https://github.com/actions/checkout
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      # Workaround: https://github.com/docker/build-push-action/issues/461
-      - name: Setup Docker buildx to speed up the build process.
-        uses: docker/setup-buildx-action@v2
+      # https://github.com/docker/setup-buildx-action
+      - name: Setup Docker buildx
+        uses: docker/setup-buildx-action@v3
 
       # https://github.com/docker/login-action
       - name: Log into registry ${{ env.REGISTRY }}
-        uses: docker/login-action@28218f9b04b4f3f62068d7b6ce6ca5b26e35336c
+        uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -35,7 +36,7 @@ jobs:
       # https://github.com/docker/metadata-action
       - name: Extract Docker Metadata for app
         id: meta-app
-        uses: docker/metadata-action@98669ae865ea3cffbcbaa878cf57c20bbf1c6c38
+        uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/app
           flavor: |
@@ -45,7 +46,7 @@ jobs:
 
       - name: Extract Docker metadata for API
         id: meta-api
-        uses: docker/metadata-action@98669ae865ea3cffbcbaa878cf57c20bbf1c6c38
+        uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/api
           flavor: |
@@ -55,7 +56,7 @@ jobs:
 
       # https://github.com/docker/build-push-action
       - name: Build and push Docker image for app
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v5
         with:
           context: "./minitwit-web-app/"
           push: true
@@ -65,7 +66,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Build and push Docker image for api
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v5
         with:
           context: "./minitwit-web-app/"
           push: true
