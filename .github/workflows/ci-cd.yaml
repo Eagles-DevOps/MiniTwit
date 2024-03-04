@@ -82,7 +82,7 @@ jobs:
           chmod 600 ~/.ssh/terraform
         env:
           SSH_KEY: ${{ secrets.SSH_KEY_TERRAFORM }}
-      
+
       - name: Deploy to server
         run: >
           ssh root@$SSH_HOST
