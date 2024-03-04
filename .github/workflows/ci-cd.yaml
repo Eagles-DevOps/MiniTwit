@@ -1,7 +1,5 @@
 name: ci-cd
 
-#comment
-
 on:
   push:
     branches:
@@ -86,6 +84,8 @@ jobs:
       
       - name: Deploy to server api
         run: >
-          ssh root@SSH_HOST -i ~/.ssh/terraform -o StrictHostKeyChecking=no 'sh /tmp/provision.sh'
+          ssh root@$SSH_HOST
+          -i ~/.ssh/terraform -o StrictHostKeyChecking=no
+          'sh /tmp/provision.sh'
         env:
           SSH_HOST: ${{ secrets.SSH_HOST_TERRAFORM }}
