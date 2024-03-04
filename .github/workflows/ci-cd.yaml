@@ -3,7 +3,7 @@ name: ci-cd
 on:
   push:
     branches:
-      - updatePipe
+      - main
   workflow_dispatch:
 
 env:
