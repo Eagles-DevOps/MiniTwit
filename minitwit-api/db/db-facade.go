@@ -33,44 +33,38 @@ func Connect_db() {
 	db.AutoMigrate(&model.User{}, &model.Follower{}, &model.Message{})
 }
 
-func QueryRegister(args []any) {
+func QueryRegister(args []string) {
 	user := &model.User{
-		Username: args[0].(string),
-		Email:    args[1].(string),
-		PwHash:   args[2].(string),
+		Username: args[0],
+		Email:    args[1],
+		PwHash:   args[2],
 	}
 	db.Create(user)
 }
 
-func QueryMessage(args []any) {
-	message := &model.Message{
-		AuthorID: args[0].(uint),
-		Text:     args[1].(string),
-		PubDate:  args[2].(int),
-		Flagged:  false,
-	}
+func QueryMessage(message *model.Message) {
 	db.Create(message)
 }
 
-func QueryFollow(args []any) {
+func QueryFollow(args []int) {
 	follower := &model.Follower{
-		WhoID:  args[0].(uint),
-		WhomID: args[1].(uint),
+		WhoID:  args[0],
+		WhomID: args[1],
 	}
 	db.Create(follower)
 }
 
-func QueryUnfollow(args []any) {
-	db.Where("who_id = ? AND whom_id = ?", args[0].(uint), args[1].(uint)).Delete(&model.Follower{})
+func QueryUnfollow(args []int) {
+	db.Where("who_id = ? AND whom_id = ?", args[0], args[1]).Delete(&model.Follower{})
 }
 
-func QueryDelete(args []any) {
-	db.Delete(&model.User{}, args[0].(uint))
+func QueryDelete(args []int) {
+	db.Delete(&model.User{}, args[0])
 }
 
-func GetMessages(args []any, one bool) []map[string]any {
+func GetMessages(args []int) []map[string]any {
 	var messages []model.Message
-	db.Where("flagged = 0").Order("pub_date DESC").Limit(args[0].(int)).Find(&messages)
+	db.Where("flagged = 0").Order("pub_date DESC").Limit(args[0]).Find(&messages)
 
 	var Messages []map[string]any
 	for _, msg := range messages {
@@ -87,9 +81,9 @@ func GetMessages(args []any, one bool) []map[string]any {
 	return Messages
 }
 
-func GetMessagesForUser(args []any, one bool) []map[string]any {
+func GetMessagesForUser(args []int) []map[string]any {
 	var messages []model.Message
-	db.Where("flagged = 0 AND author_id = ?", args[0].(uint)).Order("pub_date DESC").Limit(args[1].(int)).Find(&messages)
+	db.Where("flagged = 0 AND author_id = ?", args[0]).Order("pub_date DESC").Limit(args[1]).Find(&messages)
 
 	var Messages []map[string]any
 
@@ -107,32 +101,40 @@ func GetMessagesForUser(args []any, one bool) []map[string]any {
 	return Messages
 }
 
-func GetFollowees(args []any, one bool) []string {
+func GetFollowees(args []int) []string {
 	var followees []string
 	db.Table("user").
 		Select("user.username").
 		Joins("inner join follower ON follower.whom_id=user.user_id").
-		Where("follower.who_id = ?", args[0].(uint)).
-		Limit(args[1].(int)).
+		Where("follower.who_id = ?", args[0]).
+		Limit(args[1]).
 		Scan(&followees)
 
 	return followees
 }
 
-func Get_user_id(username string) (any, error) {
+func Get_user_id(username string) (int, error) {
 	var user model.User
 	res := db.Where("username = ?", username).First(&user)
 	if res.Error != nil {
 		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
-			return nil, fmt.Errorf("user with username '%s' not found", username)
+			return 0, fmt.Errorf("user with username '%s' not found", username)
 		}
-		return nil, fmt.Errorf("error querying database: %v", res.Error)
+		return 0, fmt.Errorf("error querying database: %v", res.Error)
 	}
 	return user.UserID, nil
 }
 
 func IsNil(i interface{}) bool {
 	if i == nil || i == interface{}(nil) {
+		return true
+	} else {
+		return false
+	}
+}
+
+func IsZero(i int) bool {
+	if i == 0 {
 		return true
 	} else {
 		return false

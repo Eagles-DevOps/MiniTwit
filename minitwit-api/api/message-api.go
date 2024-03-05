@@ -21,10 +21,10 @@ func Messages(w http.ResponseWriter, r *http.Request) {
 	if !is_auth {
 		return
 	}
-	no_msg := no_msgs(r, 100)
+	no_msg := no_msgs(r)
 
 	if r.Method == "GET" {
-		messages := db.GetMessages([]any{no_msg}, false)
+		messages := db.GetMessages([]int{no_msg})
 		err := json.NewEncoder(w).Encode(messages)
 
 		if err != nil {
@@ -43,7 +43,7 @@ func Messages_per_user(w http.ResponseWriter, r *http.Request) {
 	if !is_auth {
 		return
 	}
-	no_msg := no_msgs(r, 100)
+	no_msg := no_msgs(r)
 
 	user_id, err := db.Get_user_id(username)
 	if err != nil {
@@ -52,7 +52,7 @@ func Messages_per_user(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Method == "GET" {
-		messages := db.GetMessagesForUser([]any{user_id, no_msg}, false)
+		messages := db.GetMessagesForUser([]int{user_id, no_msg})
 
 		err = json.NewEncoder(w).Encode(messages)
 		if err != nil {
@@ -68,12 +68,18 @@ func Messages_per_user(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusForbidden)
 			return
 		}
-		db.QueryMessage([]any{user_id, rv.Content, int(time.Now().Unix())})
+		message := &model.Message{
+			AuthorID: user_id,
+			Text:     rv.Content,
+			PubDate:  int(time.Now().Unix()),
+			Flagged:  false,
+		}
+		db.QueryMessage(message)
 		w.WriteHeader(http.StatusNoContent)
 	}
 }
 
-func no_msgs(r *http.Request, defaultValue int) int {
+func no_msgs(r *http.Request) int {
 	value := r.URL.Query().Get("no")
 	if value != "" {
 		intValue, err := strconv.Atoi(value)
@@ -81,5 +87,5 @@ func no_msgs(r *http.Request, defaultValue int) int {
 			return intValue
 		}
 	}
-	return defaultValue
+	return 100
 }

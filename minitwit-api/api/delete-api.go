@@ -24,9 +24,9 @@ func Delete(w http.ResponseWriter, r *http.Request) {
 	if !is_auth {
 		return
 	}
-	if !db.IsNil(rv.User) && r.Method == "POST" {
+	if rv.User != "" && r.Method == "POST" {
 		toDeleteUsername := rv.User
 		toDeleteUser_id, _ := db.Get_user_id(toDeleteUsername)
-		db.QueryDelete([]any{toDeleteUser_id})
+		db.QueryDelete([]int{toDeleteUser_id})
 	}
 }

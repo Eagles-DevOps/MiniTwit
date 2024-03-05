@@ -15,7 +15,7 @@ func Cleandb(w http.ResponseWriter, r *http.Request) {
 	if !is_auth {
 		return
 	}
-	user_ids := make([]any, 4)
+	user_ids := make([]int, 4)
 	usernames := []string{"a", "b", "c", "test"}
 
 	for i, username := range usernames {
@@ -24,8 +24,8 @@ func Cleandb(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for _, userID := range user_ids {
-		if !db.IsNil(userID) {
-			db.QueryDelete([]any{userID})
+		if !db.IsZero(userID) {
+			db.QueryDelete([]int{userID})
 		}
 	}
 	json.NewEncoder(w).Encode(http.StatusOK)
