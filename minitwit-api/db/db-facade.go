@@ -52,6 +52,7 @@ func QueryRegister(args []string) {
 }
 
 func QueryMessage(message *model.Message) {
+
 	db.Insert(message)
 }
 
