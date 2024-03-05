@@ -2,10 +2,10 @@
 
 ## Apps live here:
 ### Main app: 
-http://142.93.139.208:15000
+http://188.166.201.66:15000
 
 ### API service: 
-http://161.35.154.39:15001
+http://188.166.201.66:15001
 
 ## Folders
 * **docs** documentation
