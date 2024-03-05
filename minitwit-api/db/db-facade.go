@@ -19,12 +19,17 @@ func Connect_db() {
 		dbPath = "./sqlite/minitwit.db"
 	}
 	dir := filepath.Dir(dbPath)
-	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		if _ = os.MkdirAll(dir, 0755); err != nil {
-			fmt.Printf("Error creating directory: %v\n", err)
+	_, err := os.Stat(dir)
+	if os.IsNotExist(err) {
+		if err != nil {
+			fmt.Println("error getting the directory of the database")
+		} else {
+			err = os.MkdirAll(dir, 0755)
+			if err != nil {
+				fmt.Printf("Error creating directory: %v\n", err)
+			}
 		}
 	}
-	var err error
 	db, err = gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
 	if err != nil {
 		fmt.Println("Error connecting to the database ", err)
