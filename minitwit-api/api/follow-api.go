@@ -22,7 +22,7 @@ func Follow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	user_id, _ := db.Get_user_id(username)
-	if db.IsNil(user_id) {
+	if db.IsUserIDZero(user_id) {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
@@ -41,11 +41,11 @@ func Follow(w http.ResponseWriter, r *http.Request) {
 		follow_username := rv.Follow
 		follow_user_id, _ := db.Get_user_id(follow_username)
 
-		if db.IsNil(follow_user_id) {
+		if db.IsUserIDZero(follow_user_id) {
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
-		db.QueryFollow([]any{user_id, follow_user_id})
+		db.QueryFollow([]int{user_id, follow_user_id})
 		w.WriteHeader(http.StatusNoContent)
 
 	} else if r.Method == "POST" && rv.Unfollow != "" {
@@ -61,7 +61,7 @@ func Follow(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNoContent)
 
 	} else if r.Method == "GET" {
-		followees := db.GetFollowees([]any{user_id, no_flws}, false)
+		followees := db.GetFollowees([]int{user_id, no_flws}, false)
 
 		err := json.NewEncoder(w).Encode(struct {
 			Follows []string `json:"follows"`

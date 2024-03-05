@@ -13,7 +13,8 @@ import (
 )
 
 func main() {
-	db.Connect_db()
+	db := db.Connect_db()
+	defer db.Db.Close()
 	r := mux.NewRouter()
 
 	r.HandleFunc("/register", api.Register)

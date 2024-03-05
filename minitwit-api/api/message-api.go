@@ -25,7 +25,7 @@ func Messages(w http.ResponseWriter, r *http.Request) {
 	no_msg := no_msgs(r, 100)
 
 	if r.Method == "GET" {
-		messages := db.GetMessages([]any{no_msg}, false)
+		messages := db.GetMessages([]int{no_msg}, false)
 		err := json.NewEncoder(w).Encode(messages)
 
 		if err != nil {
@@ -54,7 +54,7 @@ func Messages_per_user(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Method == "GET" {
-		messages := db.GetMessagesForUser([]any{user_id, no_msg}, false)
+		messages := db.GetMessagesForUser([]int{user_id, no_msg}, false)
 
 		err = json.NewEncoder(w).Encode(messages)
 		if err != nil {
@@ -71,7 +71,13 @@ func Messages_per_user(w http.ResponseWriter, r *http.Request) {
 			fmt.Println("error decoding mesg")
 			return
 		}
-		db.QueryMessage([]any{user_id, rv.Content, int(time.Now().Unix())})
+		message := &model.Message{
+			AuthorID: user_id,
+			Text:     rv.Content,
+			PubDate:  int(time.Now().Unix()),
+			Flagged:  false,
+		}
+		db.QueryMessage(message)
 		w.WriteHeader(http.StatusNoContent)
 	}
 }

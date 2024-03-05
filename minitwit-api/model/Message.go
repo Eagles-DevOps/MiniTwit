@@ -1,8 +1,8 @@
 package model
 
 type Message struct {
-	MessageID uint
-	AuthorID  uint
+	MessageID int
+	AuthorID  int
 	Text      string
 	PubDate   int
 	Flagged   bool

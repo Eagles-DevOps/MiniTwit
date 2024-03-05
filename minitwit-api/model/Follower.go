@@ -1,8 +1,8 @@
 package model
 
 type Follower struct {
-	WhoID  uint
-	WhomID uint
+	WhoID  int
+	WhomID int
 }
 
 func (Follower) TableName() string {

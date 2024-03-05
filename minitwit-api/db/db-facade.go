@@ -13,7 +13,7 @@ import (
 
 var db *gorp.DbMap
 
-func Connect_db() {
+func Connect_db() *gorp.DbMap {
 	dbPath := os.Getenv("SQLITEPATH")
 	if len(dbPath) == 0 {
 		dbPath = "./sqlite/minitwit.db"
@@ -38,31 +38,28 @@ func Connect_db() {
 	if err := db.CreateTablesIfNotExists(); err != nil {
 		log.Fatalf("Error creating tables: %v", err)
 	}
+	return db
 }
 
-func QueryRegister(args []any) {
+func QueryRegister(args []string) {
+
 	user := &model.User{
-		Username: args[0].(string),
-		Email:    args[1].(string),
-		PwHash:   args[2].(string),
+		Username: args[0],
+		Email:    args[1],
+		PwHash:   args[2],
 	}
 	db.Insert(user)
 }
 
-func QueryMessage(args []any) {
-	message := &model.Message{
-		AuthorID: args[0].(uint),
-		Text:     args[1].(string),
-		PubDate:  args[2].(int),
-		Flagged:  false,
-	}
+func QueryMessage(message *model.Message) {
 	db.Insert(message)
 }
 
-func QueryFollow(args []any) {
+func QueryFollow(args []int) {
+
 	follower := &model.Follower{
-		WhoID:  args[0].(uint),
-		WhomID: args[1].(uint),
+		WhoID:  args[0],
+		WhomID: args[1],
 	}
 	db.Insert(follower)
 }
@@ -72,26 +69,26 @@ func QueryUnfollow(args []any) {
 }
 
 func QueryDelete(args []any) {
+	db.Exec("DELETE FROM message WHERE AuthorID=?", args...)
+	db.Exec("DELETE FROM follower WHERE WhoID=? OR WhomID=?", args...)
 	db.Exec("DELETE FROM user WHERE UserID=?", args...)
 }
 
-func GetMessages(args []interface{}, one bool) []map[string]interface{} {
+func GetMessages(args []int, one bool) []map[string]any {
 	var messages []model.Message
 
-	_, err := db.Select(&messages, "SELECT * FROM message WHERE Flagged = 0 ORDER BY PubDate DESC LIMIT ?", args[0].(int))
+	_, err := db.Select(&messages, "SELECT * FROM message WHERE Flagged = 0 ORDER BY PubDate DESC LIMIT ?", args[0])
 	if err != nil {
 		log.Fatalf("Error retrieving messages: %v", err)
 	}
-
-	var Messages []map[string]interface{}
+	var Messages []map[string]any
 	for _, msg := range messages {
 		var user model.User
 		err := db.SelectOne(&user, "SELECT * FROM user WHERE UserID=?", msg.AuthorID)
 		if err != nil {
 			log.Fatalf("Error retrieving user: %v", err)
 		}
-
-		message := make(map[string]interface{})
+		message := make(map[string]any)
 		message["content"] = msg.Text
 		message["pub_date"] = msg.PubDate
 		message["user"] = user.Username
@@ -101,23 +98,22 @@ func GetMessages(args []interface{}, one bool) []map[string]interface{} {
 	return Messages
 }
 
-func GetMessagesForUser(args []interface{}, one bool) []map[string]interface{} {
+func GetMessagesForUser(args []int, one bool) []map[string]any {
 	var messages []model.Message
 
-	_, err := db.Select(&messages, "SELECT * FROM message WHERE Flagged = 0 AND AuthorID = ? ORDER BY PubDate DESC LIMIT ?", args[0].(uint), args[1].(int))
+	_, err := db.Select(&messages, "SELECT * FROM message WHERE Flagged = 0 AND AuthorID = ? ORDER BY PubDate DESC LIMIT ?", args[0], args[1])
 	if err != nil {
 		log.Fatalf("Error retrieving messages: %v", err)
 	}
 
-	var Messages []map[string]interface{}
+	var Messages []map[string]any
 	for _, msg := range messages {
 		var user model.User
 		err := db.SelectOne(&user, "SELECT * FROM user WHERE UserID=?", msg.AuthorID)
 		if err != nil {
 			log.Fatalf("Error retrieving user: %v", err)
 		}
-
-		message := make(map[string]interface{})
+		message := make(map[string]any)
 		message["content"] = msg.Text
 		message["pub_date"] = msg.PubDate
 		message["user"] = user.Username
@@ -127,7 +123,7 @@ func GetMessagesForUser(args []interface{}, one bool) []map[string]interface{} {
 	return Messages
 }
 
-func GetFollowees(args []interface{}, one bool) []string {
+func GetFollowees(args []int, one bool) []string {
 	var followees []string
 
 	_, err := db.Select(&followees, `
@@ -136,30 +132,36 @@ func GetFollowees(args []interface{}, one bool) []string {
 		INNER JOIN follower 
 		ON follower.WhomID = user.UserID 
 		WHERE follower.WhoID = ? 
-		LIMIT ?`, args[0].(uint), args[1].(int))
+		LIMIT ?`, args[0], args[1])
 	if err != nil {
 		log.Fatalf("Error retrieving followees: %v", err)
 	}
-
 	return followees
 }
 
-func Get_user_id(username string) (any, error) {
-	var userID interface{}
+func Get_user_id(username string) (int, error) {
+	var userID int
 
 	err := db.SelectOne(&userID, "SELECT UserID FROM user WHERE Username=?", username)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, fmt.Errorf("user with username '%s' not found", username)
+			return 0, fmt.Errorf("user with username '%s' not found", username)
 		}
-		return nil, fmt.Errorf("error querying database: %v", err)
+		return 0, fmt.Errorf("error querying database: %v", err)
 	}
-
 	return userID, nil
 }
 
-func IsNil(i interface{}) bool {
+func IsNil(i any) bool {
 	if i == nil || i == interface{}(nil) {
+		return true
+	} else {
+		return false
+	}
+}
+
+func IsUserIDZero(i int) bool {
+	if i == 0 {
 		return true
 	} else {
 		return false

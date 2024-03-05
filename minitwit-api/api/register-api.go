@@ -35,7 +35,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 			errMsg = "You have to enter a valid email address"
 		} else if rv.Pwd == "" {
 			errMsg = "You have to enter a password"
-		} else if !db.IsNil(user_id) {
+		} else if !db.IsUserIDZero(user_id) {
 			errMsg = "The username is already taken"
 		} else {
 			hash_pw := hashPassword(rv.Pwd)
@@ -43,7 +43,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusBadRequest)
 				return
 			}
-			db.QueryRegister([]any{rv.Username, rv.Email, hash_pw})
+			db.QueryRegister([]string{rv.Username, rv.Email, hash_pw})
 		}
 		if errMsg != "" {
 			w.WriteHeader(http.StatusBadRequest)

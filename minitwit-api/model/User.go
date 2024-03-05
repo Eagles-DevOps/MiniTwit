@@ -1,7 +1,7 @@
 package model
 
 type User struct {
-	UserID   uint
+	UserID   int
 	Username string
 	Email    string
 	PwHash   string
