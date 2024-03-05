@@ -53,10 +53,28 @@ func Connect_db() (db *sql.DB, err error) {
 	return sql.Open("sqlite3", dbPath)
 }
 
-func DoExec(query string, args []any) error { //used for all post request
+func DoExec(endpoint string, args []any) error { //used for all post request
 	db, _ := Connect_db()
 
 	defer db.Close()
+	query := ""
+	switch endpoint {
+	case "message":
+		query = `INSERT INTO message (author_id, text, pub_date, flagged)
+		VALUES (?, ?, ?, 0)`
+	case "follow":
+		query = `INSERT INTO follower (who_id, whom_id) VALUES (?, ?)`
+	case "unfollow":
+		query = `DELETE FROM follower WHERE who_id=? and WHOM_id=?`
+	case "delete":
+		query = `DELETE FROM user WHERE user_id = ?`
+	case "register":
+		query = "INSERT INTO user (username, email, pw_hash) VALUES (?, ?, ?)"
+	}
+
+	if query == "" {
+		fmt.Println("Wrong endpoint given for POST request, can't fetch query")
+	}
 
 	_, err := db.Exec(query, args...)
 	if err != nil {
