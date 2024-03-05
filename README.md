@@ -19,6 +19,9 @@ http://188.166.201.66:15001
 # How to: 
 [docs/how-to.md](docs/how-to.md)
 
+# Status page
+[LIVE APP STATUS](http://206.81.24.116/status.html)
+
 *Authors:*
 Daniel Grønbjerg
 Roman Zvoda
