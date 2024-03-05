@@ -1,9 +1,10 @@
 name: Docker Compose Pipeline
 
 on:
-  pull_request:
-    branches:
-      - main
+  workflow_dispatch:  # Enables manual workflow dispatch from main branch
+  #pull_request:
+  #  branches:
+  #    - main
 
 jobs:
   docker-compose:
