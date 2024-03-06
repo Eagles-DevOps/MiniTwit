@@ -29,9 +29,8 @@ jobs:
               ((version_number++))
               new_tag="v$version_number"
 
-              git config --global user.name 'Romes8'
-              git config --global user.email '58208649+Romes8@users.noreply.github.com'
-              git remote set-url origin https://${{ secrets.AUTOMATED_RELEASE }}@github.com/Eagles-DevOps/MiniTwit.git
+              git config --global user.name ${{ secrets.BOT_USERNAME }}
+              git config --global user.email ${{ secrets.BOT_EMAIL }}
 
               git tag $new_tag
               git push origin $new_tag
