@@ -5,14 +5,13 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
 
 	"minitwit-api/api"
 
 	"github.com/gorilla/mux"
 
 	"minitwit-api/db"
-
-	"os/exec"
 
 	"github.com/robfig/cron/v3"
 )
