@@ -3,12 +3,14 @@ package db
 import (
 	"errors"
 	"fmt"
+	"log"
 	"minitwit-api/model"
 	"os"
 	"path/filepath"
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 var db *gorm.DB
@@ -18,6 +20,7 @@ func Connect_db() {
 	if len(dbPath) == 0 {
 		dbPath = "./sqlite/minitwit.db"
 	}
+
 	dir := filepath.Dir(dbPath)
 	_, err := os.Stat(dir)
 	if os.IsNotExist(err) {
@@ -30,7 +33,17 @@ func Connect_db() {
 			}
 		}
 	}
-	db, err = gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
+
+	newLogger := logger.New(
+		log.New(os.Stdout, "\r\n", log.LstdFlags),
+		logger.Config{
+			IgnoreRecordNotFoundError: true,
+		},
+	)
+
+	db, err = gorm.Open(sqlite.Open(dbPath), &gorm.Config{
+		Logger: newLogger,
+	})
 	if err != nil {
 		fmt.Println("Error connecting to the database ", err)
 		return
