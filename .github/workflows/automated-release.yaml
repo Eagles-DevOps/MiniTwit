@@ -5,7 +5,8 @@ on:
     - cron:  '50 21 * * 4'  #runs every Thursday at 21:50
 
   push:
-    - automated-release
+    branches: 
+      - automated-release
 
   workflow_dispatch:
 
@@ -13,9 +14,6 @@ on:
 jobs: 
   release: 
     runs-on: ubuntu-latest
-
-    env: 
-      TAG
     steps: 
       - name: Check out Code
         uses: actions/checkout@v4
@@ -53,6 +51,6 @@ jobs:
         uses: marvinpinto/action-automatic-releases@latest
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          automatic_release_tag: "${{ steps.increment_tag.outputs.incremented_tag }}"
+          automatic_release_tag: "${{ steps.tag_step.outputs.incremented_tag }}"
           prerelease: false
-          title: "Release ${{ steps.increment_tag.outputs.incremented_tag }}"
+          title: "Release ${{ steps.tag_step.outputs.incremented_tag }}"
