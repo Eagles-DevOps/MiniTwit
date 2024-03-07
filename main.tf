@@ -20,6 +20,14 @@ provider "digitalocean" {
   token = var.do_token
 }
 
+resource "digitalocean_reserved_ip" "prod-ip" {
+  region = "ams3"
+}
+
+output "reserved_ip_address" {
+  value = digitalocean_reserved_ip.prod-ip.ip_address
+}
+
 resource "digitalocean_droplet" "prod" {
   image  = "docker-20-04"
   name   = "prod"
@@ -61,16 +69,8 @@ data "digitalocean_ssh_key" "Viktoria_key" {
 
 # reserved IP
 
-data "terraform_remote_state" "other_workspace" {
-  backend = "local"
-
-  config = {
-    path = "/terraform.tfstate"
-  }
-}
-
 resource "digitalocean_reserved_ip_assignment" "example" {
-  ip_address = data.terraform_remote_state.other_workspace.outputs.reserved_ip_address
+  ip_address = digitalocean_reserved_ip.prod-ip.ip_address  
   droplet_id = digitalocean_droplet.prod.id
 }
 
