@@ -14,7 +14,10 @@ variable "do_token" {
   type        = string
 }
 
-variable "pvt_key" {}
+variable "pvt_key" {
+  description = "Path to private key"
+  type        = string 
+}
 
 provider "digitalocean" {
   token = var.do_token
@@ -33,7 +36,7 @@ resource "digitalocean_droplet" "prod" {
     host = self.ipv4_address
     user = "root"
     type = "ssh"
-    private_key = cat ~/.ssh/id_rsa
+    private_key = file("/Users/Viktoria/.ssh/id_rsa")
     timeout     = "2m"
   }
 
