@@ -92,17 +92,3 @@ data "digitalocean_ssh_key" "Viktoria_key" {
   name = "Viktoria_key"
 }
 
-### Add the static IP
-
-data "terraform_remote_state" "other_workspace" {
-  backend = "local"
-
-  config = {
-    path = "./reserved/terraform.tfstate"
-  }
-}
-
-resource "digitalocean_reserved_ip_assignment" "example" {
-  ip_address = data.terraform_remote_state.other_workspace.outputs.reserved_ip_address
-  droplet_id = digitalocean_droplet.prod.id
-}
