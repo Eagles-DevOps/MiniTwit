@@ -14,15 +14,15 @@ variable "do_token" {
   type        = string
 }
 
-variable "private_key" {}
+variable "pvt_key" {}
 
 provider "digitalocean" {
   token = var.do_token
 }
 
-resource "digitalocean_droplet" "api" {
+resource "digitalocean_droplet" "prod" {
   image  = "docker-20-04"
-  name   = "api"
+  name   = "prod"
   region = "ams3"
   size   = "s-1vcpu-1gb"
   ssh_keys = [
@@ -33,25 +33,26 @@ resource "digitalocean_droplet" "api" {
     host = self.ipv4_address
     user = "root"
     type = "ssh"
-    private_key = var.private_key
+    private_key = var.pvt_key
+    timeout     = "2m"
   }
 
   provisioner "file" {
-    source = "docker_compose.yml"
-    destination = "/tmp/docker_compose.yml"
+    source      = "docker-compose.yml"
+    destination = "/tmp/docker-compose.yml"
   }
 
   provisioner "file" {
-    source = "provision.sh"
+    source      = "provision.sh"
     destination = "/tmp/provision.sh"
   }
 
   provisioner "remote-exec" {
   inline = [
     "chmod +x /tmp/provision.sh", 
-    "/tmp/provision.sh" 
+    "/tmp/provision.sh"            
   ]
-  }           
+  }
 }
 
 data "digitalocean_ssh_key" "Viktoria_key" {
