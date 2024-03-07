@@ -12,8 +12,6 @@ import (
 	"github.com/gorilla/mux"
 
 	"minitwit-api/db"
-
-	"github.com/robfig/cron/v3"
 )
 
 func main() {
@@ -28,13 +26,13 @@ func main() {
 	r.HandleFunc("/cleandb", api.Cleandb)
 	r.HandleFunc("/delete", api.Delete)
 
-	c := cron.New()
-	if c == nil {
-		log.Fatal("Error creating cron instance")
-	}
-	c.AddFunc("*/15 * * * *", backup)
-	c.Start()
-	defer c.Stop()
+	// c := cron.New()
+	// if c == nil {
+	// 	log.Fatal("Error creating cron instance")
+	// }
+	// c.AddFunc("*/15 * * * *", backup)
+	// c.Start()
+	// defer c.Stop()
 
 	fmt.Println("Listening on port 15001...")
 	err := http.ListenAndServe(":15001", r)
