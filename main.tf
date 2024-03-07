@@ -20,40 +20,6 @@ provider "digitalocean" {
   token = var.do_token
 }
 
-resource "digitalocean_droplet" "app" {
-  image  = "docker-20-04"
-  name   = "app"
-  region = "ams3"
-  size   = "s-1vcpu-1gb"
-  ssh_keys = [
-    data.digitalocean_ssh_key.Viktoria_key.id
-  ]
-
-  connection {
-    host = self.ipv4_address
-    user = "root"
-    type = "ssh"
-    private_key = var.private_key
-  }
-
-  provisioner "file" {
-    source = "docker_compose.yml"
-    destination = "/tmp/docker_compose.yml"
-  }
-
-  provisioner "file" {
-    source = "provision.sh"
-    destination = "/tmp/provision.sh"
-  }
-  
-  provisioner "remote-exec" {
-  inline = [
-    "chmod +x /tmp/provision.sh", 
-    "/tmp/provision.sh" 
-  ]
-  } 
-}
-
 resource "digitalocean_droplet" "api" {
   image  = "docker-20-04"
   name   = "api"
