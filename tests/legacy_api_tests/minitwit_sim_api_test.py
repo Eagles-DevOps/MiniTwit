@@ -11,8 +11,6 @@ ENCODED_CREDENTIALS = base64.b64encode(CREDENTIALS).decode()
 HEADERS = {'Connection': 'close',
            'Content-Type': 'application/json',
            f'Authorization': f'Basic {ENCODED_CREDENTIALS}'}
-
-
     
 def test_cleandb():
         url = f"{BASE_URL}/cleandb"
@@ -182,5 +180,5 @@ def test_a_unfollows_b():
 
         # verify that latest was updated
         response = requests.get(f'{BASE_URL}/latest', headers=HEADERS)
-        assert response.json()['latest'] == 11, response
+        assert response.json()['latest'] == 11, response 
 

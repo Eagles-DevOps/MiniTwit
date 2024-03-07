@@ -21,16 +21,14 @@ func Messages(w http.ResponseWriter, r *http.Request) {
 	if !is_auth {
 		return
 	}
-	no_msg := no_msgs(r, 100)
+	no_msg := no_msgs(r)
 
 	if r.Method == "GET" {
-		messages := db.GetMessages([]any{no_msg}, false)
-
-		w.WriteHeader(http.StatusOK)
+		messages := db.GetMessages([]int{no_msg})
 		err := json.NewEncoder(w).Encode(messages)
 
 		if err != nil {
-			http.Error(w, "Error encoding JSON data", http.StatusInternalServerError)
+			w.WriteHeader(http.StatusForbidden)
 			return
 		}
 	}
@@ -45,21 +43,20 @@ func Messages_per_user(w http.ResponseWriter, r *http.Request) {
 	if !is_auth {
 		return
 	}
-	no_msg := no_msgs(r, 100)
+	no_msg := no_msgs(r)
 
 	user_id, err := db.Get_user_id(username)
 	if err != nil {
-		http.Error(w, "Error getting the user_id", http.StatusNotFound)
+		w.WriteHeader(http.StatusForbidden)
 		return
 	}
 
 	if r.Method == "GET" {
-		messages := db.GetMessagesForUser([]any{user_id, no_msg}, false)
+		messages := db.GetMessagesForUser([]int{user_id, no_msg})
 
-		w.WriteHeader(http.StatusOK)
 		err = json.NewEncoder(w).Encode(messages)
 		if err != nil {
-			http.Error(w, "Error encoding JSON data", http.StatusInternalServerError)
+			w.WriteHeader(http.StatusForbidden)
 			return
 		}
 
@@ -68,25 +65,21 @@ func Messages_per_user(w http.ResponseWriter, r *http.Request) {
 
 		err := json.NewDecoder(r.Body).Decode(&rv)
 		if err != nil {
-			//fmt.Println("Error in decoding the JSON, message", err)
-			http.Error(w, "Error in decoding the JSON, message", http.StatusUnauthorized)
+			w.WriteHeader(http.StatusForbidden)
 			return
 		}
-
-		query := `INSERT INTO message (author_id, text, pub_date, flagged)
-		VALUES (?, ?, ?, 0)`
-
-		dberr := db.DoExec(query, []any{user_id, rv.Content, int(time.Now().Unix())})
-		if dberr != nil {
-			http.Error(w, "Error inserting message", http.StatusForbidden)
-		} else {
-			w.WriteHeader(http.StatusNoContent)
-
+		message := &model.Message{
+			AuthorID: user_id,
+			Text:     rv.Content,
+			PubDate:  int(time.Now().Unix()),
+			Flagged:  false,
 		}
+		db.QueryMessage(message)
+		w.WriteHeader(http.StatusNoContent)
 	}
 }
 
-func no_msgs(r *http.Request, defaultValue int) int {
+func no_msgs(r *http.Request) int {
 	value := r.URL.Query().Get("no")
 	if value != "" {
 		intValue, err := strconv.Atoi(value)
@@ -94,5 +87,5 @@ func no_msgs(r *http.Request, defaultValue int) int {
 			return intValue
 		}
 	}
-	return defaultValue
+	return 100
 }

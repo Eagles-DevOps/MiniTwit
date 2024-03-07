@@ -9,23 +9,15 @@ terraform {
   }
 }
 
-# variable "digital_ocean_token" {
-#    description = "DigitalOcean API Token"
-#    type = string
-# }
-
 variable "do_token" {
   description = "DigitalOcean API Token"
   type        = string
 }
 
-# variable "pvt_key_path" {}
-
 variable "pvt_key" {}
 
 provider "digitalocean" {
   token = var.do_token
-  #   token = var.digital_ocean_token # change for the CI/CD pipeline
 }
 
 resource "digitalocean_droplet" "prod" {
@@ -41,26 +33,9 @@ resource "digitalocean_droplet" "prod" {
     host = self.ipv4_address
     user = "root"
     type = "ssh"
-    # private_key = file(var.pvt_key_path)
     private_key = var.pvt_key
     timeout     = "2m"
   }
-
-  # provisioner "remote-exec" {
-  #   inline = [
-  #     "export PATH=$PATH:/usr/bin",
-  #     "sudo apt update",
-  #     "sudo apt install -y curl",
-  #     "curl -fsSL https://get.docker.com -o get-docker.sh",
-  #     "sudo sh get-docker.sh",
-  #     "sudo docker run hello-world"
-  #   ]
-  # }
-
-  # provisioner "file" {
-  #   source      = "provision.sh"
-  #   destination = "/tmp/provision.sh"
-  # }
 
   provisioner "file" {
     source      = "docker-compose.yml"
@@ -78,17 +53,7 @@ resource "digitalocean_droplet" "prod" {
     "/tmp/provision.sh"            # Run the script
   ]
   }
-
-  # provisioner "remote-exec" {
-  #   script = "provision.sh"
-  # }
 }
-
-
-# output "droplet_ip_main_app" {
-#   value       = digitalocean_droplet.main-app.ipv4_address
-#   description = "The public IP address of the main-app droplet."
-# }
 
 ### Add the static IP
 

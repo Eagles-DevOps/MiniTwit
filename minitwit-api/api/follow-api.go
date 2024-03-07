@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"minitwit-api/db"
 	"minitwit-api/model"
 	"net/http"
@@ -23,38 +22,30 @@ func Follow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	user_id, _ := db.Get_user_id(username)
-	if db.IsNil(user_id) {
-		http.Error(w, "User not found", http.StatusNotFound)
+	if db.IsZero(user_id) {
+		w.WriteHeader(http.StatusNotFound)
 		return
 	}
-	no_flws := no_followees(r, 100)
+	no_flws := no_followees(r)
 
 	var rv model.FollowData
 	if r.Method == "POST" {
 		err := json.NewDecoder(r.Body).Decode(&rv)
 		if err != nil {
-			http.Error(w, "error in decoding JSON, follow", http.StatusNotFound)
-			fmt.Println("Error in decoding the JSON, follow", err)
+			w.WriteHeader(http.StatusForbidden)
+			return
 		}
 	}
-
 	if r.Method == "POST" && rv.Follow != "" {
 
 		follow_username := rv.Follow
 		follow_user_id, _ := db.Get_user_id(follow_username)
 
-		if db.IsNil(follow_user_id) {
-			http.Error(w, "user not found", http.StatusNotFound)
-			return
-		}
-		query := `INSERT INTO follower (who_id, whom_id) VALUES (?, ?)`
-		err := db.DoExec(query, []any{user_id, follow_user_id})
-
-		if err != nil {
+		if db.IsZero(follow_user_id) {
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
-
+		db.QueryFollow([]int{user_id, follow_user_id})
 		w.WriteHeader(http.StatusNoContent)
 
 	} else if r.Method == "POST" && rv.Unfollow != "" {
@@ -63,31 +54,27 @@ func Follow(w http.ResponseWriter, r *http.Request) {
 		unfollow_user_id, err := db.Get_user_id(unfollow_username)
 
 		if err != nil {
-			http.Error(w, "user not found", http.StatusNotFound)
+			w.WriteHeader(http.StatusNotFound)
 			return
 		}
-		query := `DELETE FROM follower WHERE who_id=? and WHOM_id=?`
-
-		err = db.DoExec(query, []any{user_id, unfollow_user_id})
-		if err != nil {
-			w.WriteHeader(http.StatusForbidden)
-			return
-		} else {
-			w.WriteHeader(http.StatusNoContent)
-		}
+		db.QueryUnfollow([]int{user_id, unfollow_user_id})
+		w.WriteHeader(http.StatusNoContent)
 
 	} else if r.Method == "GET" {
-		followees := db.GetFollowees([]any{user_id, no_flws}, false)
+		followees := db.GetFollowees([]int{user_id, no_flws})
 
-		json.NewEncoder(w).Encode(struct {
+		err := json.NewEncoder(w).Encode(struct {
 			Follows []string `json:"follows"`
 		}{
 			Follows: followees,
 		})
+		if err != nil {
+			w.WriteHeader(http.StatusForbidden)
+		}
 	}
 }
 
-func no_followees(r *http.Request, defaultValue int) int {
+func no_followees(r *http.Request) int {
 	value := r.URL.Query().Get("no")
 	if value != "" {
 		intValue, err := strconv.Atoi(value)
@@ -95,5 +82,5 @@ func no_followees(r *http.Request, defaultValue int) int {
 			return intValue
 		}
 	}
-	return defaultValue
+	return 100
 }
