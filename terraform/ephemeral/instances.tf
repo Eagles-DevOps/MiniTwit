@@ -26,14 +26,14 @@ resource "digitalocean_droplet" "prod" {
   region = "ams3"
   size   = "s-1vcpu-1gb"
   ssh_keys = [
-    data.digitalocean_ssh_key.terraform.id
+    data.digitalocean_ssh_key.Viktoria_key.id
   ]
 
   connection {
     host = self.ipv4_address
     user = "root"
     type = "ssh"
-    private_key = var.pvt_key
+    private_key = cat ~/.ssh/id_rsa
     timeout     = "2m"
   }
 
@@ -70,6 +70,6 @@ resource "digitalocean_reserved_ip_assignment" "example" {
   droplet_id = digitalocean_droplet.prod.id
 }
 
-data "digitalocean_ssh_key" "terraform" {
-  name = "terraform"
+data "digitalocean_ssh_key" "Viktoria_key" {
+  name = "Viktoria_key"
 }
