@@ -38,8 +38,8 @@ resource "digitalocean_droplet" "prod" {
   }
 
   provisioner "file" {
-    source      = "docker-compose.yml"
-    destination = "/tmp/docker-compose.yml"
+    source      = "docker_compose.yml"
+    destination = "/tmp/docker_compose.yml"
   }
 
   provisioner "file" {
