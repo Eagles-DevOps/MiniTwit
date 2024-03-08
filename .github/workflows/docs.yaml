@@ -24,3 +24,6 @@ jobs:
             git fetch origin docs
             git merge --squash --no-edit -m "docs update [skip ci]" origin/docs
             git push
+            git checkout docs
+            git pull origin main
+
