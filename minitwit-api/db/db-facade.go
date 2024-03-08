@@ -18,7 +18,7 @@ var db *gorm.DB
 func Connect_db() {
 	dbPath := os.Getenv("SQLITEPATH")
 	if len(dbPath) == 0 {
-		dbPath = "./sqlite/minitwit.db"
+		dbPath = "./minitwit.db"
 	}
 
 	dir := filepath.Dir(dbPath)
