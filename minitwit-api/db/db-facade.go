@@ -20,17 +20,21 @@ func Connect_db() {
 	if len(dbPath) == 0 {
 		dbPath = "./sqlite/minitwit.db"
 	}
+	fmt.Println("dbPath set to:", dbPath)
 
 	dir := filepath.Dir(dbPath)
 	_, err := os.Stat(dir)
-	if os.IsNotExist(err) {
+
+	if err == nil {
+		fmt.Println("directory of the database exists")
+	} else if os.IsNotExist(err) {
+		fmt.Println("directory of the database does not exist, will create new one")
+		err = os.MkdirAll(dir, 0755)
 		if err != nil {
-			fmt.Println("error getting the directory of the database")
+			fmt.Printf("Fatal Error: creating directory for db: %v\n", err)
+			os.Exit(1)
 		} else {
-			err = os.MkdirAll(dir, 0755)
-			if err != nil {
-				fmt.Printf("Error creating directory: %v\n", err)
-			}
+			fmt.Println("db directory created")
 		}
 	}
 
