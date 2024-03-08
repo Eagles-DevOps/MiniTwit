@@ -6,6 +6,13 @@ on:
       - docs
   workflow_dispatch:
 
+permissions:
+  actions: write
+  contents: write
+  deployments: write
+  packages: write
+  repository-projects: write
+
 jobs:
   merge-docs-to-main:
     runs-on: ubuntu-latest
