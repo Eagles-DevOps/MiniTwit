@@ -3,6 +3,7 @@ services:
   minitwit_app:
     container_name: app
     image: ghcr.io/eagles-devops/app:latest
+    platform: linux/amd64
     restart: always
     ports:
       - '15000:15000'
@@ -10,10 +11,14 @@ services:
       - ./sqlitedb-app/:/usr/src/app/sqlitedb/
     environment:
       - SQLITEPATH=/usr/src/app/sqlitedb/minitwit.db
+    labels:
+      logging: "promtail"
+      logging_tag: "minitwit"
 
   minitwit_api:
     container_name: api
     image: ghcr.io/eagles-devops/api:latest
+    platform: linux/amd64
     restart: always
     ports:
       - '15001:15001'
@@ -21,27 +26,81 @@ services:
       - ./sqlitedb-api/:/usr/src/app/sqlitedb/
     environment:
       - SQLITEPATH=/usr/src/app/sqlitedb/minitwit.db
-    depends_on: 
-      - grafana 
-      - prometheus
-  
-  prometheus:
-    image: prom/prometheus
-    container_name: prometheus
-    volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml 
-    ports:
-      - "15002:15002"
-
-  grafana:
-    image: grafana/grafana:10.2.4
-    ports:
-      - "15003:15003"
+    labels:
+      logging: "promtail"
+      logging_tag: "minitwit"
 
   watchtower:
     container_name: watchtower
     image: containrrr/watchtower
+    platform: linux/amd64
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     restart: always
     command: --interval 300
+    labels:
+      logging: "promtail"
+      logging_tag: "devops"
+
+  loki:
+    image: grafana/loki:latest
+    labels:
+      logging: "promtail"
+      logging_tag: "devops"
+    volumes:
+      - ./data/loki:/loki
+      - ./config/loki.yml:/etc/loki/local-config.yaml
+    ports:
+      - "3100:3100"
+    networks:
+      - loki-net
+    command: -config.file=/etc/loki/local-config.yaml
+
+  promtail:
+    image: grafana/promtail:latest
+    container_name: promtail
+    labels:
+      logging: "promtail"
+      logging_tag: "devops"
+    volumes:
+      - ./data/promtail/:/data/
+      - ./config/promtail.yaml:/etc/promtail/docker-config.yaml
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: -config.file=/etc/promtail/docker-config.yaml
+    networks:
+      - loki-net
+    depends_on:
+      - loki
+
+  grafana:
+    image: grafana/grafana:latest
+    labels:
+      logging: "promtail"
+      logging_tag: "devops"
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./config/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yaml
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_DISABLE_LOGIN_FORM=true
+    networks:
+      - loki-net
+    depends_on:
+      - loki
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    volumes:
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    networks:
+      - loki-net
+
+networks:
+  loki-net:
+    driver: bridge
