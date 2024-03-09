@@ -12,7 +12,6 @@ import (
 	"minitwit-api/db"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
@@ -39,19 +38,18 @@ var (
 	)
 )
 
-var (
+/* var (
 	httpDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 		Name: "myapp_http_duration_seconds",
 		Help: "Duration of HTTP requests.",
 	}, []string{"path"})
-)
+) */
 
-// prometheusMiddleware implements mux.MiddlewareFunc.
 func prometheusMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		route := mux.CurrentRoute(r)
 		path, _ := route.GetPathTemplate()
-		timer := prometheus.NewTimer(httpDuration.WithLabelValues(path))
+		timer := prometheus.NewTimer(requestDuration.WithLabelValues(path))
 		next.ServeHTTP(w, r)
 		timer.ObserveDuration()
 	})
@@ -81,7 +79,6 @@ func main() {
 	http.Handle("/metrics", promhttp.Handler())
 	r.Path("/obj/{id}").HandlerFunc( // Delete maybe?
 		func(w http.ResponseWriter, r *http.Request) {})
-	// err := http.ListenAndServe(":15002", nil)
 
 	fmt.Println("Listening on port 15001...")
 	err := http.ListenAndServe(":15001", r)
