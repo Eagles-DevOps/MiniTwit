@@ -4,17 +4,48 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
-	"os/exec"
 
 	"minitwit-api/api"
 
 	"github.com/gorilla/mux"
 
 	"minitwit-api/db"
+
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
+var (
+	cpuGauge = prometheus.NewGauge(
+		prometheus.GaugeOpts{
+			Name: "minitwit_cpu_load_percent",
+			Help: "Current load of the CPU in percent.",
+		},
+	)
+	responseCounter = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "minitwit_http_responses_total",
+			Help: "The count of HTTP responses sent.",
+		},
+		[]string{"status"},
+	)
+	requestDuration = prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name: "minitwit_request_duration_milliseconds",
+			Help: "Request duration distribution.",
+		},
+		[]string{"endpoint"},
+	)
+)
+
+func init() {
+	prometheus.MustRegister(cpuGauge)
+	prometheus.MustRegister(responseCounter)
+	prometheus.MustRegister(requestDuration)
+}
+
 func main() {
+
 	db.Connect_db()
 	r := mux.NewRouter()
 
@@ -26,35 +57,12 @@ func main() {
 	r.HandleFunc("/cleandb", api.Cleandb)
 	r.HandleFunc("/delete", api.Delete)
 
-	// c := cron.New()
-	// if c == nil {
-	// 	log.Fatal("Error creating cron instance")
-	// }
-	// c.AddFunc("*/15 * * * *", backup)
-	// c.Start()
-	// defer c.Stop()
+	http.Handle("/metrics", promhttp.Handler())
+	err := http.ListenAndServe(":15002", nil)
 
 	fmt.Println("Listening on port 15001...")
-	err := http.ListenAndServe(":15001", r)
+	err = http.ListenAndServe(":15001", r)
 	if err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
-}
-
-func backup() {
-	fmt.Println("Starting backup of the database...")
-
-	if err := os.MkdirAll("./backups", 0755); err != nil {
-		fmt.Printf("Error creating destination directory: %s\n", err)
-		return
-	}
-	cmd := exec.Command("scp", "-i", "~/.ssh/terraform", "-o", "StrictHostKeyChecking=no", "root@188.166.201.66:/tmp/sqlitedb-api/minitwit.db", "./backups/minitwit.db")
-
-	err := cmd.Run()
-	if err != nil {
-		fmt.Printf("Error running scp command: %s\n", err)
-		return
-	}
-
-	fmt.Println("Backup completed successfully")
 }

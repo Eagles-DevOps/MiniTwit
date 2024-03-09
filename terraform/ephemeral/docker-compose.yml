@@ -21,6 +21,22 @@ services:
       - ./sqlitedb-api/:/usr/src/app/sqlitedb/
     environment:
       - SQLITEPATH=/usr/src/app/sqlitedb/minitwit.db
+    depends_on: 
+      - grafana 
+      - prometheus
+  
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml 
+    ports:
+      - "15002:15002"
+
+  grafana:
+    image: grafana/grafana:10.2.4
+    ports:
+      - "15003:15003"
 
   watchtower:
     container_name: watchtower

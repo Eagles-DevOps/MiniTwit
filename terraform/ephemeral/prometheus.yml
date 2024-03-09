@@ -1,0 +1,16 @@
+scrape_configs:
+  - job_name: 'prometheus'
+
+    scrape_interval: 5s
+
+    static_configs:
+      - targets: ['prometheus:15002']
+
+  - job_name:       'minitwit-api'
+
+    scrape_interval: 5s
+
+    static_configs:
+      - targets: ['minitwit-api:15001']
+        labels:
+          group: 'production'
