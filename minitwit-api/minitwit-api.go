@@ -12,6 +12,7 @@ import (
 	"minitwit-api/db"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
@@ -38,6 +39,24 @@ var (
 	)
 )
 
+var (
+	httpDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Name: "myapp_http_duration_seconds",
+		Help: "Duration of HTTP requests.",
+	}, []string{"path"})
+)
+
+// prometheusMiddleware implements mux.MiddlewareFunc.
+func prometheusMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		route := mux.CurrentRoute(r)
+		path, _ := route.GetPathTemplate()
+		timer := prometheus.NewTimer(httpDuration.WithLabelValues(path))
+		next.ServeHTTP(w, r)
+		timer.ObserveDuration()
+	})
+}
+
 func init() {
 	prometheus.MustRegister(cpuGauge)
 	prometheus.MustRegister(responseCounter)
@@ -49,6 +68,8 @@ func main() {
 	db.Connect_db()
 	r := mux.NewRouter()
 
+	r.Use(prometheusMiddleware)
+
 	r.HandleFunc("/register", api.Register)
 	r.HandleFunc("/msgs", api.Messages)
 	r.HandleFunc("/msgs/{username}", api.Messages_per_user).Methods("GET", "POST")
@@ -58,10 +79,12 @@ func main() {
 	r.HandleFunc("/delete", api.Delete)
 
 	http.Handle("/metrics", promhttp.Handler())
-	err := http.ListenAndServe(":15002", nil)
+	r.Path("/obj/{id}").HandlerFunc( // Delete maybe?
+		func(w http.ResponseWriter, r *http.Request) {})
+	// err := http.ListenAndServe(":15002", nil)
 
 	fmt.Println("Listening on port 15001...")
-	err = http.ListenAndServe(":15001", r)
+	err := http.ListenAndServe(":15001", r)
 	if err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
