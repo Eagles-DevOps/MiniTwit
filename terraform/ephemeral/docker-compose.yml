@@ -52,7 +52,7 @@ services:
     volumes:
       - ./data/loki:/loki
       - ./config/loki.yml:/etc/loki/local-config.yaml
-    # ports:
+    # ports: DONT ADD TO PRODUCTION WILL EXPOSE TO PUBLIC
     #   - "3100:3100"
     networks:
       - loki-net
@@ -86,12 +86,14 @@ services:
       - "3000:3000"
     volumes:
       - ./config/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yaml
+      - ./data/grafana:/var/lib/grafana
     env_file:
       - ~/terraform.env
     networks:
       - loki-net
     depends_on:
       - loki
+    user: "0:0"
 
   prometheus:
     image: prom/prometheus
@@ -99,10 +101,11 @@ services:
     volumes:
       - ./data/prometheus:/prometheus
       - ./config/prometheus.yml:/etc/prometheus/prometheus.yml
-    # ports:
+    # ports: DONT ADD TO PRODUCTION WILL EXPOSE TO PUBLIC
     #   - "9090:9090"
     networks:
       - loki-net
+      - default
     user: "0:0"
 
 networks:
