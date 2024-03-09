@@ -20,7 +20,6 @@ services:
   minitwit_api:
     container_name: api
     image: ghcr.io/eagles-devops/api:latest
-    platform: linux/amd64
     restart: always
     ports:
       - '15001:15001'
