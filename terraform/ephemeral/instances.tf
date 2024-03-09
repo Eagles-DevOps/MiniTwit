@@ -38,8 +38,13 @@ resource "digitalocean_droplet" "prod" {
   }
 
   provisioner "file" {
-    source      = "~/.ssh/terraform.env"
-    destination = "/tmp/terraform.env"
+    source      = "./config"
+    destination = "/tmp/config"
+  }
+
+  provisioner "file" {
+    source      = "~/terraform.env"
+    destination = "/root/terraform.env"
   }
 
   provisioner "file" {
