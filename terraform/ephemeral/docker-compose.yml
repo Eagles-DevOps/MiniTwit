@@ -57,6 +57,7 @@ services:
     networks:
       - loki-net
     command: -config.file=/etc/loki/local-config.yaml
+    user: "0:0"
 
   promtail:
     image: grafana/promtail:latest
@@ -74,6 +75,7 @@ services:
       - loki-net
     depends_on:
       - loki
+    user: "0:0"
 
   grafana:
     image: grafana/grafana:latest
@@ -101,6 +103,7 @@ services:
     #   - "9090:9090"
     networks:
       - loki-net
+    user: "0:0"
 
 networks:
   loki-net:
