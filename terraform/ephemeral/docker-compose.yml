@@ -11,6 +11,8 @@ services:
       - ./sqlitedb-app/:/usr/src/app/sqlitedb/
     environment:
       - SQLITEPATH=/usr/src/app/sqlitedb/minitwit.db
+    env_file:
+      - ~/.ssh/terraform.env
     labels:
       logging: "promtail"
       logging_tag: "minitwit"
@@ -50,8 +52,8 @@ services:
     volumes:
       - ./data/loki:/loki
       - ./config/loki.yml:/etc/loki/local-config.yaml
-    ports:
-      - "3100:3100"
+    # ports:
+    #   - "3100:3100"
     networks:
       - loki-net
     command: -config.file=/etc/loki/local-config.yaml
@@ -82,10 +84,8 @@ services:
       - "3000:3000"
     volumes:
       - ./config/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yaml
-    environment:
-      - GF_AUTH_ANONYMOUS_ENABLED=true
-      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
-      - GF_AUTH_DISABLE_LOGIN_FORM=true
+    env_file:
+      - ~/.ssh/terraform.env
     networks:
       - loki-net
     depends_on:
@@ -95,9 +95,10 @@ services:
     image: prom/prometheus
     container_name: prometheus
     volumes:
+      - ./data/prometheus:/prometheus
       - ./config/prometheus.yml:/etc/prometheus/prometheus.yml
-    ports:
-      - "9090:9090"
+    # ports:
+    #   - "9090:9090"
     networks:
       - loki-net
 
