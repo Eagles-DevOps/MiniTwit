@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 
 	"minitwit-api/api"
 
@@ -17,45 +18,51 @@ import (
 )
 
 var (
-	cpuGauge = promauto.NewGauge(
-		prometheus.GaugeOpts{
-			Name: "minitwit_cpu_load_percent",
-			Help: "Current load of the CPU in percent.",
-		},
-	)
 	responseCounter = promauto.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: "minitwit_http_responses_total",
 			Help: "The count of HTTP responses sent.",
 		},
-		[]string{"status"}, // "status" label required
+		[]string{"status"},
 	)
 	requestDuration = promauto.NewHistogramVec(
 		prometheus.HistogramOpts{
 			Name: "minitwit_request_duration_milliseconds",
 			Help: "Request duration distribution.",
 		},
-		[]string{"path"}, // "path" label required
+		[]string{"path"},
 	)
 )
 
-// Middleware handler function for prometheus
 func prometheusMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		rw := &responseWriter{ResponseWriter: w}
+
+		next.ServeHTTP(rw, r)
+
+		responseCounter.WithLabelValues(strconv.Itoa(rw.status)).Inc()
+
 		path, _ := mux.CurrentRoute(r).GetPathTemplate()
-		timer := prometheus.NewTimer(requestDuration.With(prometheus.Labels{"path": path}))
-		next.ServeHTTP(w, r)
-		timer.ObserveDuration()
+		timer := prometheus.NewTimer(requestDuration.WithLabelValues(path))
+		defer timer.ObserveDuration()
 	})
 }
 
-func main() {
+type responseWriter struct {
+	http.ResponseWriter
+	status int
+}
 
+func (rw *responseWriter) WriteHeader(code int) {
+	rw.status = code
+	rw.ResponseWriter.WriteHeader(code)
+}
+
+func main() {
 	db.Connect_db()
 	r := mux.NewRouter()
 
-	// Adds middleware handlers
-	r.Use(prometheusMiddleware) // Should come before other handlers
+	r.Use(prometheusMiddleware)
 
 	r.HandleFunc("/register", api.Register)
 	r.HandleFunc("/msgs", api.Messages)
