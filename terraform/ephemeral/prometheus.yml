@@ -4,7 +4,7 @@ scrape_configs:
     scrape_interval: 5s
 
     static_configs:
-      - targets: ['prometheus:9090']
+      - targets: ['prometheus:15002']
 
   - job_name:       'minitwit-api'
 
