@@ -6,7 +6,7 @@ datasources:
     access: proxy
     url: http://loki:3100
     version: 1
-    editable: false
+    editable: true
     isDefault: true
 
   - name: Prometheus
@@ -14,5 +14,5 @@ datasources:
     access: proxy
     url: http://prometheus:9090
     version: 1
-    editable: false
+    editable: true
     isDefault: false

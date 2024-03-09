@@ -38,6 +38,11 @@ resource "digitalocean_droplet" "prod" {
   }
 
   provisioner "file" {
+    source      = "~/.ssh/terraform.env"
+    destination = "/tmp/terraform.env"
+  }
+
+  provisioner "file" {
     source      = "docker-compose.yml"
     destination = "/tmp/docker-compose.yml"
   }
