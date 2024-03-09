@@ -17,50 +17,36 @@ import (
 )
 
 var (
-	cpuGauge = prometheus.NewGauge(
+	cpuGauge = promauto.NewGauge(
 		prometheus.GaugeOpts{
 			Name: "minitwit_cpu_load_percent",
 			Help: "Current load of the CPU in percent.",
 		},
 	)
-	responseCounter = prometheus.NewCounterVec(
+	responseCounter = promauto.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: "minitwit_http_responses_total",
 			Help: "The count of HTTP responses sent.",
 		},
-		[]string{"status"},
+		[]string{"status"}, // "status" label required
 	)
-	requestDuration = prometheus.NewHistogramVec(
+	requestDuration = promauto.NewHistogramVec(
 		prometheus.HistogramOpts{
 			Name: "minitwit_request_duration_milliseconds",
 			Help: "Request duration distribution.",
 		},
-		[]string{"endpoint"},
+		[]string{"path"}, // "path" label required
 	)
 )
 
-var (
-	httpDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
-		Name: "myapp_http_duration_seconds",
-		Help: "Duration of HTTP requests.",
-	}, []string{"path"})
-)
-
-// prometheusMiddleware implements mux.MiddlewareFunc.
+// Middleware handler function for prometheus
 func prometheusMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		route := mux.CurrentRoute(r)
-		path, _ := route.GetPathTemplate()
-		timer := prometheus.NewTimer(httpDuration.WithLabelValues(path))
+		path, _ := mux.CurrentRoute(r).GetPathTemplate()
+		timer := prometheus.NewTimer(requestDuration.With(prometheus.Labels{"path": path}))
 		next.ServeHTTP(w, r)
 		timer.ObserveDuration()
 	})
-}
-
-func init() {
-	prometheus.MustRegister(cpuGauge)
-	prometheus.MustRegister(responseCounter)
-	prometheus.MustRegister(requestDuration)
 }
 
 func main() {
@@ -68,7 +54,8 @@ func main() {
 	db.Connect_db()
 	r := mux.NewRouter()
 
-	r.Use(prometheusMiddleware)
+	// Adds middleware handlers
+	r.Use(prometheusMiddleware) // Should come before other handlers
 
 	r.HandleFunc("/register", api.Register)
 	r.HandleFunc("/msgs", api.Messages)
@@ -78,10 +65,7 @@ func main() {
 	r.HandleFunc("/cleandb", api.Cleandb)
 	r.HandleFunc("/delete", api.Delete)
 
-	http.Handle("/metrics", promhttp.Handler())
-	r.Path("/obj/{id}").HandlerFunc( // Delete maybe?
-		func(w http.ResponseWriter, r *http.Request) {})
-	// err := http.ListenAndServe(":15002", nil)
+	r.Handle("/metrics", promhttp.Handler())
 
 	fmt.Println("Listening on port 15001...")
 	err := http.ListenAndServe(":15001", r)
