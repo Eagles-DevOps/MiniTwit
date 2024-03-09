@@ -91,6 +91,16 @@ services:
     depends_on:
       - loki
 
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    volumes:
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    networks:
+      - loki-net
+
 networks:
   loki-net:
     driver: bridge
