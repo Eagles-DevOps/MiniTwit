@@ -11,6 +11,8 @@ services:
       - ./sqlitedb-app/:/usr/src/app/sqlitedb/
     environment:
       - SQLITEPATH=/usr/src/app/sqlitedb/minitwit.db
+    env_file:
+      - ~/terraform.env
     labels:
       logging: "promtail"
       logging_tag: "minitwit"
@@ -18,7 +20,6 @@ services:
   minitwit_api:
     container_name: api
     image: ghcr.io/eagles-devops/api:latest
-    platform: linux/amd64
     restart: always
     ports:
       - '15001:15001'
@@ -50,11 +51,12 @@ services:
     volumes:
       - ./data/loki:/loki
       - ./config/loki.yml:/etc/loki/local-config.yaml
-    ports:
-      - "3100:3100"
+    # ports: DONT ADD TO PRODUCTION WILL EXPOSE TO PUBLIC
+    #   - "3100:3100"
     networks:
       - loki-net
     command: -config.file=/etc/loki/local-config.yaml
+    user: "0:0"
 
   promtail:
     image: grafana/promtail:latest
@@ -72,6 +74,7 @@ services:
       - loki-net
     depends_on:
       - loki
+    user: "0:0"
 
   grafana:
     image: grafana/grafana:latest
@@ -82,24 +85,27 @@ services:
       - "3000:3000"
     volumes:
       - ./config/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yaml
-    environment:
-      - GF_AUTH_ANONYMOUS_ENABLED=true
-      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
-      - GF_AUTH_DISABLE_LOGIN_FORM=true
+      - ./data/grafana:/var/lib/grafana
+    env_file:
+      - ~/terraform.env
     networks:
       - loki-net
     depends_on:
       - loki
+    user: "0:0"
 
   prometheus:
     image: prom/prometheus
     container_name: prometheus
     volumes:
+      - ./data/prometheus:/prometheus
       - ./config/prometheus.yml:/etc/prometheus/prometheus.yml
-    ports:
-      - "9090:9090"
+    # ports: DONT ADD TO PRODUCTION WILL EXPOSE TO PUBLIC
+    #   - "9090:9090"
     networks:
       - loki-net
+      - default
+    user: "0:0"
 
 networks:
   loki-net:
