@@ -15,6 +15,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/shirou/gopsutil/cpu"
 )
 
 var (
@@ -32,11 +33,24 @@ var (
 		},
 		[]string{"path"},
 	)
+	cpuGauge = promauto.NewGauge(
+		prometheus.GaugeOpts{
+			Name: "minitwit_cpu_load_percent",
+			Help: "Current CPU load as a percentage",
+		},
+	)
 )
 
 func prometheusMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		rw := &responseWriter{ResponseWriter: w}
+
+		cpuLoad, err := getCPULoad()
+		if err != nil {
+			log.Printf("Error getting CPU load: %v", err)
+		} else {
+			cpuGauge.Set(cpuLoad)
+		}
 
 		next.ServeHTTP(rw, r)
 
@@ -56,6 +70,14 @@ type responseWriter struct {
 func (rw *responseWriter) WriteHeader(code int) {
 	rw.status = code
 	rw.ResponseWriter.WriteHeader(code)
+}
+
+func getCPULoad() (float64, error) {
+	percentages, err := cpu.Percent(0, false)
+	if err != nil || len(percentages) == 0 {
+		return 0, err
+	}
+	return percentages[0], nil
 }
 
 func main() {
