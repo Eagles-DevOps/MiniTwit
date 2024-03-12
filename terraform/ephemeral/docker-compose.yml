@@ -15,11 +15,12 @@ services:
       - ~/terraform.env
     labels:
       logging: "promtail"
-      logging_tag: "minitwit"
+      logging_tag: "app"
 
   minitwit_api:
     container_name: api
     image: ghcr.io/eagles-devops/api:latest
+    platform: linux/amd64
     restart: always
     ports:
       - '15001:15001'
@@ -27,60 +28,61 @@ services:
       - ./sqlitedb-api/:/usr/src/app/sqlitedb/
     environment:
       - SQLITEPATH=/usr/src/app/sqlitedb/minitwit.db
+    env_file:
+      - ~/terraform.env
     labels:
       logging: "promtail"
-      logging_tag: "minitwit"
+      logging_tag: "api"
 
   watchtower:
     container_name: watchtower
     image: containrrr/watchtower
     platform: linux/amd64
+    restart: always
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-    restart: always
     command: --interval 300
     labels:
       logging: "promtail"
-      logging_tag: "devops"
+      logging_tag: "watchtower"
 
   loki:
+    container_name: loki 
     image: grafana/loki:latest
-    labels:
-      logging: "promtail"
-      logging_tag: "devops"
     volumes:
       - ./data/loki:/loki
       - ./config/loki.yml:/etc/loki/local-config.yaml
     # ports: DONT ADD TO PRODUCTION WILL EXPOSE TO PUBLIC
     #   - "3100:3100"
-    networks:
-      - loki-net
     command: -config.file=/etc/loki/local-config.yaml
     user: "0:0"
-
-  promtail:
-    image: grafana/promtail:latest
-    container_name: promtail
+    networks:
+      - loki-net
     labels:
       logging: "promtail"
-      logging_tag: "devops"
+      logging_tag: "loki"
+
+  promtail:
+    container_name: promtail
+    image: grafana/promtail:latest
     volumes:
       - ./data/promtail/:/data/
       - ./config/promtail.yaml:/etc/promtail/docker-config.yaml
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - /var/run/docker.sock:/var/run/docker.sock
     command: -config.file=/etc/promtail/docker-config.yaml
+    user: "0:0"
     networks:
       - loki-net
-    depends_on:
-      - loki
-    user: "0:0"
-
-  grafana:
-    image: grafana/grafana:latest
     labels:
       logging: "promtail"
-      logging_tag: "devops"
+      logging_tag: "promtail"
+    depends_on:
+      - loki
+
+  grafana:
+    container_name: grafana 
+    image: grafana/grafana:latest
     ports:
       - "3000:3000"
     volumes:
@@ -88,24 +90,27 @@ services:
       - ./data/grafana:/var/lib/grafana
     env_file:
       - ~/terraform.env
+    user: "0:0"
     networks:
       - loki-net
+    labels:
+      logging: "promtail"
+      logging_tag: "grafana"
     depends_on:
       - loki
-    user: "0:0"
 
   prometheus:
-    image: prom/prometheus
     container_name: prometheus
+    image: prom/prometheus
     volumes:
       - ./data/prometheus:/prometheus
       - ./config/prometheus.yml:/etc/prometheus/prometheus.yml
     # ports: DONT ADD TO PRODUCTION WILL EXPOSE TO PUBLIC
     #   - "9090:9090"
+    user: "0:0"
     networks:
       - loki-net
       - default
-    user: "0:0"
 
 networks:
   loki-net:

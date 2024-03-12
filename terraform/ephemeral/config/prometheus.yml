@@ -3,11 +3,10 @@ global:
   evaluation_interval: 15s 
 
 scrape_configs:
-  - job_name:       'scrape-minittwit-api'
+  - job_name:       'scrape-minitwit-api'
     scrape_interval: 5s
     static_configs:
-<<<<<<< HEAD
-=======
+
       - targets: ['prometheus:9090']
 
   - job_name:       'minitwit-api'
@@ -15,7 +14,6 @@ scrape_configs:
     scrape_interval: 5s
 
     static_configs:
->>>>>>> monitoring
       - targets: ['api:15001']
         labels:
           group: 'prod'
