@@ -57,7 +57,8 @@ func prometheusMiddleware(next http.Handler) http.Handler {
 		var handlerLabel string
 		route := mux.CurrentRoute(r)
 		if route != nil {
-			if name := route.GetName(); name != "" {
+			name := route.GetName()
+			if name != "" {
 				handlerLabel = name
 			}
 		}
