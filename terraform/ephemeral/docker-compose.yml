@@ -3,7 +3,6 @@ services:
   minitwit_app:
     container_name: app
     image: ghcr.io/eagles-devops/app:latest
-    platform: linux/amd64
     restart: always
     ports:
       - '15000:15000'
@@ -20,7 +19,6 @@ services:
   minitwit_api:
     container_name: api
     image: ghcr.io/eagles-devops/api:latest
-    platform: linux/amd64
     restart: always
     ports:
       - '15001:15001'
@@ -37,7 +35,6 @@ services:
   watchtower:
     container_name: watchtower
     image: containrrr/watchtower
-    platform: linux/amd64
     restart: always
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
