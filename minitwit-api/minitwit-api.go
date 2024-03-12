@@ -31,7 +31,7 @@ var (
 			Name: "minitwit_request_duration_milliseconds",
 			Help: "Request duration distribution.",
 		},
-		[]string{"path"},
+		[]string{"handler"},
 	)
 	cpuGauge = promauto.NewGauge(
 		prometheus.GaugeOpts{
@@ -55,16 +55,15 @@ func prometheusMiddleware(next http.Handler) http.Handler {
 		next.ServeHTTP(rw, r)
 
 		var handlerLabel string
-		if route := mux.CurrentRoute(r); route != nil {
+		route := mux.CurrentRoute(r)
+		if route != nil {
 			if name := route.GetName(); name != "" {
 				handlerLabel = name
 			}
 		}
-
 		responseCounter.WithLabelValues(handlerLabel, strconv.Itoa(rw.status), r.Method).Inc()
 
-		path, _ := mux.CurrentRoute(r).GetPathTemplate()
-		timer := prometheus.NewTimer(requestDuration.WithLabelValues(path))
+		timer := prometheus.NewTimer(requestDuration.WithLabelValues(handlerLabel))
 		defer timer.ObserveDuration()
 	})
 }
@@ -101,7 +100,7 @@ func main() {
 	r.HandleFunc("/cleandb", api.Cleandb).Name("Cleandb")
 	r.HandleFunc("/delete", api.Delete).Name("Delete")
 
-	r.Handle("/metrics", promhttp.Handler())
+	r.Handle("/metrics", promhttp.Handler()).Name("Metrics")
 
 	fmt.Println("Listening on port 15001...")
 	err := http.ListenAndServe(":15001", r)

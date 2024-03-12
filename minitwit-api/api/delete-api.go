@@ -29,4 +29,5 @@ func Delete(w http.ResponseWriter, r *http.Request) {
 		toDeleteUser_id, _ := db.Get_user_id(toDeleteUsername)
 		db.QueryDelete([]int{toDeleteUser_id})
 	}
+	w.WriteHeader(http.StatusOK)
 }
