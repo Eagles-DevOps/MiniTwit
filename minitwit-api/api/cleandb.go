@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"net/http"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -28,5 +27,5 @@ func Cleandb(w http.ResponseWriter, r *http.Request) {
 			db.QueryDelete([]int{userID})
 		}
 	}
-	json.NewEncoder(w).Encode(http.StatusOK)
+	w.WriteHeader(http.StatusOK)
 }

@@ -63,6 +63,7 @@ func Follow(w http.ResponseWriter, r *http.Request) {
 	} else if r.Method == "GET" {
 		followees := db.GetFollowees([]int{user_id, no_flws})
 
+		w.WriteHeader(http.StatusOK)
 		err := json.NewEncoder(w).Encode(struct {
 			Follows []string `json:"follows"`
 		}{

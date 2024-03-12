@@ -7,6 +7,12 @@ http://188.166.201.66:15000
 ### API service: 
 http://188.166.201.66:15001
 
+### Grafana
+http://188.166.201.66:3000/
+
+### Prometheus
+http://188.166.201.66:15001/metrics
+
 ## Folders
 * **docs** documentation
 * **legacy_tests** Python tests as provided from the legacy setup.
@@ -28,3 +34,4 @@ Roman Zvoda
 Viktoria Hopeberg
 Trond Rossing
 Rasmus Balder Nordbjærg
+Jan Lishak
