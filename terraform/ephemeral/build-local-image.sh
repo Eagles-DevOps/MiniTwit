@@ -6,4 +6,4 @@ script_dir=$(dirname "$0")
 cd "$script_dir"/../../minitwit-api/
 echo "changed directory to: $(pwd)"
 ls
-docker build -t ghcr.io/eagles-devops/api:latest .
+docker build --no-cache -t ghcr.io/eagles-devops/api:latest .

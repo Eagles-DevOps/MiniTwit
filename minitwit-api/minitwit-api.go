@@ -24,7 +24,7 @@ var (
 			Name: "minitwit_http_responses_total",
 			Help: "The count of HTTP responses sent.",
 		},
-		[]string{"status"},
+		[]string{"handler", "status", "method"},
 	)
 	requestDuration = promauto.NewHistogramVec(
 		prometheus.HistogramOpts{
@@ -54,7 +54,14 @@ func prometheusMiddleware(next http.Handler) http.Handler {
 
 		next.ServeHTTP(rw, r)
 
-		responseCounter.WithLabelValues(strconv.Itoa(rw.status)).Inc()
+		var handlerLabel string
+		if route := mux.CurrentRoute(r); route != nil {
+			if name := route.GetName(); name != "" {
+				handlerLabel = name
+			}
+		}
+
+		responseCounter.WithLabelValues(handlerLabel, strconv.Itoa(rw.status), r.Method).Inc()
 
 		path, _ := mux.CurrentRoute(r).GetPathTemplate()
 		timer := prometheus.NewTimer(requestDuration.WithLabelValues(path))
@@ -86,13 +93,13 @@ func main() {
 
 	r.Use(prometheusMiddleware)
 
-	r.HandleFunc("/register", api.Register)
-	r.HandleFunc("/msgs", api.Messages)
-	r.HandleFunc("/msgs/{username}", api.Messages_per_user).Methods("GET", "POST")
-	r.HandleFunc("/fllws/{username}", api.Follow)
-	r.HandleFunc("/latest", api.Get_latest).Methods("GET")
-	r.HandleFunc("/cleandb", api.Cleandb)
-	r.HandleFunc("/delete", api.Delete)
+	r.HandleFunc("/register", api.Register).Name("Register")
+	r.HandleFunc("/msgs", api.Messages).Methods("GET").Name("Messages")
+	r.HandleFunc("/msgs/{username}", api.Messages_per_user).Methods("GET", "POST").Name("Messages_per_user")
+	r.HandleFunc("/fllws/{username}", api.Follow).Name("Follow")
+	r.HandleFunc("/latest", api.Get_latest).Methods("GET").Name("Get_latest")
+	r.HandleFunc("/cleandb", api.Cleandb).Name("Cleandb")
+	r.HandleFunc("/delete", api.Delete).Name("Delete")
 
 	r.Handle("/metrics", promhttp.Handler())
 

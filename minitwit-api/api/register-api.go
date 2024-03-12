@@ -39,16 +39,11 @@ func Register(w http.ResponseWriter, r *http.Request) {
 			errMsg = "The username is already taken"
 		} else {
 			hash_pw := hashPassword(rv.Pwd)
-			if err != nil {
-				w.WriteHeader(http.StatusBadRequest)
-				return
-			}
 			db.QueryRegister([]string{rv.Username, rv.Email, hash_pw})
+			w.WriteHeader(http.StatusNoContent)
 		}
 		if errMsg != "" {
 			w.WriteHeader(http.StatusBadRequest)
-		} else {
-			w.WriteHeader(http.StatusNoContent)
 		}
 	}
 }
