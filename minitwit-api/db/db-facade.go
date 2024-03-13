@@ -76,12 +76,18 @@ func QueryRegister(args []string) {
 		Email:    args[1],
 		PwHash:   args[2],
 	}
-	db.Create(user)
+	res := db.Create(user)
+	if res.Error != nil {
+		readWritesDatabase.WithLabelValues("QueryRegister", "write", "fail").Inc()
+	}
 	readWritesDatabase.WithLabelValues("QueryRegister", "write", "success").Inc()
 }
 
 func QueryMessage(message *model.Message) {
-	db.Create(message)
+	res := db.Create(message)
+	if res.Error != nil {
+		readWritesDatabase.WithLabelValues("QueryMessage", "write", "fail").Inc()
+	}
 	readWritesDatabase.WithLabelValues("QueryMessage", "write", "success").Inc()
 
 }
@@ -91,23 +97,35 @@ func QueryFollow(args []int) {
 		WhoID:  args[0],
 		WhomID: args[1],
 	}
-	db.Create(follower)
+	res := db.Create(follower)
+	if res.Error != nil {
+		readWritesDatabase.WithLabelValues("QueryFollow", "write", "fail").Inc()
+	}
 	readWritesDatabase.WithLabelValues("QueryFollow", "write", "success").Inc()
 }
 
 func QueryUnfollow(args []int) {
-	db.Where("who_id = ? AND whom_id = ?", args[0], args[1]).Delete(&model.Follower{})
+	res := db.Where("who_id = ? AND whom_id = ?", args[0], args[1]).Delete(&model.Follower{})
+	if res.Error != nil {
+		readWritesDatabase.WithLabelValues("QueryUnfollow", "write", "fail").Inc()
+	}
 	readWritesDatabase.WithLabelValues("QueryUnfollow", "write", "success").Inc()
 }
 
 func QueryDelete(args []int) {
-	db.Delete(&model.User{}, args[0])
+	res := db.Delete(&model.User{}, args[0])
+	if res.Error != nil {
+		readWritesDatabase.WithLabelValues("QueryDelete", "write", "fail").Inc()
+	}
 	readWritesDatabase.WithLabelValues("QueryDelete", "write", "success").Inc()
 }
 
 func GetMessages(args []int) []map[string]any {
 	var messages []model.Message
-	db.Where("flagged = 0").Order("pub_date DESC").Limit(args[0]).Find(&messages)
+	res := db.Where("flagged = 0").Order("pub_date DESC").Limit(args[0]).Find(&messages)
+	if res.Error != nil {
+		readWritesDatabase.WithLabelValues("GetMessages", "read", "fail").Inc()
+	}
 
 	var Messages []map[string]any
 	for _, msg := range messages {
@@ -127,7 +145,10 @@ func GetMessages(args []int) []map[string]any {
 
 func GetMessagesForUser(args []int) []map[string]any {
 	var messages []model.Message
-	db.Where("flagged = 0 AND author_id = ?", args[0]).Order("pub_date DESC").Limit(args[1]).Find(&messages)
+	res := db.Where("flagged = 0 AND author_id = ?", args[0]).Order("pub_date DESC").Limit(args[1]).Find(&messages)
+	if res.Error != nil {
+		readWritesDatabase.WithLabelValues("GetMessagesForUser", "read", "fail").Inc()
+	}
 
 	var Messages []map[string]any
 
@@ -148,13 +169,16 @@ func GetMessagesForUser(args []int) []map[string]any {
 
 func GetFollowees(args []int) []string {
 	var followees []string
-	db.Table("user").
+	res := db.Table("user").
 		Select("user.username").
 		Joins("inner join follower ON follower.whom_id=user.user_id").
 		Where("follower.who_id = ?", args[0]).
 		Limit(args[1]).
 		Scan(&followees)
 
+	if res.Error != nil {
+		readWritesDatabase.WithLabelValues("GetFollowees", "read", "fail").Inc()
+	}
 	readWritesDatabase.WithLabelValues("GetFollowees", "read", "success").Inc()
 	return followees
 }
