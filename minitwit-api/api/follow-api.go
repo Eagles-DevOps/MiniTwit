@@ -21,8 +21,8 @@ func Follow(w http.ResponseWriter, r *http.Request) {
 	if !is_auth {
 		return
 	}
-	user_id, err := db.Get_user_id(username)
-	if err != nil {
+	user_id, _ := db.Get_user_id(username)
+	if db.IsZero(user_id) {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
@@ -39,17 +39,13 @@ func Follow(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" && rv.Follow != "" {
 
 		follow_username := rv.Follow
-		follow_user_id, err := db.Get_user_id(follow_username)
+		follow_user_id, _ := db.Get_user_id(follow_username)
 
-		if err != nil {
+		if db.IsZero(follow_user_id) {
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
-		err = db.QueryFollow([]int{user_id, follow_user_id})
-		if err != nil {
-			w.WriteHeader(http.StatusForbidden)
-			return
-		}
+		db.QueryFollow([]int{user_id, follow_user_id})
 		w.WriteHeader(http.StatusNoContent)
 
 	} else if r.Method == "POST" && rv.Unfollow != "" {
@@ -61,11 +57,7 @@ func Follow(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
-		err = db.QueryUnfollow([]int{user_id, unfollow_user_id})
-		if err != nil {
-			w.WriteHeader(http.StatusForbidden)
-			return
-		}
+		db.QueryUnfollow([]int{user_id, unfollow_user_id})
 		w.WriteHeader(http.StatusNoContent)
 
 	} else if r.Method == "GET" {

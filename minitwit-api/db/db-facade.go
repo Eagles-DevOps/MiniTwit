@@ -67,74 +67,47 @@ func Connect_db() {
 	}
 	db.AutoMigrate(&model.User{}, &model.Follower{}, &model.Message{})
 	readWritesDatabase.WithLabelValues("Connect_db", "connect", "success").Inc()
+
 }
 
-func QueryRegister(args []string) error {
+func QueryRegister(args []string) {
 	user := &model.User{
 		Username: args[0],
 		Email:    args[1],
 		PwHash:   args[2],
 	}
-	res := db.Create(user)
-	if res.Error != nil {
-		readWritesDatabase.WithLabelValues("QueryRegister", "write", "fail").Inc()
-		return res.Error
-	}
+	db.Create(user)
 	readWritesDatabase.WithLabelValues("QueryRegister", "write", "success").Inc()
-	return nil
 }
 
-func QueryMessage(message *model.Message) error {
-	res := db.Create(message)
-	if res.Error != nil {
-		readWritesDatabase.WithLabelValues("QueryMessage", "write", "fail").Inc()
-		return res.Error
-	}
+func QueryMessage(message *model.Message) {
+	db.Create(message)
 	readWritesDatabase.WithLabelValues("QueryMessage", "write", "success").Inc()
-	return nil
+
 }
 
-func QueryFollow(args []int) error {
+func QueryFollow(args []int) {
 	follower := &model.Follower{
 		WhoID:  args[0],
 		WhomID: args[1],
 	}
-	res := db.Create(follower)
-	if res.Error != nil {
-		readWritesDatabase.WithLabelValues("QueryFollow", "write", "fail").Inc()
-		return res.Error
-	}
+	db.Create(follower)
 	readWritesDatabase.WithLabelValues("QueryFollow", "write", "success").Inc()
-	return nil
 }
 
-func QueryUnfollow(args []int) error {
-	res := db.Where("who_id = ? AND whom_id = ?", args[0], args[1]).Delete(&model.Follower{})
-	if res.Error != nil {
-		readWritesDatabase.WithLabelValues("QueryUnfollow", "write", "fail").Inc()
-		return res.Error
-	}
+func QueryUnfollow(args []int) {
+	db.Where("who_id = ? AND whom_id = ?", args[0], args[1]).Delete(&model.Follower{})
 	readWritesDatabase.WithLabelValues("QueryUnfollow", "write", "success").Inc()
-	return nil
 }
 
-func QueryDelete(args []int) error {
-	res := db.Delete(&model.User{}, args[0])
-	if res.Error != nil {
-		readWritesDatabase.WithLabelValues("QueryDelete", "write", "fail").Inc()
-		return res.Error
-	}
+func QueryDelete(args []int) {
+	db.Delete(&model.User{}, args[0])
 	readWritesDatabase.WithLabelValues("QueryDelete", "write", "success").Inc()
-	return nil
 }
 
 func GetMessages(args []int) []map[string]any {
 	var messages []model.Message
-	res := db.Where("flagged = 0").Order("pub_date DESC").Limit(args[0]).Find(&messages)
-	if res.Error != nil {
-		readWritesDatabase.WithLabelValues("GetMessages", "read", "fail").Inc()
-		return nil
-	}
+	db.Where("flagged = 0").Order("pub_date DESC").Limit(args[0]).Find(&messages)
 
 	var Messages []map[string]any
 	for _, msg := range messages {
@@ -154,13 +127,10 @@ func GetMessages(args []int) []map[string]any {
 
 func GetMessagesForUser(args []int) []map[string]any {
 	var messages []model.Message
-	res := db.Where("flagged = 0 AND author_id = ?", args[0]).Order("pub_date DESC").Limit(args[1]).Find(&messages)
-	if res.Error != nil {
-		readWritesDatabase.WithLabelValues("GetMessagesForUser", "read", "fail").Inc()
-		return nil
-	}
+	db.Where("flagged = 0 AND author_id = ?", args[0]).Order("pub_date DESC").Limit(args[1]).Find(&messages)
 
 	var Messages []map[string]any
+
 	for _, msg := range messages {
 		var user model.User
 		db.First(&user, msg.AuthorID)
@@ -178,17 +148,13 @@ func GetMessagesForUser(args []int) []map[string]any {
 
 func GetFollowees(args []int) []string {
 	var followees []string
-	res := db.Table("user").
+	db.Table("user").
 		Select("user.username").
 		Joins("inner join follower ON follower.whom_id=user.user_id").
 		Where("follower.who_id = ?", args[0]).
 		Limit(args[1]).
 		Scan(&followees)
 
-	if res.Error != nil {
-		readWritesDatabase.WithLabelValues("GetMessages", "read", "fail").Inc()
-		return nil
-	}
 	readWritesDatabase.WithLabelValues("GetFollowees", "read", "success").Inc()
 	return followees
 }
@@ -209,7 +175,7 @@ func Get_user_id(username string) (int, error) {
 	return user.UserID, nil
 }
 
-func IsNil(i any) bool {
+func IsNil(i interface{}) bool {
 	if i == nil || i == interface{}(nil) {
 		return true
 	} else {

@@ -24,11 +24,7 @@ func Cleandb(w http.ResponseWriter, r *http.Request) {
 
 	for _, userID := range user_ids {
 		if !db.IsZero(userID) {
-			err := db.QueryDelete([]int{userID})
-			if err != nil {
-				w.WriteHeader(http.StatusForbidden)
-				return
-			}
+			db.QueryDelete([]int{userID})
 		}
 	}
 	w.WriteHeader(http.StatusOK)
