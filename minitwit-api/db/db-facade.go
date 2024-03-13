@@ -23,7 +23,7 @@ var (
 			Name: "minitwit_database_read_writes_total",
 			Help: "Counts reads and writes to database.",
 		},
-		[]string{"func_name", "action, status"},
+		[]string{"func_name", "action", "status"},
 	)
 )
 

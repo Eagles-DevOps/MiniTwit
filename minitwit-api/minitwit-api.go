@@ -62,7 +62,6 @@ func prometheusMiddleware(next http.Handler) http.Handler {
 				handlerLabel = name
 			}
 		}
-		db.readWritesDatabase.WithLabelValues("test func", "successful", "read").Inc()
 		responseCounter.WithLabelValues(handlerLabel, strconv.Itoa(rw.status), r.Method).Inc()
 
 		timer := prometheus.NewTimer(requestDuration.WithLabelValues(handlerLabel))
