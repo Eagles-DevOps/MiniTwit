@@ -7,10 +7,10 @@ import (
 	"strconv"
 
 	"minitwit-api/api"
+	"minitwit-api/db"
+	"minitwit-api/db/postgres"
 
 	"github.com/gorilla/mux"
-
-	"minitwit-api/db"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -89,6 +89,7 @@ func getCPULoad() (float64, error) {
 }
 
 func main() {
+	postgres.Connect_db()
 	db.Connect_db()
 	r := mux.NewRouter()
 
