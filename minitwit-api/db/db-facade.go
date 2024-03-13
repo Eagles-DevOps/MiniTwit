@@ -22,6 +22,7 @@ var (
 			Name: "minitwit_database_read_writes_total",
 			Help: "Counts reads and writes to database.",
 		},
+
 		[]string{"func_name", "action", "status"},
 	)
 )
@@ -196,6 +197,11 @@ func Get_user_id(username string) (int, error) {
 	var user model.User
 	res := db.Where("username = ?", username).First(&user)
 	if res.Error != nil {
+		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
+			readWritesDatabase.WithLabelValues("Get_user_id", "read", "fail").Inc()
+			return 0, fmt.Errorf("user with username '%s' not found", username)
+
+		}
 		readWritesDatabase.WithLabelValues("Get_user_id", "read", "fail").Inc()
 		return 0, fmt.Errorf("error querying database: %v", res.Error)
 	}
