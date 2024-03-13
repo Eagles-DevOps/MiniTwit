@@ -32,16 +32,16 @@ services:
       logging: "promtail"
       logging_tag: "api"
 
-  # watchtower:
-  #   container_name: watchtower
-  #   image: containrrr/watchtower
-  #   restart: always
-  #   volumes:
-  #     - /var/run/docker.sock:/var/run/docker.sock
-  #   command: --interval 300
-  #   labels:
-  #     logging: "promtail"
-  #     logging_tag: "watchtower"
+  watchtower:
+    container_name: watchtower
+    image: containrrr/watchtower
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --interval 300
+    labels:
+      logging: "promtail"
+      logging_tag: "watchtower"
 
   loki:
     container_name: loki 
