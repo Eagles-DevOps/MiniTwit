@@ -20,12 +20,12 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	var rv model.RegisterData
 	err := json.NewDecoder(r.Body).Decode(&rv)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusForbidden)
 		return
 	}
 
 	if r.Method == "POST" {
-		user_id, _ := db.Get_user_id(rv.Username)
+		_, err := db.Get_user_id(rv.Username)
 
 		errMsg := ""
 
@@ -35,11 +35,15 @@ func Register(w http.ResponseWriter, r *http.Request) {
 			errMsg = "You have to enter a valid email address"
 		} else if rv.Pwd == "" {
 			errMsg = "You have to enter a password"
-		} else if !db.IsZero(user_id) {
+		} else if err != nil {
 			errMsg = "The username is already taken"
 		} else {
 			hash_pw := hashPassword(rv.Pwd)
-			db.QueryRegister([]string{rv.Username, rv.Email, hash_pw})
+			err = db.QueryRegister([]string{rv.Username, rv.Email, hash_pw})
+			if err != nil {
+				w.WriteHeader(http.StatusForbidden)
+				return
+			}
 			w.WriteHeader(http.StatusNoContent)
 		}
 		if errMsg != "" {
