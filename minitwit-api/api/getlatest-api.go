@@ -16,9 +16,12 @@ func Get_latest(w http.ResponseWriter, r *http.Request) {
 		latest_command_id = -1
 	}
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(struct {
+	err = json.NewEncoder(w).Encode(struct {
 		Latest int `json:"latest"`
 	}{
 		Latest: latest_command_id,
 	})
+	if err != nil {
+		w.WriteHeader(http.StatusForbidden)
+	}
 }

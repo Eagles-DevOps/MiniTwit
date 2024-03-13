@@ -1,7 +1,6 @@
 package db
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"minitwit-api/model"
@@ -23,7 +22,8 @@ var (
 			Name: "minitwit_database_read_writes_total",
 			Help: "Counts reads and writes to database.",
 		},
-		[]string{"func_name", "action, status"},
+
+		[]string{"func_name", "action", "status"},
 	)
 )
 
@@ -67,47 +67,74 @@ func Connect_db() {
 	}
 	db.AutoMigrate(&model.User{}, &model.Follower{}, &model.Message{})
 	readWritesDatabase.WithLabelValues("Connect_db", "connect", "success").Inc()
-
 }
 
-func QueryRegister(args []string) {
+func QueryRegister(args []string) error {
 	user := &model.User{
 		Username: args[0],
 		Email:    args[1],
 		PwHash:   args[2],
 	}
-	db.Create(user)
+	res := db.Create(user)
+	if res.Error != nil {
+		readWritesDatabase.WithLabelValues("QueryRegister", "write", "fail").Inc()
+		return res.Error
+	}
 	readWritesDatabase.WithLabelValues("QueryRegister", "write", "success").Inc()
+	return nil
 }
 
-func QueryMessage(message *model.Message) {
-	db.Create(message)
+func QueryMessage(message *model.Message) error {
+	res := db.Create(message)
+	if res.Error != nil {
+		readWritesDatabase.WithLabelValues("QueryMessage", "write", "fail").Inc()
+		return res.Error
+	}
 	readWritesDatabase.WithLabelValues("QueryMessage", "write", "success").Inc()
-
+	return nil
 }
 
-func QueryFollow(args []int) {
+func QueryFollow(args []int) error {
 	follower := &model.Follower{
 		WhoID:  args[0],
 		WhomID: args[1],
 	}
-	db.Create(follower)
+	res := db.Create(follower)
+	if res.Error != nil {
+		readWritesDatabase.WithLabelValues("QueryFollow", "write", "fail").Inc()
+		return res.Error
+	}
 	readWritesDatabase.WithLabelValues("QueryFollow", "write", "success").Inc()
+	return nil
 }
 
-func QueryUnfollow(args []int) {
-	db.Where("who_id = ? AND whom_id = ?", args[0], args[1]).Delete(&model.Follower{})
+func QueryUnfollow(args []int) error {
+	res := db.Where("who_id = ? AND whom_id = ?", args[0], args[1]).Delete(&model.Follower{})
+	if res.Error != nil {
+		readWritesDatabase.WithLabelValues("QueryUnfollow", "write", "fail").Inc()
+		return res.Error
+	}
 	readWritesDatabase.WithLabelValues("QueryUnfollow", "write", "success").Inc()
+	return nil
 }
 
-func QueryDelete(args []int) {
-	db.Delete(&model.User{}, args[0])
+func QueryDelete(args []int) error {
+	res := db.Delete(&model.User{}, args[0])
+	if res.Error != nil {
+		readWritesDatabase.WithLabelValues("QueryDelete", "write", "fail").Inc()
+		return res.Error
+	}
 	readWritesDatabase.WithLabelValues("QueryDelete", "write", "success").Inc()
+	return nil
 }
 
 func GetMessages(args []int) []map[string]any {
 	var messages []model.Message
-	db.Where("flagged = 0").Order("pub_date DESC").Limit(args[0]).Find(&messages)
+	res := db.Where("flagged = 0").Order("pub_date DESC").Limit(args[0]).Find(&messages)
+	if res.Error != nil {
+		readWritesDatabase.WithLabelValues("GetMessages", "read", "fail").Inc()
+		return nil
+	}
 
 	var Messages []map[string]any
 	for _, msg := range messages {
@@ -127,10 +154,13 @@ func GetMessages(args []int) []map[string]any {
 
 func GetMessagesForUser(args []int) []map[string]any {
 	var messages []model.Message
-	db.Where("flagged = 0 AND author_id = ?", args[0]).Order("pub_date DESC").Limit(args[1]).Find(&messages)
+	res := db.Where("flagged = 0 AND author_id = ?", args[0]).Order("pub_date DESC").Limit(args[1]).Find(&messages)
+	if res.Error != nil {
+		readWritesDatabase.WithLabelValues("GetMessagesForUser", "read", "fail").Inc()
+		return nil
+	}
 
 	var Messages []map[string]any
-
 	for _, msg := range messages {
 		var user model.User
 		db.First(&user, msg.AuthorID)
@@ -148,13 +178,17 @@ func GetMessagesForUser(args []int) []map[string]any {
 
 func GetFollowees(args []int) []string {
 	var followees []string
-	db.Table("user").
+	res := db.Table("user").
 		Select("user.username").
 		Joins("inner join follower ON follower.whom_id=user.user_id").
 		Where("follower.who_id = ?", args[0]).
 		Limit(args[1]).
 		Scan(&followees)
 
+	if res.Error != nil {
+		readWritesDatabase.WithLabelValues("GetMessages", "read", "fail").Inc()
+		return nil
+	}
 	readWritesDatabase.WithLabelValues("GetFollowees", "read", "success").Inc()
 	return followees
 }
@@ -175,7 +209,7 @@ func Get_user_id(username string) (int, error) {
 	return user.UserID, nil
 }
 
-func IsNil(i interface{}) bool {
+func IsNil(i any) bool {
 	if i == nil || i == interface{}(nil) {
 		return true
 	} else {

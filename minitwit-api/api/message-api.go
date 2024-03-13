@@ -26,6 +26,11 @@ func Messages(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		messages := db.GetMessages([]int{no_msg})
 
+		if db.IsNil(messages) {
+			w.WriteHeader(http.StatusForbidden)
+			return
+		}
+
 		w.WriteHeader(http.StatusOK)
 		err := json.NewEncoder(w).Encode(messages)
 
@@ -56,6 +61,11 @@ func Messages_per_user(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		messages := db.GetMessagesForUser([]int{user_id, no_msg})
 
+		if db.IsNil(messages) {
+			w.WriteHeader(http.StatusForbidden)
+			return
+		}
+
 		w.WriteHeader(http.StatusOK)
 		err = json.NewEncoder(w).Encode(messages)
 		if err != nil {
@@ -77,7 +87,11 @@ func Messages_per_user(w http.ResponseWriter, r *http.Request) {
 			PubDate:  int(time.Now().Unix()),
 			Flagged:  false,
 		}
-		db.QueryMessage(message)
+		err = db.QueryMessage(message)
+		if err != nil {
+			w.WriteHeader(http.StatusForbidden)
+			return
+		}
 		w.WriteHeader(http.StatusNoContent)
 	}
 }
