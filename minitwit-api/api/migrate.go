@@ -12,42 +12,44 @@ import (
 func Migrate(w http.ResponseWriter, r *http.Request) {
 	pgImpl := &postgres.PostgresDbImplementation{}
 	sqliteImpl := &sqlite.SqliteDbImplementation{}
-
 	pgImpl.Connect_db()
 	sqliteImpl.Connect_db()
 
+	// CLEAN POSTGRES
+	pgImpl.DeleteAllData()
+	fmt.Println("deleted all data")
+
+	// MIGRATE USERS
 	start := time.Now()
-	var users = sqliteImpl.GetAllUsers()
-	err := pgImpl.CreateUsers(&users)
+	users := sqliteImpl.GetAllUsers()
+	fmt.Println("Users Count: ", len(users))
+	err := pgImpl.CreateUsers(users)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("Error migrating users:", err)
 	}
-	elapsed := time.Since(start)
+	fmt.Println("Users migrated in ", time.Since(start))
 
-	fmt.Println("Users migrated in ", elapsed)
-
+	// MIGRATE FOLLOWERS
 	start = time.Now()
-	var followers = sqliteImpl.GetAllFollowers()
-	fmt.Print(len(followers))
-	err = pgImpl.CreateFollowers(&followers)
+	followers := sqliteImpl.GetAllFollowers()
+	fmt.Println("Followers Count: ", len(followers))
+	err = pgImpl.CreateFollowers(followers)
 	if err != nil {
 		fmt.Println(err)
 	}
-	elapsed = time.Since(start)
+	fmt.Println("Followers migrated in ", time.Since(start))
 
-	fmt.Println("Followers migrated in ", elapsed)
-
+	// MIGRATE MESSAGES
 	start = time.Now()
-	var messages = sqliteImpl.GetAllMessages()
-	fmt.Print(len(messages))
-	err = pgImpl.CreateMessages(&messages)
+	messages := sqliteImpl.GetAllMessages()
+	fmt.Println("Messages Count: ", len(messages))
+	err = pgImpl.CreateMessages(messages)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("Error Creting:", err)
 	}
-	elapsed = time.Since(start)
+	fmt.Println("Messages migrated in ", time.Since(start))
 
-	fmt.Println("Messages migrated in ", elapsed)
-
+	// Set the db implementation to use
 	db.SetDb(pgImpl)
 }
 

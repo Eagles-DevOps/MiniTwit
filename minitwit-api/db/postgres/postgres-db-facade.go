@@ -61,12 +61,16 @@ func (pgImpl *PostgresDbImplementation) Connect_db() {
 	newLogger := logger.New(
 		log.New(os.Stdout, "\r\n", log.LstdFlags),
 		logger.Config{
-			IgnoreRecordNotFoundError: true,
+			LogLevel:                  logger.Error, // Log level
+			IgnoreRecordNotFoundError: false,        // Ignore ErrRecordNotFound error for logger
+			ParameterizedQueries:      false,        // Don't include params in the SQL log
+			Colorful:                  true,
 		},
 	)
 	var err error
 	pgImpl.db, err = gorm.Open(postgres.Open(dsn.String()), &gorm.Config{
-		Logger: newLogger,
+		CreateBatchSize: 1000,
+		Logger:          newLogger,
 	})
 	if err != nil {
 		fmt.Println("Error connecting to the database ", err)
@@ -240,8 +244,8 @@ func (pgImpl *PostgresDbImplementation) GetAllUsers() []model.User {
 	return users
 }
 
-func (pgImpl *PostgresDbImplementation) CreateUsers(users *[]model.User) error {
-	res := pgImpl.db.CreateInBatches(&users, 100)
+func (pgImpl *PostgresDbImplementation) CreateUsers(users []model.User) error {
+	res := pgImpl.db.Create(&users)
 	if res.Error != nil {
 		return res.Error
 	}
@@ -254,8 +258,8 @@ func (pgImpl *PostgresDbImplementation) GetAllMessages() []model.Message {
 	return messages
 }
 
-func (pgImpl *PostgresDbImplementation) CreateMessages(messages *[]model.Message) error {
-	res := pgImpl.db.CreateInBatches(&messages, 100)
+func (pgImpl *PostgresDbImplementation) CreateMessages(messages []model.Message) error {
+	res := pgImpl.db.Create(&messages)
 	if res.Error != nil {
 		return res.Error
 	}
@@ -268,11 +272,33 @@ func (pgImpl *PostgresDbImplementation) GetAllFollowers() []model.Follower {
 	return followers
 }
 
-func (pgImpl *PostgresDbImplementation) CreateFollowers(followers *[]model.Follower) error {
-	res := pgImpl.db.CreateInBatches(&followers, 100)
+func (pgImpl *PostgresDbImplementation) CreateFollowers(followers []model.Follower) error {
+	res := pgImpl.db.Create(&followers)
 	if res.Error != nil {
 		return res.Error
 	}
+	return nil
+}
+
+func (pgImpl *PostgresDbImplementation) DeleteAllData() error {
+	// Delete all followers
+	if err := pgImpl.db.Where("1 = 1").Delete(&model.Follower{}).Error; err != nil {
+		fmt.Println("Error deleting followers:", err)
+		return err
+	}
+
+	// Delete all users
+	if err := pgImpl.db.Where("1 = 1").Delete(&model.User{}).Error; err != nil {
+		fmt.Println("Error deleting users:", err)
+		return err
+	}
+
+	// Delete all messages
+	if err := pgImpl.db.Where("1 = 1").Delete(&model.Message{}).Error; err != nil {
+		fmt.Println("Error deleting messages:", err)
+		return err
+	}
+
 	return nil
 }
 
