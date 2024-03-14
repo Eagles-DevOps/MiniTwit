@@ -10,7 +10,7 @@ import (
 	"minitwit-api/api"
 	"minitwit-api/db"
 	"minitwit-api/db/postgres"
-	"minitwit-api/db/sqlite"
+	sqlite "minitwit-api/db/sqlitedb"
 
 	"github.com/gorilla/mux"
 

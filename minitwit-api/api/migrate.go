@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"minitwit-api/db"
 	"minitwit-api/db/postgres"
-	"minitwit-api/db/sqlite"
+	sqlite "minitwit-api/db/sqlitedb"
 	"net/http"
 	"time"
 )
