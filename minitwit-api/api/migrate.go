@@ -18,21 +18,32 @@ func Migrate(w http.ResponseWriter, r *http.Request) {
 
 	start := time.Now()
 	var users = sqliteImpl.GetAllUsers()
-	pgImpl.CreateUsers(&users)
+	err := pgImpl.CreateUsers(&users)
+	if err != nil {
+		fmt.Println(err)
+	}
 	elapsed := time.Since(start)
 
 	fmt.Println("Users migrated in ", elapsed)
 
 	start = time.Now()
 	var followers = sqliteImpl.GetAllFollowers()
-	pgImpl.CreateFollowers(&followers)
+	fmt.Print(len(followers))
+	err = pgImpl.CreateFollowers(&followers)
+	if err != nil {
+		fmt.Println(err)
+	}
 	elapsed = time.Since(start)
 
 	fmt.Println("Followers migrated in ", elapsed)
 
 	start = time.Now()
 	var messages = sqliteImpl.GetAllMessages()
-	pgImpl.CreateMessages(&messages)
+	fmt.Print(len(messages))
+	err = pgImpl.CreateMessages(&messages)
+	if err != nil {
+		fmt.Println(err)
+	}
 	elapsed = time.Since(start)
 
 	fmt.Println("Messages migrated in ", elapsed)

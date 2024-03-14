@@ -52,11 +52,10 @@ func (pgImpl *PostgresDbImplementation) Connect_db() {
 	dbname := os.Getenv("POSTGRES_DB_NAME")
 
 	dsn := url.URL{
-		User:     url.UserPassword(user, pw),
-		Scheme:   "postgres",
-		Host:     fmt.Sprintf("%s:%s", host, port),
-		Path:     dbname,
-		RawQuery: (&url.Values{"sslmode": []string{"disable"}}).Encode(),
+		User:   url.UserPassword(user, pw),
+		Scheme: "postgres",
+		Host:   fmt.Sprintf("%s:%s", host, port),
+		Path:   dbname,
 	}
 
 	newLogger := logger.New(
@@ -242,7 +241,7 @@ func (pgImpl *PostgresDbImplementation) GetAllUsers() []model.User {
 }
 
 func (pgImpl *PostgresDbImplementation) CreateUsers(users *[]model.User) error {
-	res := pgImpl.db.Create(&users)
+	res := pgImpl.db.CreateInBatches(&users, 100)
 	if res.Error != nil {
 		return res.Error
 	}
@@ -256,8 +255,7 @@ func (pgImpl *PostgresDbImplementation) GetAllMessages() []model.Message {
 }
 
 func (pgImpl *PostgresDbImplementation) CreateMessages(messages *[]model.Message) error {
-	res := pgImpl.db.Create(&messages)
-
+	res := pgImpl.db.CreateInBatches(&messages, 100)
 	if res.Error != nil {
 		return res.Error
 	}
@@ -271,8 +269,7 @@ func (pgImpl *PostgresDbImplementation) GetAllFollowers() []model.Follower {
 }
 
 func (pgImpl *PostgresDbImplementation) CreateFollowers(followers *[]model.Follower) error {
-	res := pgImpl.db.Create(&followers)
-
+	res := pgImpl.db.CreateInBatches(&followers, 100)
 	if res.Error != nil {
 		return res.Error
 	}
