@@ -15,6 +15,8 @@ services:
       - POSTGRES_USER=minitwituser
       - POSTGRES_PW=minitwitpw
       - POSTGRES_HOST=postgres
+      - POSTGRES_DB_NAME=minitwit
+      - POSTGRES_PORT=5432
       #- DBTYPE=postgres
     
       #- POSTGRES_CONNECTIONSTRING=postgresql://minitwituser:minitwitpw@db:5432/minitwit

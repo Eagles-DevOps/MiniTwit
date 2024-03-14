@@ -18,20 +18,34 @@ func Migrate(w http.ResponseWriter, r *http.Request) {
 
 	start := time.Now()
 	var users = sqliteImpl.GetAllUsers()
-	err := pgImpl.CreateUsers(&users)
+	fmt.Println("Users to migrate: ", len(users))
+
+	var err error
+
+	err = pgImpl.CreateUsers(&users)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println(err.Error())
 	}
+
 	elapsed := time.Since(start)
 
 	fmt.Println("Users migrated in ", elapsed)
 
 	start = time.Now()
 	var followers = sqliteImpl.GetAllFollowers()
-	fmt.Print(len(followers))
-	err = pgImpl.CreateFollowers(&followers)
-	if err != nil {
-		fmt.Println(err)
+	fmt.Println("Followers to migrate: ", len(followers))
+
+	for i := 0; i < len(followers); i += 10000 {
+		if i+10000 >= len(followers) {
+			flw := followers[i:]
+			err = pgImpl.CreateFollowers(&flw)
+		} else {
+			flw := followers[i : i+10000]
+			err = pgImpl.CreateFollowers(&flw)
+		}
+		if err != nil {
+			fmt.Println(err.Error())
+		}
 	}
 	elapsed = time.Since(start)
 
@@ -40,9 +54,17 @@ func Migrate(w http.ResponseWriter, r *http.Request) {
 	start = time.Now()
 	var messages = sqliteImpl.GetAllMessages()
 	fmt.Print(len(messages))
-	err = pgImpl.CreateMessages(&messages)
-	if err != nil {
-		fmt.Println(err)
+	for i := 0; i < len(messages); i += 10000 {
+		if i+10000 >= len(messages) {
+			msgs := messages[i:]
+			err = pgImpl.CreateMessages(&msgs)
+		} else {
+			msgs := messages[i : i+10000]
+			err = pgImpl.CreateMessages(&msgs)
+		}
+		if err != nil {
+			fmt.Println(err.Error())
+		}
 	}
 	elapsed = time.Since(start)
 

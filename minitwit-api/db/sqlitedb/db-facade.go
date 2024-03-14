@@ -241,17 +241,12 @@ func (sqliteImpl *SqliteDbImplementation) Get_user_id(username string) (int, err
 
 func (sqliteImpl *SqliteDbImplementation) GetAllUsers() []model.User {
 	var users []model.User
-	batchSize := 100
 
 	// Perform batched retrieval
-	err := sqliteImpl.db.FindInBatches(&users, batchSize, func(tx *gorm.DB, batch int) error {
-		// Process each batch here if needed
-		// fmt.Printf("Processing batch %d\n", batch)
-		return nil // Return nil to continue fetching batches, or return an error to stop
-	})
+	res := sqliteImpl.db.Find(&users)
 
-	if err != nil {
-		fmt.Println("Error:", err)
+	if res.Error != nil {
+		fmt.Println("Error:", res.Error)
 	}
 
 	return users
@@ -260,16 +255,10 @@ func (sqliteImpl *SqliteDbImplementation) GetAllUsers() []model.User {
 func (sqliteImpl *SqliteDbImplementation) GetAllMessages() []model.Message {
 	var messages []model.Message
 
-	batchSize := 100
-	err := sqliteImpl.db.FindInBatches(&messages, batchSize, func(tx *gorm.DB, batch int) error {
-		// fmt.Printf("Processing batch %d\n", batch)
-		return nil
-	})
+	res := sqliteImpl.db.Find(&messages)
 
-	if err != nil {
-		fmt.Println("Error:", err)
-	} else {
-		fmt.Println("All batches fetched successfully")
+	if res.Error != nil {
+		fmt.Println("Error:", res.Error)
 	}
 
 	return messages
@@ -277,16 +266,11 @@ func (sqliteImpl *SqliteDbImplementation) GetAllMessages() []model.Message {
 
 func (sqliteImpl *SqliteDbImplementation) GetAllFollowers() []model.Follower {
 	var followers []model.Follower
-	batchSize := 100
-	err := sqliteImpl.db.FindInBatches(&followers, batchSize, func(tx *gorm.DB, batch int) error {
-		// fmt.Printf("Processing batch %d\n", batch)
-		return nil
-	})
+	res := sqliteImpl.db.Find(&followers)
 
-	if err != nil {
-		fmt.Println("Error:", err)
+	if res.Error != nil {
+		fmt.Println("Error:", res.Error)
 	}
-
 	return followers
 }
 
