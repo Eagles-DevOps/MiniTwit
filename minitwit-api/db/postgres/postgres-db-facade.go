@@ -16,7 +16,10 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-var db *gorm.DB
+type PostgresDbImplementation struct {
+	// Implement the methods defined in the Idb interface here
+	db *gorm.DB
+}
 
 var (
 	readWritesDatabase = promauto.NewCounterVec(
@@ -28,7 +31,7 @@ var (
 	)
 )
 
-func Connect_db() {
+func (pgImpl *PostgresDbImplementation) Connect_db() {
 
 	// ie "host=localhost user=gorm password=gorm dbname=gorm port=9920 sslmode=disable TimeZone=Asia/Shanghai"
 	//connectionstring := os.Getenv("POSTGRES_CONNECTIONSTRING")
@@ -51,8 +54,8 @@ func Connect_db() {
 			IgnoreRecordNotFoundError: true,
 		},
 	)
-
-	db, err := gorm.Open(postgres.Open(dsn.String()), &gorm.Config{
+	var err error
+	pgImpl.db, err = gorm.Open(postgres.Open(dsn.String()), &gorm.Config{
 		Logger: newLogger,
 	})
 	if err != nil {
@@ -60,26 +63,26 @@ func Connect_db() {
 		readWritesDatabase.WithLabelValues("Connect_db", "connect", "fail").Inc()
 		return
 	}
-	db.AutoMigrate(&model.User{}, &model.Follower{}, &model.Message{})
+	pgImpl.db.AutoMigrate(&model.User{}, &model.Follower{}, &model.Message{})
 	readWritesDatabase.WithLabelValues("Connect_db", "connect", "success").Inc()
 
 }
 
-func QueryRegister(args []string) {
+func (pgImpl *PostgresDbImplementation) QueryRegister(args []string) {
 	user := &model.User{
 		Username: args[0],
 		Email:    args[1],
 		PwHash:   args[2],
 	}
-	res := db.Create(user)
+	res := pgImpl.db.Create(user)
 	if res.Error != nil {
 		readWritesDatabase.WithLabelValues("QueryRegister", "write", "fail").Inc()
 	}
 	readWritesDatabase.WithLabelValues("QueryRegister", "write", "success").Inc()
 }
 
-func QueryMessage(message *model.Message) {
-	res := db.Create(message)
+func (pgImpl *PostgresDbImplementation) QueryMessage(message *model.Message) {
+	res := pgImpl.db.Create(message)
 	if res.Error != nil {
 		readWritesDatabase.WithLabelValues("QueryMessage", "write", "fail").Inc()
 	}
@@ -87,37 +90,37 @@ func QueryMessage(message *model.Message) {
 
 }
 
-func QueryFollow(args []int) {
+func (pgImpl *PostgresDbImplementation) QueryFollow(args []int) {
 	follower := &model.Follower{
 		WhoID:  args[0],
 		WhomID: args[1],
 	}
-	res := db.Create(follower)
+	res := pgImpl.db.Create(follower)
 	if res.Error != nil {
 		readWritesDatabase.WithLabelValues("QueryFollow", "write", "fail").Inc()
 	}
 	readWritesDatabase.WithLabelValues("QueryFollow", "write", "success").Inc()
 }
 
-func QueryUnfollow(args []int) {
-	res := db.Where("who_id = ? AND whom_id = ?", args[0], args[1]).Delete(&model.Follower{})
+func (pgImpl *PostgresDbImplementation) QueryUnfollow(args []int) {
+	res := pgImpl.db.Where("who_id = ? AND whom_id = ?", args[0], args[1]).Delete(&model.Follower{})
 	if res.Error != nil {
 		readWritesDatabase.WithLabelValues("QueryUnfollow", "write", "fail").Inc()
 	}
 	readWritesDatabase.WithLabelValues("QueryUnfollow", "write", "success").Inc()
 }
 
-func QueryDelete(args []int) {
-	res := db.Delete(&model.User{}, args[0])
+func (pgImpl *PostgresDbImplementation) QueryDelete(args []int) {
+	res := pgImpl.db.Delete(&model.User{}, args[0])
 	if res.Error != nil {
 		readWritesDatabase.WithLabelValues("QueryDelete", "write", "fail").Inc()
 	}
 	readWritesDatabase.WithLabelValues("QueryDelete", "write", "success").Inc()
 }
 
-func GetMessages(args []int) []map[string]any {
+func (pgImpl *PostgresDbImplementation) GetMessages(args []int) []map[string]any {
 	var messages []model.Message
-	res := db.Where("flagged = 0").Order("pub_date DESC").Limit(args[0]).Find(&messages)
+	res := pgImpl.db.Where("flagged = false").Order("pub_date DESC").Limit(args[0]).Find(&messages)
 	if res.Error != nil {
 		readWritesDatabase.WithLabelValues("GetMessages", "read", "fail").Inc()
 	}
@@ -125,7 +128,7 @@ func GetMessages(args []int) []map[string]any {
 	var Messages []map[string]any
 	for _, msg := range messages {
 		var user model.User
-		db.First(&user, msg.AuthorID)
+		pgImpl.db.First(&user, msg.AuthorID)
 
 		message := make(map[string]any)
 		message["content"] = msg.Text
@@ -138,9 +141,9 @@ func GetMessages(args []int) []map[string]any {
 	return Messages
 }
 
-func GetMessagesForUser(args []int) []map[string]any {
+func (pgImpl *PostgresDbImplementation) GetMessagesForUser(args []int) []map[string]any {
 	var messages []model.Message
-	res := db.Where("flagged = 0 AND author_id = ?", args[0]).Order("pub_date DESC").Limit(args[1]).Find(&messages)
+	res := pgImpl.db.Where("flagged = false AND author_id = ?", args[0]).Order("pub_date DESC").Limit(args[1]).Find(&messages)
 	if res.Error != nil {
 		readWritesDatabase.WithLabelValues("GetMessagesForUser", "read", "fail").Inc()
 	}
@@ -149,7 +152,7 @@ func GetMessagesForUser(args []int) []map[string]any {
 
 	for _, msg := range messages {
 		var user model.User
-		db.First(&user, msg.AuthorID)
+		pgImpl.db.First(&user, msg.AuthorID)
 
 		message := make(map[string]any)
 		message["content"] = msg.Text
@@ -162,11 +165,11 @@ func GetMessagesForUser(args []int) []map[string]any {
 	return Messages
 }
 
-func GetFollowees(args []int) []string {
+func (pgImpl *PostgresDbImplementation) GetFollowees(args []int) []string {
 	var followees []string
-	res := db.Table("user").
-		Select("user.username").
-		Joins("inner join follower ON follower.whom_id=user.user_id").
+	res := pgImpl.db.Model(model.User{}).
+		Select("username").
+		Joins("inner join follower ON follower.whom_id = user_id").
 		Where("follower.who_id = ?", args[0]).
 		Limit(args[1]).
 		Scan(&followees)
@@ -178,9 +181,9 @@ func GetFollowees(args []int) []string {
 	return followees
 }
 
-func Get_user_id(username string) (int, error) {
+func (pgImpl *PostgresDbImplementation) Get_user_id(username string) (int, error) {
 	var user model.User
-	res := db.Where("username = ?", username).First(&user)
+	res := pgImpl.db.Where("username = ?", username).First(&user)
 	if res.Error != nil {
 		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
 			readWritesDatabase.WithLabelValues("Get_user_id", "read", "fail").Inc()
@@ -194,7 +197,51 @@ func Get_user_id(username string) (int, error) {
 	return user.UserID, nil
 }
 
-func IsNil(i interface{}) bool {
+func (pgImpl *PostgresDbImplementation) GetAllUsers() []model.User {
+	var users []model.User
+	pgImpl.db.Find(users)
+	return users
+}
+
+func (pgImpl *PostgresDbImplementation) CreateUsers(users *[]model.User) error {
+	res := pgImpl.db.Create(&users)
+	if res.Error != nil {
+		return res.Error
+	}
+	return nil
+}
+
+func (pgImpl *PostgresDbImplementation) GetAllMessages() []model.Message {
+	var messages []model.Message
+	pgImpl.db.Find(messages)
+	return messages
+}
+
+func (pgImpl *PostgresDbImplementation) CreateMessages(messages *[]model.Message) error {
+	res := pgImpl.db.Create(&messages)
+
+	if res.Error != nil {
+		return res.Error
+	}
+	return nil
+}
+
+func (pgImpl *PostgresDbImplementation) GetAllFollowers() []model.Follower {
+	var followers []model.Follower
+	pgImpl.db.Find(followers)
+	return followers
+}
+
+func (pgImpl *PostgresDbImplementation) CreateFollowers(followers *[]model.Follower) error {
+	res := pgImpl.db.Create(&followers)
+
+	if res.Error != nil {
+		return res.Error
+	}
+	return nil
+}
+
+func (pgImpl *PostgresDbImplementation) IsNil(i interface{}) bool {
 	if i == nil || i == interface{}(nil) {
 		return true
 	} else {
@@ -202,7 +249,7 @@ func IsNil(i interface{}) bool {
 	}
 }
 
-func IsZero(i int) bool {
+func (pgImpl *PostgresDbImplementation) IsZero(i int) bool {
 	if i == 0 {
 		return true
 	} else {

@@ -12,10 +12,10 @@ services:
       - '15001:15001'
     environment:
       - SQLITEPATH=./minitwit.db
-      #- POSTGRES_CONNECTIONSTRING="host=postgres user=minitwituser password=minitwitpw dbname=minitwit sslmode=disable"
       - POSTGRES_USER=minitwituser
       - POSTGRES_PW=minitwitpw
       - POSTGRES_HOST=postgres
+      #- DBTYPE=postgres
     
       #- POSTGRES_CONNECTIONSTRING=postgresql://minitwituser:minitwitpw@db:5432/minitwit
     depends_on:
@@ -48,6 +48,7 @@ services:
     restart: always
     ports:
       - '5432:5432'
+    command: -c 'max_connections=22'
     environment:
       POSTGRES_USER: minitwituser
       POSTGRES_PASSWORD: minitwitpw

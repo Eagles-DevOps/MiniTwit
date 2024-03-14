@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 
 	"minitwit-api/api"
 	"minitwit-api/db"
 	"minitwit-api/db/postgres"
+	"minitwit-api/db/sqlite"
 
 	"github.com/gorilla/mux"
 
@@ -89,8 +91,22 @@ func getCPULoad() (float64, error) {
 }
 
 func main() {
-	postgres.Connect_db()
-	db.Connect_db()
+
+	pgImpl := &postgres.PostgresDbImplementation{}
+	sqliteImpl := &sqlite.SqliteDbImplementation{}
+	pgImpl.Connect_db()
+	sqliteImpl.Connect_db()
+
+	dbType := os.Getenv("DBTYPE")
+
+	if dbType == "postgres" {
+		db.SetDb(pgImpl)
+		fmt.Println("Using postgres as main db")
+	} else {
+		db.SetDb(sqliteImpl)
+		fmt.Println("Using sqlite as main db")
+	}
+
 	r := mux.NewRouter()
 
 	r.Use(prometheusMiddleware)
@@ -102,6 +118,7 @@ func main() {
 	r.HandleFunc("/latest", api.Get_latest).Methods("GET").Name("Get_latest")
 	r.HandleFunc("/cleandb", api.Cleandb).Name("Cleandb")
 	r.HandleFunc("/delete", api.Delete).Name("Delete")
+	r.HandleFunc("/migrate", api.Migrate).Name("Migrate")
 
 	r.Handle("/metrics", promhttp.Handler()).Name("Metrics")
 

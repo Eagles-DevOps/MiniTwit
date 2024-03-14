@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"minitwit-api/db"
 	"minitwit-api/model"
 	"minitwit-api/sim"
@@ -15,10 +16,14 @@ import (
 )
 
 func Register(w http.ResponseWriter, r *http.Request) {
+	db, err := db.GetDb()
+	if err != nil {
+		log.Fatalf("Could not get database: %v", err)
+	}
 	sim.UpdateLatest(r)
 
 	var rv model.RegisterData
-	err := json.NewDecoder(r.Body).Decode(&rv)
+	err = json.NewDecoder(r.Body).Decode(&rv)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
