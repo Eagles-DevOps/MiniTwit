@@ -42,9 +42,6 @@ var (
 
 func (pgImpl *PostgresDbImplementation) Connect_db() {
 
-	// ie "host=localhost user=gorm password=gorm dbname=gorm port=9920 sslmode=disable TimeZone=Asia/Shanghai"
-	//connectionstring := os.Getenv("POSTGRES_CONNECTIONSTRING")
-
 	user := os.Getenv("POSTGRES_USER")
 	pw := os.Getenv("POSTGRES_PW")
 	host := os.Getenv("POSTGRES_HOST")
@@ -76,12 +73,6 @@ func (pgImpl *PostgresDbImplementation) Connect_db() {
 
 	pgImpl.db.AutoMigrate(&model.User{}, &model.Follower{}, &model.Message{})
 	readWritesDatabase.WithLabelValues("Connect_db", "connect", "success").Inc()
-	// fmt.Println("user count is:")
-	// fmt.Println(pgImpl.QueryUserCount())
-	// fmt.Println("message count is:")
-	// fmt.Println(pgImpl.QueryMessageCount())
-	// fmt.Println("follower count is:")
-	// fmt.Println(pgImpl.QueryFollowerCount())
 
 }
 

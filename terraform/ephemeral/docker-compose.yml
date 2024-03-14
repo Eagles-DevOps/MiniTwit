@@ -25,6 +25,8 @@ services:
       - '15001:15001'
     volumes:
       - ./sqlitedb-api/:/usr/src/app/sqlitedb/
+    environment:
+      - SQLITEPATH=/usr/src/app/sqlitedb/minitwit.db
     env_file:
       - ~/terraform.env
     labels:
@@ -108,18 +110,6 @@ services:
       - loki-net
       - default
 
-  ### Postgres Database
-  postgres:
-    image: postgres:16.2-alpine3.19
-    restart: always
-    ports:
-      - '5432:5432'
-    command: -c 'max_connections=22'
-    environment:
-      POSTGRES_USER: minitwituser
-      POSTGRES_PASSWORD: minitwitpw
-      POSTGRES_DB: minitwit
-  ### Postgres Database
 
 networks:
   loki-net:

@@ -30,19 +30,6 @@ var (
 	)
 )
 
-/*
-var (
-
-	entityCounterDatabase = promauto.NewCounterVec(
-		prometheus.CounterOpts{
-			Name: "minitwit_postgres_entity_numbers_total",
-			Help: "Counts the total number",
-		},
-		[]string{"entity_type"},
-	)
-
-)
-*/
 func (sqliteImpl *SqliteDbImplementation) Connect_db() {
 	dbPath := os.Getenv("SQLITEPATH")
 	if len(dbPath) == 0 {
@@ -83,12 +70,6 @@ func (sqliteImpl *SqliteDbImplementation) Connect_db() {
 	}
 	sqliteImpl.db.AutoMigrate(&model.User{}, &model.Follower{}, &model.Message{})
 	readWritesDatabase.WithLabelValues("Connect_db", "connect", "success").Inc()
-	// fmt.Println("user count is:")
-	// fmt.Println(sqliteImpl.QueryUserCount())
-	// fmt.Println("message count is:")
-	// fmt.Println(sqliteImpl.QueryMessageCount())
-	// fmt.Println("follower count is:")
-	// fmt.Println(sqliteImpl.QueryFollowerCount())
 
 }
 
