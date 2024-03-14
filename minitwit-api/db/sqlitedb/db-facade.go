@@ -30,6 +30,19 @@ var (
 	)
 )
 
+/*
+var (
+
+	entityCounterDatabase = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "minitwit_postgres_entity_numbers_total",
+			Help: "Counts the total number",
+		},
+		[]string{"entity_type"},
+	)
+
+)
+*/
 func (sqliteImpl *SqliteDbImplementation) Connect_db() {
 	dbPath := os.Getenv("SQLITEPATH")
 	if len(dbPath) == 0 {
@@ -70,9 +83,33 @@ func (sqliteImpl *SqliteDbImplementation) Connect_db() {
 	}
 	sqliteImpl.db.AutoMigrate(&model.User{}, &model.Follower{}, &model.Message{})
 	readWritesDatabase.WithLabelValues("Connect_db", "connect", "success").Inc()
+	// fmt.Println("user count is:")
+	// fmt.Println(sqliteImpl.QueryUserCount())
+	// fmt.Println("message count is:")
+	// fmt.Println(sqliteImpl.QueryMessageCount())
+	// fmt.Println("follower count is:")
+	// fmt.Println(sqliteImpl.QueryFollowerCount())
 
 }
 
+func (sqliteImpl *SqliteDbImplementation) QueryUserCount() int { // To be called each time the counters are reset (when building the image)
+
+	var count int64
+	sqliteImpl.db.Model(&model.User{}).Count(&count)
+	return int(count)
+}
+func (sqliteImpl *SqliteDbImplementation) QueryMessageCount() int { // To be called each time the counters are reset (when building the image)
+
+	var count int64
+	sqliteImpl.db.Model(&model.Message{}).Count(&count)
+	return int(count)
+}
+func (sqliteImpl *SqliteDbImplementation) QueryFollowerCount() int { // To be called each time the counters are reset (when building the image)
+
+	var count int64
+	sqliteImpl.db.Model(&model.Follower{}).Count(&count)
+	return int(count)
+}
 func (sqliteImpl *SqliteDbImplementation) QueryRegister(args []string) {
 	user := &model.User{
 		Username: args[0],
@@ -204,19 +241,52 @@ func (sqliteImpl *SqliteDbImplementation) Get_user_id(username string) (int, err
 
 func (sqliteImpl *SqliteDbImplementation) GetAllUsers() []model.User {
 	var users []model.User
-	sqliteImpl.db.Find(&users)
+	batchSize := 100
+
+	// Perform batched retrieval
+	err := sqliteImpl.db.FindInBatches(&users, batchSize, func(tx *gorm.DB, batch int) error {
+		// Process each batch here if needed
+		// fmt.Printf("Processing batch %d\n", batch)
+		return nil // Return nil to continue fetching batches, or return an error to stop
+	})
+
+	if err != nil {
+		fmt.Println("Error:", err)
+	}
+
 	return users
 }
 
 func (sqliteImpl *SqliteDbImplementation) GetAllMessages() []model.Message {
 	var messages []model.Message
-	sqliteImpl.db.Find(&messages)
+
+	batchSize := 100
+	err := sqliteImpl.db.FindInBatches(&messages, batchSize, func(tx *gorm.DB, batch int) error {
+		// fmt.Printf("Processing batch %d\n", batch)
+		return nil
+	})
+
+	if err != nil {
+		fmt.Println("Error:", err)
+	} else {
+		fmt.Println("All batches fetched successfully")
+	}
+
 	return messages
 }
 
 func (sqliteImpl *SqliteDbImplementation) GetAllFollowers() []model.Follower {
 	var followers []model.Follower
-	sqliteImpl.db.Find(&followers)
+	batchSize := 100
+	err := sqliteImpl.db.FindInBatches(&followers, batchSize, func(tx *gorm.DB, batch int) error {
+		// fmt.Printf("Processing batch %d\n", batch)
+		return nil
+	})
+
+	if err != nil {
+		fmt.Println("Error:", err)
+	}
+
 	return followers
 }
 
