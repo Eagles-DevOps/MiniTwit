@@ -83,12 +83,12 @@ func (sqliteImpl *SqliteDbImplementation) Connect_db() {
 	}
 	sqliteImpl.db.AutoMigrate(&model.User{}, &model.Follower{}, &model.Message{})
 	readWritesDatabase.WithLabelValues("Connect_db", "connect", "success").Inc()
-	fmt.Println("user count is:")
-	fmt.Println(sqliteImpl.QueryUserCount())
-	fmt.Println("message count is:")
-	fmt.Println(sqliteImpl.QueryMessageCount())
-	fmt.Println("follower count is:")
-	fmt.Println(sqliteImpl.QueryFollowerCount())
+	// fmt.Println("user count is:")
+	// fmt.Println(sqliteImpl.QueryUserCount())
+	// fmt.Println("message count is:")
+	// fmt.Println(sqliteImpl.QueryMessageCount())
+	// fmt.Println("follower count is:")
+	// fmt.Println(sqliteImpl.QueryFollowerCount())
 
 }
 

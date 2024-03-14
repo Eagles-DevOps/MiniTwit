@@ -75,12 +75,12 @@ func (pgImpl *PostgresDbImplementation) Connect_db() {
 
 	pgImpl.db.AutoMigrate(&model.User{}, &model.Follower{}, &model.Message{})
 	readWritesDatabase.WithLabelValues("Connect_db", "connect", "success").Inc()
-	fmt.Println("user count is:")
-	fmt.Println(pgImpl.QueryUserCount())
-	fmt.Println("message count is:")
-	fmt.Println(pgImpl.QueryMessageCount())
-	fmt.Println("follower count is:")
-	fmt.Println(pgImpl.QueryFollowerCount())
+	// fmt.Println("user count is:")
+	// fmt.Println(pgImpl.QueryUserCount())
+	// fmt.Println("message count is:")
+	// fmt.Println(pgImpl.QueryMessageCount())
+	// fmt.Println("follower count is:")
+	// fmt.Println(pgImpl.QueryFollowerCount())
 
 }
 

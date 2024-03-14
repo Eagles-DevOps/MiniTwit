@@ -38,5 +38,31 @@ func Migrate(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Messages migrated in ", elapsed)
 
 	db.SetDb(pgImpl)
+}
 
+func StatsPg(w http.ResponseWriter, r *http.Request) {
+	pgImpl := &postgres.PostgresDbImplementation{}
+	pgImpl.Connect_db()
+
+	usersBefore := pgImpl.QueryUserCount()
+	followersBefore := pgImpl.QueryFollowerCount()
+	messagesBefore := pgImpl.QueryMessageCount()
+
+	fmt.Printf("Users: %d\n", usersBefore)
+	fmt.Printf("Followers: %d\n", followersBefore)
+	fmt.Printf("Messages: %d\n", messagesBefore)
+}
+
+func StatsSqlite(w http.ResponseWriter, r *http.Request) {
+	sqliteImpl := &sqlite.SqliteDbImplementation{}
+	sqliteImpl.Connect_db()
+
+	// Count entities before migration
+	usersBefore := sqliteImpl.QueryUserCount()
+	followersBefore := sqliteImpl.QueryFollowerCount()
+	messagesBefore := sqliteImpl.QueryMessageCount()
+
+	fmt.Printf("Users: %d\n", usersBefore)
+	fmt.Printf("Followers: %d\n", followersBefore)
+	fmt.Printf("Messages: %d\n", messagesBefore)
 }
