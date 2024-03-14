@@ -48,12 +48,14 @@ func (pgImpl *PostgresDbImplementation) Connect_db() {
 	user := os.Getenv("POSTGRES_USER")
 	pw := os.Getenv("POSTGRES_PW")
 	host := os.Getenv("POSTGRES_HOST")
+	port := os.Getenv("POSTGRES_PORT")
+	dbname := os.Getenv("POSTGRES_DB_NAME")
 
 	dsn := url.URL{
 		User:     url.UserPassword(user, pw),
 		Scheme:   "postgres",
-		Host:     fmt.Sprintf("%s:%d", host, 5432),
-		Path:     "minitwit",
+		Host:     fmt.Sprintf("%s:%s", host, port),
+		Path:     dbname,
 		RawQuery: (&url.Values{"sslmode": []string{"disable"}}).Encode(),
 	}
 
