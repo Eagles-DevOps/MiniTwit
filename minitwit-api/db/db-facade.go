@@ -6,11 +6,10 @@ import (
 	"log"
 	"minitwit-api/model"
 	"os"
-	"path/filepath"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"gorm.io/driver/sqlite"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
@@ -28,27 +27,27 @@ var (
 )
 
 func Connect_db() {
-	dbPath := os.Getenv("SQLITEPATH")
-	if len(dbPath) == 0 {
-		dbPath = "./sqlite/minitwit.db"
-	}
-	fmt.Println("dbPath set to:", dbPath)
+	// dbPath := os.Getenv("SQLITEPATH")
+	// if len(dbPath) == 0 {
+	// 	dbPath = "./sqlite/minitwit.db"
+	// }
+	// fmt.Println("dbPath set to:", dbPath)
 
-	dir := filepath.Dir(dbPath)
-	_, err := os.Stat(dir)
+	// dir := filepath.Dir(dbPath)
+	// _, err := os.Stat(dir)
 
-	if err == nil {
-		fmt.Println("directory of the database exists")
-	} else if os.IsNotExist(err) {
-		fmt.Println("directory of the database does not exist, will create new one")
-		err = os.MkdirAll(dir, 0755)
-		if err != nil {
-			fmt.Printf("Fatal Error: creating directory for db: %v\n", err)
-			os.Exit(1)
-		} else {
-			fmt.Println("db directory created")
-		}
-	}
+	// if err == nil {
+	// 	fmt.Println("directory of the database exists")
+	// } else if os.IsNotExist(err) {
+	// 	fmt.Println("directory of the database does not exist, will create new one")
+	// 	err = os.MkdirAll(dir, 0755)
+	// 	if err != nil {
+	// 		fmt.Printf("Fatal Error: creating directory for db: %v\n", err)
+	// 		os.Exit(1)
+	// 	} else {
+	// 		fmt.Println("db directory created")
+	// 	}
+	// }
 
 	newLogger := logger.New(
 		log.New(os.Stdout, "\r\n", log.LstdFlags),
@@ -57,17 +56,37 @@ func Connect_db() {
 		},
 	)
 
-	db, err = gorm.Open(sqlite.Open(dbPath), &gorm.Config{
+	dsn := "host=localhost user=postgres password=pass dbname=postgres port=9820 sslmode=disable TimeZone=Europe/Copenhagen"
+	var err error
+	db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
 		Logger: newLogger,
 	})
+
 	if err != nil {
-		fmt.Println("Error connecting to the database ", err)
+		fmt.Println("Error connecting to the database:", err)
 		readWritesDatabase.WithLabelValues("Connect_db", "connect", "fail").Inc()
 		return
 	}
+
+	// Check if the database connection is still alive
+	sqlDB, err := db.DB()
+	if err != nil {
+		fmt.Println("Error getting DB connection:", err)
+		return
+	}
+
+	// Test the connection
+	if err := sqlDB.Ping(); err != nil {
+		fmt.Println("Error pinging database:", err)
+		return
+	}
+
+	// Auto migrate the models
 	db.AutoMigrate(&model.User{}, &model.Follower{}, &model.Message{})
 	readWritesDatabase.WithLabelValues("Connect_db", "connect", "success").Inc()
 
+	fmt.Println("Connected to the database")
+	fmt.Println(db)
 }
 
 func QueryRegister(args []string) {
