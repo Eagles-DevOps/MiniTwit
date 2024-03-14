@@ -30,6 +30,19 @@ var (
 	)
 )
 
+/*
+var (
+
+	entityCounterDatabase = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "minitwit_postgres_entity_numbers_total",
+			Help: "Counts the total number",
+		},
+		[]string{"entity_type"},
+	)
+
+)
+*/
 func (sqliteImpl *SqliteDbImplementation) Connect_db() {
 	dbPath := os.Getenv("SQLITEPATH")
 	if len(dbPath) == 0 {
@@ -70,9 +83,33 @@ func (sqliteImpl *SqliteDbImplementation) Connect_db() {
 	}
 	sqliteImpl.db.AutoMigrate(&model.User{}, &model.Follower{}, &model.Message{})
 	readWritesDatabase.WithLabelValues("Connect_db", "connect", "success").Inc()
+	fmt.Println("user count is:")
+	fmt.Println(sqliteImpl.QueryUserCount())
+	fmt.Println("message count is:")
+	fmt.Println(sqliteImpl.QueryMessageCount())
+	fmt.Println("follower count is:")
+	fmt.Println(sqliteImpl.QueryFollowerCount())
 
 }
 
+func (sqliteImpl *SqliteDbImplementation) QueryUserCount() int { // To be called each time the counters are reset (when building the image)
+
+	var count int64
+	sqliteImpl.db.Model(&model.User{}).Count(&count)
+	return int(count)
+}
+func (sqliteImpl *SqliteDbImplementation) QueryMessageCount() int { // To be called each time the counters are reset (when building the image)
+
+	var count int64
+	sqliteImpl.db.Model(&model.Message{}).Count(&count)
+	return int(count)
+}
+func (sqliteImpl *SqliteDbImplementation) QueryFollowerCount() int { // To be called each time the counters are reset (when building the image)
+
+	var count int64
+	sqliteImpl.db.Model(&model.Follower{}).Count(&count)
+	return int(count)
+}
 func (sqliteImpl *SqliteDbImplementation) QueryRegister(args []string) {
 	user := &model.User{
 		Username: args[0],
