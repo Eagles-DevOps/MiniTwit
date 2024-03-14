@@ -30,6 +30,15 @@ var (
 		[]string{"func_name", "action", "status"},
 	)
 )
+var (
+	entityCounterDatabase = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "minitwit_postgres_entity_numbers_total",
+			Help: "Counts the total number",
+		},
+		[]string{"entity_type"},
+	)
+)
 
 func (pgImpl *PostgresDbImplementation) Connect_db() {
 
@@ -63,9 +72,35 @@ func (pgImpl *PostgresDbImplementation) Connect_db() {
 		readWritesDatabase.WithLabelValues("Connect_db", "connect", "fail").Inc()
 		return
 	}
+
 	pgImpl.db.AutoMigrate(&model.User{}, &model.Follower{}, &model.Message{})
 	readWritesDatabase.WithLabelValues("Connect_db", "connect", "success").Inc()
+	fmt.Println("user count is:")
+	fmt.Println(pgImpl.QueryUserCount())
+	fmt.Println("message count is:")
+	fmt.Println(pgImpl.QueryMessageCount())
+	fmt.Println("follower count is:")
+	fmt.Println(pgImpl.QueryFollowerCount())
 
+}
+
+func (pgImpl *PostgresDbImplementation) QueryUserCount() int { // To be called each time the counters are reset (when building the image)
+
+	var count int64
+	pgImpl.db.Model(&model.User{}).Count(&count)
+	return int(count)
+}
+func (pgImpl *PostgresDbImplementation) QueryMessageCount() int { // To be called each time the counters are reset (when building the image)
+
+	var count int64
+	pgImpl.db.Model(&model.Message{}).Count(&count)
+	return int(count)
+}
+func (pgImpl *PostgresDbImplementation) QueryFollowerCount() int { // To be called each time the counters are reset (when building the image)
+
+	var count int64
+	pgImpl.db.Model(&model.Follower{}).Count(&count)
+	return int(count)
 }
 
 func (pgImpl *PostgresDbImplementation) QueryRegister(args []string) {
@@ -78,6 +113,7 @@ func (pgImpl *PostgresDbImplementation) QueryRegister(args []string) {
 	if res.Error != nil {
 		readWritesDatabase.WithLabelValues("QueryRegister", "write", "fail").Inc()
 	}
+	entityCounterDatabase.WithLabelValues("User").Inc()
 	readWritesDatabase.WithLabelValues("QueryRegister", "write", "success").Inc()
 }
 
