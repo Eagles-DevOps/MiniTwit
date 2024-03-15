@@ -6,12 +6,6 @@ import (
 	"minitwit-api/db/postgres"
 	sqlite "minitwit-api/db/sqlitedb"
 	"net/http"
-<<<<<<< HEAD
-	"time"
-)
-
-func Migrate(w http.ResponseWriter, r *http.Request) {
-=======
 	"os"
 	"time"
 )
@@ -26,7 +20,6 @@ func Migrate(w http.ResponseWriter, r *http.Request) {
 	}
 	allowMigration = "false"
 
->>>>>>> main
 	pgImpl := &postgres.PostgresDbImplementation{}
 	sqliteImpl := &sqlite.SqliteDbImplementation{}
 
