@@ -17,9 +17,14 @@ services:
       - POSTGRES_HOST=postgres
       - POSTGRES_DB_NAME=minitwit
       - POSTGRES_PORT=5432
+<<<<<<< HEAD
       #- DBTYPE=postgres
     
       #- POSTGRES_CONNECTIONSTRING=postgresql://minitwituser:minitwitpw@db:5432/minitwit
+=======
+      - ALLOWMIGRATION=true
+      #- DBTYPE=postgres
+>>>>>>> main
     depends_on:
       - postgres
     command: ["./wait-for-it.sh", "postgres:5432", "--", "/minitwit/app"]

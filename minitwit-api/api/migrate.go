@@ -6,10 +6,27 @@ import (
 	"minitwit-api/db/postgres"
 	sqlite "minitwit-api/db/sqlitedb"
 	"net/http"
+<<<<<<< HEAD
 	"time"
 )
 
 func Migrate(w http.ResponseWriter, r *http.Request) {
+=======
+	"os"
+	"time"
+)
+
+var allowMigration = os.Getenv("ALLOWMIGRATION")
+
+func Migrate(w http.ResponseWriter, r *http.Request) {
+
+	if allowMigration != "true" {
+		fmt.Println("Unallowed migration attempted")
+		return
+	}
+	allowMigration = "false"
+
+>>>>>>> main
 	pgImpl := &postgres.PostgresDbImplementation{}
 	sqliteImpl := &sqlite.SqliteDbImplementation{}
 

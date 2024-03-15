@@ -30,6 +30,7 @@ var (
 	)
 )
 
+<<<<<<< HEAD
 var (
 	sqliteUserGauge = promauto.NewGauge(
 		prometheus.GaugeOpts{
@@ -55,6 +56,8 @@ var (
 	)
 )
 
+=======
+>>>>>>> main
 func (sqliteImpl *SqliteDbImplementation) Connect_db() {
 	dbPath := os.Getenv("SQLITEPATH")
 	if len(dbPath) == 0 {
@@ -93,7 +96,10 @@ func (sqliteImpl *SqliteDbImplementation) Connect_db() {
 		readWritesDatabase.WithLabelValues("Connect_db", "connect", "fail").Inc()
 		return
 	}
+<<<<<<< HEAD
 
+=======
+>>>>>>> main
 	sqliteImpl.db.AutoMigrate(&model.User{}, &model.Follower{}, &model.Message{})
 	readWritesDatabase.WithLabelValues("Connect_db", "connect", "success").Inc()
 
@@ -103,6 +109,7 @@ func (sqliteImpl *SqliteDbImplementation) Connect_db() {
 
 }
 
+<<<<<<< HEAD
 func (sqliteImpl *SqliteDbImplementation) QueryUserCount() float64 { // To be called each time the counters are reset (when building the image)
 
 	var count int64
@@ -120,6 +127,25 @@ func (sqliteImpl *SqliteDbImplementation) QueryFollowerCount() float64 { // To b
 	var count int64
 	sqliteImpl.db.Model(&model.Follower{}).Count(&count)
 	return float64(count)
+=======
+func (sqliteImpl *SqliteDbImplementation) QueryUserCount() int { // To be called each time the counters are reset (when building the image)
+
+	var count int64
+	sqliteImpl.db.Model(&model.User{}).Count(&count)
+	return int(count)
+}
+func (sqliteImpl *SqliteDbImplementation) QueryMessageCount() int { // To be called each time the counters are reset (when building the image)
+
+	var count int64
+	sqliteImpl.db.Model(&model.Message{}).Count(&count)
+	return int(count)
+}
+func (sqliteImpl *SqliteDbImplementation) QueryFollowerCount() int { // To be called each time the counters are reset (when building the image)
+
+	var count int64
+	sqliteImpl.db.Model(&model.Follower{}).Count(&count)
+	return int(count)
+>>>>>>> main
 }
 func (sqliteImpl *SqliteDbImplementation) QueryRegister(args []string) {
 	user := &model.User{
