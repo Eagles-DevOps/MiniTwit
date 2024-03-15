@@ -184,7 +184,7 @@ func (pgImpl *PostgresDbImplementation) GetMessages(args []int) []map[string]any
 	if res.Error != nil {
 		readWritesDatabase.WithLabelValues("GetMessages", "read", "fail").Inc()
 		fmt.Println(res.Error)
-		return messages
+		return []map[string]any{}
 	}
 
 	var Messages []map[string]any
