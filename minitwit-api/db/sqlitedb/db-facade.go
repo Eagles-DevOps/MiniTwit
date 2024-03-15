@@ -256,19 +256,36 @@ func (sqliteImpl *SqliteDbImplementation) Get_user_id(username string) (int, err
 
 func (sqliteImpl *SqliteDbImplementation) GetAllUsers() []model.User {
 	var users []model.User
-	sqliteImpl.db.Find(&users)
+
+	// Perform batched retrieval
+	res := sqliteImpl.db.Find(&users)
+
+	if res.Error != nil {
+		fmt.Println("Error:", res.Error)
+	}
+
 	return users
 }
 
 func (sqliteImpl *SqliteDbImplementation) GetAllMessages() []model.Message {
 	var messages []model.Message
-	sqliteImpl.db.Find(&messages)
+
+	res := sqliteImpl.db.Find(&messages)
+
+	if res.Error != nil {
+		fmt.Println("Error:", res.Error)
+	}
+
 	return messages
 }
 
 func (sqliteImpl *SqliteDbImplementation) GetAllFollowers() []model.Follower {
 	var followers []model.Follower
-	sqliteImpl.db.Find(&followers)
+	res := sqliteImpl.db.Find(&followers)
+
+	if res.Error != nil {
+		fmt.Println("Error:", res.Error)
+	}
 	return followers
 }
 

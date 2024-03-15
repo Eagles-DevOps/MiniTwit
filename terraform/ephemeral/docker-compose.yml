@@ -2,6 +2,7 @@ version: '3'
 services:
   minitwit_app:
     container_name: app
+    platform: linux/x86_64
     image: ghcr.io/eagles-devops/app:latest
     restart: always
     ports:
@@ -108,6 +109,7 @@ services:
     networks:
       - loki-net
       - default
+
 
 networks:
   loki-net:
