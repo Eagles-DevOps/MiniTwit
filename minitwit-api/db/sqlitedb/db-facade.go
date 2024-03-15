@@ -1,4 +1,4 @@
-package db
+package sqlite
 
 import (
 	"errors"
@@ -15,7 +15,10 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-var db *gorm.DB
+type SqliteDbImplementation struct {
+	// Implement the methods defined in the Idb interface here
+	db *gorm.DB
+}
 
 var (
 	readWritesDatabase = promauto.NewCounterVec(
@@ -27,7 +30,7 @@ var (
 	)
 )
 
-func Connect_db() {
+func (sqliteImpl *SqliteDbImplementation) Connect_db() {
 	dbPath := os.Getenv("SQLITEPATH")
 	if len(dbPath) == 0 {
 		dbPath = "./sqlite/minitwit.db"
@@ -57,7 +60,7 @@ func Connect_db() {
 		},
 	)
 
-	db, err = gorm.Open(sqlite.Open(dbPath), &gorm.Config{
+	sqliteImpl.db, err = gorm.Open(sqlite.Open(dbPath), &gorm.Config{
 		Logger: newLogger,
 	})
 	if err != nil {
@@ -65,26 +68,44 @@ func Connect_db() {
 		readWritesDatabase.WithLabelValues("Connect_db", "connect", "fail").Inc()
 		return
 	}
-	db.AutoMigrate(&model.User{}, &model.Follower{}, &model.Message{})
+	sqliteImpl.db.AutoMigrate(&model.User{}, &model.Follower{}, &model.Message{})
 	readWritesDatabase.WithLabelValues("Connect_db", "connect", "success").Inc()
 
 }
 
-func QueryRegister(args []string) {
+func (sqliteImpl *SqliteDbImplementation) QueryUserCount() int { // To be called each time the counters are reset (when building the image)
+
+	var count int64
+	sqliteImpl.db.Model(&model.User{}).Count(&count)
+	return int(count)
+}
+func (sqliteImpl *SqliteDbImplementation) QueryMessageCount() int { // To be called each time the counters are reset (when building the image)
+
+	var count int64
+	sqliteImpl.db.Model(&model.Message{}).Count(&count)
+	return int(count)
+}
+func (sqliteImpl *SqliteDbImplementation) QueryFollowerCount() int { // To be called each time the counters are reset (when building the image)
+
+	var count int64
+	sqliteImpl.db.Model(&model.Follower{}).Count(&count)
+	return int(count)
+}
+func (sqliteImpl *SqliteDbImplementation) QueryRegister(args []string) {
 	user := &model.User{
 		Username: args[0],
 		Email:    args[1],
 		PwHash:   args[2],
 	}
-	res := db.Create(user)
+	res := sqliteImpl.db.Create(user)
 	if res.Error != nil {
 		readWritesDatabase.WithLabelValues("QueryRegister", "write", "fail").Inc()
 	}
 	readWritesDatabase.WithLabelValues("QueryRegister", "write", "success").Inc()
 }
 
-func QueryMessage(message *model.Message) {
-	res := db.Create(message)
+func (sqliteImpl *SqliteDbImplementation) QueryMessage(message *model.Message) {
+	res := sqliteImpl.db.Create(message)
 	if res.Error != nil {
 		readWritesDatabase.WithLabelValues("QueryMessage", "write", "fail").Inc()
 	}
@@ -92,37 +113,37 @@ func QueryMessage(message *model.Message) {
 
 }
 
-func QueryFollow(args []int) {
+func (sqliteImpl *SqliteDbImplementation) QueryFollow(args []int) {
 	follower := &model.Follower{
 		WhoID:  args[0],
 		WhomID: args[1],
 	}
-	res := db.Create(follower)
+	res := sqliteImpl.db.Create(follower)
 	if res.Error != nil {
 		readWritesDatabase.WithLabelValues("QueryFollow", "write", "fail").Inc()
 	}
 	readWritesDatabase.WithLabelValues("QueryFollow", "write", "success").Inc()
 }
 
-func QueryUnfollow(args []int) {
-	res := db.Where("who_id = ? AND whom_id = ?", args[0], args[1]).Delete(&model.Follower{})
+func (sqliteImpl *SqliteDbImplementation) QueryUnfollow(args []int) {
+	res := sqliteImpl.db.Where("who_id = ? AND whom_id = ?", args[0], args[1]).Delete(&model.Follower{})
 	if res.Error != nil {
 		readWritesDatabase.WithLabelValues("QueryUnfollow", "write", "fail").Inc()
 	}
 	readWritesDatabase.WithLabelValues("QueryUnfollow", "write", "success").Inc()
 }
 
-func QueryDelete(args []int) {
-	res := db.Delete(&model.User{}, args[0])
+func (sqliteImpl *SqliteDbImplementation) QueryDelete(args []int) {
+	res := sqliteImpl.db.Delete(&model.User{}, args[0])
 	if res.Error != nil {
 		readWritesDatabase.WithLabelValues("QueryDelete", "write", "fail").Inc()
 	}
 	readWritesDatabase.WithLabelValues("QueryDelete", "write", "success").Inc()
 }
 
-func GetMessages(args []int) []map[string]any {
+func (sqliteImpl *SqliteDbImplementation) GetMessages(args []int) []map[string]any {
 	var messages []model.Message
-	res := db.Where("flagged = 0").Order("pub_date DESC").Limit(args[0]).Find(&messages)
+	res := sqliteImpl.db.Where("flagged = 0").Order("pub_date DESC").Limit(args[0]).Find(&messages)
 	if res.Error != nil {
 		readWritesDatabase.WithLabelValues("GetMessages", "read", "fail").Inc()
 	}
@@ -130,7 +151,7 @@ func GetMessages(args []int) []map[string]any {
 	var Messages []map[string]any
 	for _, msg := range messages {
 		var user model.User
-		db.First(&user, msg.AuthorID)
+		sqliteImpl.db.First(&user, msg.AuthorID)
 
 		message := make(map[string]any)
 		message["content"] = msg.Text
@@ -143,9 +164,9 @@ func GetMessages(args []int) []map[string]any {
 	return Messages
 }
 
-func GetMessagesForUser(args []int) []map[string]any {
+func (sqliteImpl *SqliteDbImplementation) GetMessagesForUser(args []int) []map[string]any {
 	var messages []model.Message
-	res := db.Where("flagged = 0 AND author_id = ?", args[0]).Order("pub_date DESC").Limit(args[1]).Find(&messages)
+	res := sqliteImpl.db.Where("flagged = 0 AND author_id = ?", args[0]).Order("pub_date DESC").Limit(args[1]).Find(&messages)
 	if res.Error != nil {
 		readWritesDatabase.WithLabelValues("GetMessagesForUser", "read", "fail").Inc()
 	}
@@ -154,7 +175,7 @@ func GetMessagesForUser(args []int) []map[string]any {
 
 	for _, msg := range messages {
 		var user model.User
-		db.First(&user, msg.AuthorID)
+		sqliteImpl.db.First(&user, msg.AuthorID)
 
 		message := make(map[string]any)
 		message["content"] = msg.Text
@@ -167,9 +188,9 @@ func GetMessagesForUser(args []int) []map[string]any {
 	return Messages
 }
 
-func GetFollowees(args []int) []string {
+func (sqliteImpl *SqliteDbImplementation) GetFollowees(args []int) []string {
 	var followees []string
-	res := db.Table("user").
+	res := sqliteImpl.db.Table("user").
 		Select("user.username").
 		Joins("inner join follower ON follower.whom_id=user.user_id").
 		Where("follower.who_id = ?", args[0]).
@@ -183,9 +204,9 @@ func GetFollowees(args []int) []string {
 	return followees
 }
 
-func Get_user_id(username string) (int, error) {
+func (sqliteImpl *SqliteDbImplementation) Get_user_id(username string) (int, error) {
 	var user model.User
-	res := db.Where("username = ?", username).First(&user)
+	res := sqliteImpl.db.Where("username = ?", username).First(&user)
 	if res.Error != nil {
 		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
 			readWritesDatabase.WithLabelValues("Get_user_id", "read", "fail").Inc()
@@ -199,7 +220,42 @@ func Get_user_id(username string) (int, error) {
 	return user.UserID, nil
 }
 
-func IsNil(i interface{}) bool {
+func (sqliteImpl *SqliteDbImplementation) GetAllUsers() []model.User {
+	var users []model.User
+
+	// Perform batched retrieval
+	res := sqliteImpl.db.Find(&users)
+
+	if res.Error != nil {
+		fmt.Println("Error:", res.Error)
+	}
+
+	return users
+}
+
+func (sqliteImpl *SqliteDbImplementation) GetAllMessages() []model.Message {
+	var messages []model.Message
+
+	res := sqliteImpl.db.Find(&messages)
+
+	if res.Error != nil {
+		fmt.Println("Error:", res.Error)
+	}
+
+	return messages
+}
+
+func (sqliteImpl *SqliteDbImplementation) GetAllFollowers() []model.Follower {
+	var followers []model.Follower
+	res := sqliteImpl.db.Find(&followers)
+
+	if res.Error != nil {
+		fmt.Println("Error:", res.Error)
+	}
+	return followers
+}
+
+func (sqliteImpl *SqliteDbImplementation) IsNil(i interface{}) bool {
 	if i == nil || i == interface{}(nil) {
 		return true
 	} else {
@@ -207,7 +263,7 @@ func IsNil(i interface{}) bool {
 	}
 }
 
-func IsZero(i int) bool {
+func (sqliteImpl *SqliteDbImplementation) IsZero(i int) bool {
 	if i == 0 {
 		return true
 	} else {

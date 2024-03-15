@@ -31,14 +31,29 @@ HEADERS = {
 }
 
 
-def get_actions():
+RESET = '\033[0m'
+RED = '\033[91m'
+GREEN = '\033[92m'
+YELLOW = '\033[93m'
+BLUE = '\033[94m'
+PURPLE = '\033[95m'
+CYAN = '\033[96m'
+WHITE = '\033[97m'
+GRAY = '\033[90m' 
+CL_LINE = '\33[2K\r'
+LINE_UP = '\033[1F'
 
+def warn(msg):
+    print(f"{CL_LINE}{RED}{msg}{RESET}",end="\n")
+
+def get_actions():
     # read scenario .csv and parse to a list of lists
     with open(CSV_FILENAME, "r", encoding="utf-8") as f:
         reader = csv.reader(f, delimiter="\t", quotechar=None)
 
         # for each line in .csv
         for line in reader:
+            print(f"{CL_LINE}{BLUE}{line}{RESET}", end="")
             try:
                 # we know that the command string is always the fourth element
                 command = line[3]
@@ -95,14 +110,14 @@ def get_actions():
                 else:
                     # This should never happen and can likely be removed to
                     # make parsing for plot generation later easier
-                    print("Unknown type found: (" + command + ")")
+                    warn("Unknown type found: (" + command + ")")
 
             except Exception as e:
-                print("========================================")
-                print(traceback.format_exc())
+                warn("========================================")
+                warn(traceback.format_exc())
 
 
-def main(host):
+def main(host, quick=False):
     for action, delay in get_actions():
         try:
             # SWITCH ON TYPE
@@ -140,7 +155,7 @@ def main(host):
                     ts_str = datetime.strftime(
                         datetime.utcnow(), "%Y-%m-%d %H:%M:%S"
                     )
-                    print(
+                    warn(
                         ",".join(
                             [
                                 ts_str,
@@ -174,7 +189,7 @@ def main(host):
                     ts_str = datetime.strftime(
                         datetime.utcnow(), "%Y-%m-%d %H:%M:%S"
                     )
-                    print(
+                    warn(
                         ",".join(
                             [
                                 ts_str,
@@ -214,7 +229,7 @@ def main(host):
                     ts_str = datetime.strftime(
                         datetime.utcnow(), "%Y-%m-%d %H:%M:%S"
                     )
-                    print(
+                    warn(
                         ",".join(
                             [
                                 ts_str,
@@ -254,7 +269,7 @@ def main(host):
                     ts_str = datetime.strftime(
                         datetime.utcnow(), "%Y-%m-%d %H:%M:%S"
                     )
-                    print(
+                    warn(
                         ",".join(
                             [
                                 ts_str,
@@ -292,7 +307,7 @@ def main(host):
                     ts_str = datetime.strftime(
                         datetime.utcnow(), "%Y-%m-%d %H:%M:%S"
                     )
-                    print(
+                    warn(
                         ",".join(
                             [
                                 ts_str,
@@ -311,7 +326,7 @@ def main(host):
                 ts_str = datetime.strftime(
                     datetime.utcnow(), "%Y-%m-%d %H:%M:%S"
                 )
-                print(
+                warn(
                     ",".join(
                         [
                             "FATAL: Unknown message type",
@@ -324,30 +339,39 @@ def main(host):
 
         except requests.exceptions.ConnectionError as e:
             ts_str = datetime.strftime(datetime.utcnow(), "%Y-%m-%d %H:%M:%S")
-            print(
+            warn(
                 ",".join(
                     [ts_str, host, str(action["latest"]), "ConnectionError"]
                 )
             )
         except requests.exceptions.ReadTimeout as e:
             ts_str = datetime.strftime(datetime.utcnow(), "%Y-%m-%d %H:%M:%S")
-            print(
+            warn(
                 ",".join([ts_str, host, str(action["latest"]), "ReadTimeout"])
             )
         except Exception as e:
-            print("========================================")
-            print(traceback.format_exc())
+            warn("========================================")
+            warn(traceback.format_exc())
             ts_str = datetime.strftime(datetime.utcnow(), "%Y-%m-%d %H:%M:%S")
-            print(
+            warn(
                 ",".join(
                     [ts_str, host, str(action["latest"]), type(e).__name__]
                 )
             )
 
-        sleep(delay / (1000 * 100000))
+        if not quick:
+            sleep(delay / (1000 * 100000))
+    print(f"{GREEN}Done{RESET}")
 
 
 if __name__ == "__main__":
     host = sys.argv[1]
+    if not host:
+        host = "http://localhost:15001"
+        print("No host given, will use: " + host)
 
-    main(host)
+    quick = False
+    quick_var_value = os.getenv("quick_test")
+    quick = quick_var_value == "True" or quick_var_value == "true"
+    print(f"{GREEN}Quick test: {quick}{RESET}")
+    main(host, quick)

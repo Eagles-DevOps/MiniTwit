@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"log"
 	"minitwit-api/db"
 	"minitwit-api/model"
 	"net/http"
@@ -15,6 +16,10 @@ import (
 )
 
 func Messages(w http.ResponseWriter, r *http.Request) {
+	db, err := db.GetDb()
+	if err != nil {
+		log.Fatalf("Could not get database: %v", err)
+	}
 	sim.UpdateLatest(r)
 
 	is_auth := sim.Is_authenticated(w, r)
@@ -37,6 +42,10 @@ func Messages(w http.ResponseWriter, r *http.Request) {
 }
 
 func Messages_per_user(w http.ResponseWriter, r *http.Request) {
+	db, err := db.GetDb()
+	if err != nil {
+		log.Fatalf("Could not get database: %v", err)
+	}
 	vars := mux.Vars(r)
 	username := vars["username"]
 	sim.UpdateLatest(r)

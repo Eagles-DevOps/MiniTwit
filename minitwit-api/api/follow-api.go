@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"log"
 	"minitwit-api/db"
 	"minitwit-api/model"
 	"net/http"
@@ -13,6 +14,10 @@ import (
 )
 
 func Follow(w http.ResponseWriter, r *http.Request) {
+	db, err := db.GetDb()
+	if err != nil {
+		log.Fatalf("Could not get database: %v", err)
+	}
 	vars := mux.Vars(r)
 	username := vars["username"]
 	sim.UpdateLatest(r)

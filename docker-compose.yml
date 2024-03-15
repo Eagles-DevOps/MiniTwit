@@ -12,6 +12,16 @@ services:
       - '15001:15001'
     environment:
       - SQLITEPATH=./minitwit.db
+      - POSTGRES_USER=minitwituser
+      - POSTGRES_PW=minitwitpw
+      - POSTGRES_HOST=postgres
+      - POSTGRES_DB_NAME=minitwit
+      - POSTGRES_PORT=5432
+      - ALLOWMIGRATION=true
+      #- DBTYPE=postgres
+    depends_on:
+      - postgres
+    command: ["./wait-for-it.sh", "postgres:5432", "--", "/minitwit/app"]
 
   legacy_tests:
     build:
@@ -32,3 +42,15 @@ services:
     depends_on:
       - server
     command: go test
+
+  postgres:
+    #hostname: postgres.db
+    image: postgres:16.2-alpine3.19
+    restart: always
+    ports:
+      - '5432:5432'
+    command: -c 'max_connections=22'
+    environment:
+      POSTGRES_USER: minitwituser
+      POSTGRES_PASSWORD: minitwitpw
+      POSTGRES_DB: minitwit

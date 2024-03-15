@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -13,10 +14,14 @@ import (
 )
 
 func Delete(w http.ResponseWriter, r *http.Request) {
+	db, err := db.GetDb()
+	if err != nil {
+		log.Fatalf("Could not get database: %v", err)
+	}
 	sim.UpdateLatest(r)
 	dec := json.NewDecoder(r.Body)
 	var rv model.DeleteData
-	err := dec.Decode(&rv)
+	err = dec.Decode(&rv)
 	if err != nil {
 		fmt.Println("Error in requestData")
 	}

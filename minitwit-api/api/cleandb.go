@@ -1,6 +1,7 @@
 package api
 
 import (
+	"log"
 	"net/http"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -10,6 +11,10 @@ import (
 )
 
 func Cleandb(w http.ResponseWriter, r *http.Request) {
+	db, err := db.GetDb()
+	if err != nil {
+		log.Fatalf("Could not get database: %v", err)
+	}
 	is_auth := sim.Is_authenticated(w, r)
 	if !is_auth {
 		return
