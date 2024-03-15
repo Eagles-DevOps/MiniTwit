@@ -123,6 +123,8 @@ func (pgImpl *PostgresDbImplementation) QueryRegister(args []string) {
 	res := pgImpl.db.Create(user)
 	if res.Error != nil {
 		readWritesDatabase.WithLabelValues("QueryRegister", "write", "fail").Inc()
+		fmt.Println(res.Error)
+		return
 	}
 	userGauge.Inc()
 	readWritesDatabase.WithLabelValues("QueryRegister", "write", "success").Inc()
@@ -132,6 +134,8 @@ func (pgImpl *PostgresDbImplementation) QueryMessage(message *model.Message) {
 	res := pgImpl.db.Create(message)
 	if res.Error != nil {
 		readWritesDatabase.WithLabelValues("QueryMessage", "write", "fail").Inc()
+		fmt.Println(res.Error)
+		return
 	}
 	messageGauge.Inc()
 	readWritesDatabase.WithLabelValues("QueryMessage", "write", "success").Inc()
@@ -146,6 +150,8 @@ func (pgImpl *PostgresDbImplementation) QueryFollow(args []int) {
 	res := pgImpl.db.Create(follower)
 	if res.Error != nil {
 		readWritesDatabase.WithLabelValues("QueryFollow", "write", "fail").Inc()
+		fmt.Println(res.Error)
+		return
 	}
 	followerGauge.Inc()
 	readWritesDatabase.WithLabelValues("QueryFollow", "write", "success").Inc()
@@ -155,6 +161,8 @@ func (pgImpl *PostgresDbImplementation) QueryUnfollow(args []int) {
 	res := pgImpl.db.Where("who_id = ? AND whom_id = ?", args[0], args[1]).Delete(&model.Follower{})
 	if res.Error != nil {
 		readWritesDatabase.WithLabelValues("QueryUnfollow", "write", "fail").Inc()
+		fmt.Println(res.Error)
+		return
 	}
 	followerGauge.Dec()
 	readWritesDatabase.WithLabelValues("QueryUnfollow", "write", "success").Inc()
@@ -164,6 +172,8 @@ func (pgImpl *PostgresDbImplementation) QueryDelete(args []int) {
 	res := pgImpl.db.Delete(&model.User{}, args[0])
 	if res.Error != nil {
 		readWritesDatabase.WithLabelValues("QueryDelete", "write", "fail").Inc()
+		fmt.Println(res.Error)
+		return
 	}
 	readWritesDatabase.WithLabelValues("QueryDelete", "write", "success").Inc()
 }
@@ -173,6 +183,8 @@ func (pgImpl *PostgresDbImplementation) GetMessages(args []int) []map[string]any
 	res := pgImpl.db.Where("flagged = false").Order("pub_date DESC").Limit(args[0]).Find(&messages)
 	if res.Error != nil {
 		readWritesDatabase.WithLabelValues("GetMessages", "read", "fail").Inc()
+		fmt.Println(res.Error)
+		return []map[string]any{}
 	}
 
 	var Messages []map[string]any
