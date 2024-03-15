@@ -124,11 +124,7 @@ func (pgImpl *PostgresDbImplementation) QueryRegister(args []string) {
 	if res.Error != nil {
 		readWritesDatabase.WithLabelValues("QueryRegister", "write", "fail").Inc()
 	}
-<<<<<<< HEAD
 	userGauge.Inc()
-=======
-	entityCounterDatabase.WithLabelValues("User").Inc()
->>>>>>> main
 	readWritesDatabase.WithLabelValues("QueryRegister", "write", "success").Inc()
 }
 
@@ -137,10 +133,7 @@ func (pgImpl *PostgresDbImplementation) QueryMessage(message *model.Message) {
 	if res.Error != nil {
 		readWritesDatabase.WithLabelValues("QueryMessage", "write", "fail").Inc()
 	}
-<<<<<<< HEAD
 	messageGauge.Inc()
-=======
->>>>>>> main
 	readWritesDatabase.WithLabelValues("QueryMessage", "write", "success").Inc()
 
 }
@@ -154,10 +147,7 @@ func (pgImpl *PostgresDbImplementation) QueryFollow(args []int) {
 	if res.Error != nil {
 		readWritesDatabase.WithLabelValues("QueryFollow", "write", "fail").Inc()
 	}
-<<<<<<< HEAD
 	followerGauge.Inc()
-=======
->>>>>>> main
 	readWritesDatabase.WithLabelValues("QueryFollow", "write", "success").Inc()
 }
 
@@ -166,10 +156,7 @@ func (pgImpl *PostgresDbImplementation) QueryUnfollow(args []int) {
 	if res.Error != nil {
 		readWritesDatabase.WithLabelValues("QueryUnfollow", "write", "fail").Inc()
 	}
-<<<<<<< HEAD
 	followerGauge.Dec()
-=======
->>>>>>> main
 	readWritesDatabase.WithLabelValues("QueryUnfollow", "write", "success").Inc()
 }
 
