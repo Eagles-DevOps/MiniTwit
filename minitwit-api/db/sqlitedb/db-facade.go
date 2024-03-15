@@ -30,6 +30,31 @@ var (
 	)
 )
 
+var (
+	sqliteUserGauge = promauto.NewGauge(
+		prometheus.GaugeOpts{
+			Name: "minitwit_sql_user_numbers_total",
+			Help: "Counts the totsqlal number of users",
+		},
+	)
+)
+var (
+	sqliteFollowGauge = promauto.NewGauge(
+		prometheus.GaugeOpts{
+			Name: "minitwit_sql_follow_numbers_total",
+			Help: "Counts the total sql of followers",
+		},
+	)
+)
+var (
+	sqlitemessageGauge = promauto.NewGauge(
+		prometheus.GaugeOpts{
+			Name: "minitwit_sql_message_numbers_total",
+			Help: "Counts the total number of message",
+		},
+	)
+)
+
 func (sqliteImpl *SqliteDbImplementation) Connect_db() {
 	dbPath := os.Getenv("SQLITEPATH")
 	if len(dbPath) == 0 {
@@ -71,25 +96,29 @@ func (sqliteImpl *SqliteDbImplementation) Connect_db() {
 	sqliteImpl.db.AutoMigrate(&model.User{}, &model.Follower{}, &model.Message{})
 	readWritesDatabase.WithLabelValues("Connect_db", "connect", "success").Inc()
 
+	sqliteUserGauge.Set(sqliteImpl.QueryUserCount())
+	sqliteFollowGauge.Set(sqliteImpl.QueryFollowerCount())
+	sqlitemessageGauge.Set(sqliteImpl.QueryMessageCount())
+
 }
 
-func (sqliteImpl *SqliteDbImplementation) QueryUserCount() int { // To be called each time the counters are reset (when building the image)
+func (sqliteImpl *SqliteDbImplementation) QueryUserCount() float64 { // To be called each time the counters are reset (when building the image)
 
 	var count int64
 	sqliteImpl.db.Model(&model.User{}).Count(&count)
-	return int(count)
+	return float64(count)
 }
-func (sqliteImpl *SqliteDbImplementation) QueryMessageCount() int { // To be called each time the counters are reset (when building the image)
+func (sqliteImpl *SqliteDbImplementation) QueryMessageCount() float64 { // To be called each time the counters are reset (when building the image)
 
 	var count int64
 	sqliteImpl.db.Model(&model.Message{}).Count(&count)
-	return int(count)
+	return float64(count)
 }
-func (sqliteImpl *SqliteDbImplementation) QueryFollowerCount() int { // To be called each time the counters are reset (when building the image)
+func (sqliteImpl *SqliteDbImplementation) QueryFollowerCount() float64 { // To be called each time the counters are reset (when building the image)
 
 	var count int64
 	sqliteImpl.db.Model(&model.Follower{}).Count(&count)
-	return int(count)
+	return float64(count)
 }
 func (sqliteImpl *SqliteDbImplementation) QueryRegister(args []string) {
 	user := &model.User{
@@ -101,6 +130,7 @@ func (sqliteImpl *SqliteDbImplementation) QueryRegister(args []string) {
 	if res.Error != nil {
 		readWritesDatabase.WithLabelValues("QueryRegister", "write", "fail").Inc()
 	}
+	sqliteUserGauge.Inc()
 	readWritesDatabase.WithLabelValues("QueryRegister", "write", "success").Inc()
 }
 
@@ -109,6 +139,7 @@ func (sqliteImpl *SqliteDbImplementation) QueryMessage(message *model.Message) {
 	if res.Error != nil {
 		readWritesDatabase.WithLabelValues("QueryMessage", "write", "fail").Inc()
 	}
+	sqlitemessageGauge.Inc()
 	readWritesDatabase.WithLabelValues("QueryMessage", "write", "success").Inc()
 
 }
@@ -122,6 +153,7 @@ func (sqliteImpl *SqliteDbImplementation) QueryFollow(args []int) {
 	if res.Error != nil {
 		readWritesDatabase.WithLabelValues("QueryFollow", "write", "fail").Inc()
 	}
+	sqliteFollowGauge.Inc()
 	readWritesDatabase.WithLabelValues("QueryFollow", "write", "success").Inc()
 }
 
@@ -130,6 +162,7 @@ func (sqliteImpl *SqliteDbImplementation) QueryUnfollow(args []int) {
 	if res.Error != nil {
 		readWritesDatabase.WithLabelValues("QueryUnfollow", "write", "fail").Inc()
 	}
+	sqliteFollowGauge.Dec()
 	readWritesDatabase.WithLabelValues("QueryUnfollow", "write", "success").Inc()
 }
 

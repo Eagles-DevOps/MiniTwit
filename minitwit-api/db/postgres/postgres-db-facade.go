@@ -31,12 +31,27 @@ var (
 	)
 )
 var (
-	entityCounterDatabase = promauto.NewCounterVec(
-		prometheus.CounterOpts{
-			Name: "minitwit_postgres_entity_numbers_total",
-			Help: "Counts the total number",
+	userGauge = promauto.NewGauge(
+		prometheus.GaugeOpts{
+			Name: "minitwit_postgres_user_numbers_total",
+			Help: "Counts the total number of users",
 		},
-		[]string{"entity_type"},
+	)
+)
+var (
+	followerGauge = promauto.NewGauge(
+		prometheus.GaugeOpts{
+			Name: "minitwit_postgres_follower_numbers_total",
+			Help: "Counts the total number of followers",
+		},
+	)
+)
+var (
+	messageGauge = promauto.NewGauge(
+		prometheus.GaugeOpts{
+			Name: "minitwit_postgres_message_numbers_total",
+			Help: "Counts the total number of message",
+		},
 	)
 )
 
@@ -74,25 +89,29 @@ func (pgImpl *PostgresDbImplementation) Connect_db() {
 	pgImpl.db.AutoMigrate(&model.User{}, &model.Follower{}, &model.Message{})
 	readWritesDatabase.WithLabelValues("Connect_db", "connect", "success").Inc()
 
+	userGauge.Set(pgImpl.QueryUserCount())
+	followerGauge.Set(pgImpl.QueryFollowerCount())
+	messageGauge.Set(pgImpl.QueryMessageCount())
+
 }
 
-func (pgImpl *PostgresDbImplementation) QueryUserCount() int { // To be called each time the counters are reset (when building the image)
+func (pgImpl *PostgresDbImplementation) QueryUserCount() float64 { // To be called each time the counters are reset (when building the image)
 
 	var count int64
 	pgImpl.db.Model(&model.User{}).Count(&count)
-	return int(count)
+	return float64(count)
 }
-func (pgImpl *PostgresDbImplementation) QueryMessageCount() int { // To be called each time the counters are reset (when building the image)
+func (pgImpl *PostgresDbImplementation) QueryMessageCount() float64 { // To be called each time the counters are reset (when building the image)
 
 	var count int64
 	pgImpl.db.Model(&model.Message{}).Count(&count)
-	return int(count)
+	return float64(count)
 }
-func (pgImpl *PostgresDbImplementation) QueryFollowerCount() int { // To be called each time the counters are reset (when building the image)
+func (pgImpl *PostgresDbImplementation) QueryFollowerCount() float64 { // To be called each time the counters are reset (when building the image)
 
 	var count int64
 	pgImpl.db.Model(&model.Follower{}).Count(&count)
-	return int(count)
+	return float64(count)
 }
 
 func (pgImpl *PostgresDbImplementation) QueryRegister(args []string) {
@@ -105,7 +124,7 @@ func (pgImpl *PostgresDbImplementation) QueryRegister(args []string) {
 	if res.Error != nil {
 		readWritesDatabase.WithLabelValues("QueryRegister", "write", "fail").Inc()
 	}
-	entityCounterDatabase.WithLabelValues("User").Inc()
+	userGauge.Inc()
 	readWritesDatabase.WithLabelValues("QueryRegister", "write", "success").Inc()
 }
 
@@ -114,6 +133,7 @@ func (pgImpl *PostgresDbImplementation) QueryMessage(message *model.Message) {
 	if res.Error != nil {
 		readWritesDatabase.WithLabelValues("QueryMessage", "write", "fail").Inc()
 	}
+	messageGauge.Inc()
 	readWritesDatabase.WithLabelValues("QueryMessage", "write", "success").Inc()
 
 }
@@ -127,6 +147,7 @@ func (pgImpl *PostgresDbImplementation) QueryFollow(args []int) {
 	if res.Error != nil {
 		readWritesDatabase.WithLabelValues("QueryFollow", "write", "fail").Inc()
 	}
+	followerGauge.Inc()
 	readWritesDatabase.WithLabelValues("QueryFollow", "write", "success").Inc()
 }
 
@@ -135,6 +156,7 @@ func (pgImpl *PostgresDbImplementation) QueryUnfollow(args []int) {
 	if res.Error != nil {
 		readWritesDatabase.WithLabelValues("QueryUnfollow", "write", "fail").Inc()
 	}
+	followerGauge.Dec()
 	readWritesDatabase.WithLabelValues("QueryUnfollow", "write", "success").Inc()
 }
 
