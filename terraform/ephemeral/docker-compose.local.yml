@@ -1,0 +1,15 @@
+version: '3'
+services:
+  minitwit_app:
+    build: ../../minitwit-web-app
+
+  minitwit_api:
+    build: ../../minitwit-api
+
+#Just for shadowing
+  watchtower:
+    container_name: watchtower
+    image: hello-world
+    command: ""
+
+
