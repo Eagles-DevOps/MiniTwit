@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -13,11 +12,11 @@ import (
 	sqlite "minitwit-api/db/sqlitedb"
 
 	"github.com/gorilla/mux"
-
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/shirou/gopsutil/cpu"
+	"go.uber.org/zap"
 )
 
 var (
@@ -97,14 +96,26 @@ func main() {
 	pgImpl.Connect_db()
 	sqliteImpl.Connect_db()
 
+	//logger set up
+	config := zap.NewProductionConfig()
+	config.OutputPaths = []string{"./logs/logs.log"}
+	logger, err := config.Build()
+	if err != nil {
+		log.Fatal(err)
+	}
+	lg := logger.Sugar()
+
 	dbType := os.Getenv("DBTYPE")
 
 	if dbType == "postgres" {
 		db.SetDb(pgImpl)
-		fmt.Println("Using postgres as main db")
+		//fmt.Println("Using postgres as main db")
+		lg.Info("Using postgress as main DB.")
 	} else {
 		db.SetDb(sqliteImpl)
-		fmt.Println("Using sqlite as main db")
+		//fmt.Println("Using sqlite as main db")
+		lg.Info("Using SQLite as main DB.")
+
 	}
 
 	r := mux.NewRouter()
@@ -124,9 +135,11 @@ func main() {
 
 	r.Handle("/metrics", promhttp.Handler()).Name("Metrics")
 
-	fmt.Println("Listening on port 15001...")
-	err := http.ListenAndServe(":15001", r)
+	//fmt.Println("Listening on port 15001...")
+	lg.Info("Listening on port 15001...")
+	err = http.ListenAndServe(":15001", r)
 	if err != nil {
-		log.Fatalf("Failed to start server: %v", err)
+		//log.Fatalf("Failed to start server: %v", err)
+		lg.Fatal("Failed to start server: %v", err)
 	}
 }

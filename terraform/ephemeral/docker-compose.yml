@@ -25,6 +25,7 @@ services:
       - '15001:15001'
     volumes:
       - ./sqlitedb-api/:/usr/src/app/sqlitedb/
+      - ./logs/logs.log:/usr/src/app/logs/logs.log
     environment:
       - SQLITEPATH=/usr/src/app/sqlitedb/minitwit.db
     env_file:
@@ -68,6 +69,7 @@ services:
       - ./config/promtail.yaml:/etc/promtail/docker-config.yaml
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - /var/run/docker.sock:/var/run/docker.sock
+      - ./logs:/var/log/api
     command: -config.file=/etc/promtail/docker-config.yaml
     user: "0:0"
     networks:
@@ -109,7 +111,6 @@ services:
     networks:
       - loki-net
       - default
-
 
 networks:
   loki-net:
