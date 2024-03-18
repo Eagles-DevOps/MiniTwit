@@ -98,7 +98,6 @@ func main() {
 
 	//logger set up
 	config := zap.NewProductionConfig()
-	config.OutputPaths = []string{"./logs/logs.log"}
 	logger, err := config.Build()
 	if err != nil {
 		log.Fatal(err)
