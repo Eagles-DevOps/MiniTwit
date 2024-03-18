@@ -129,9 +129,6 @@ func main() {
 	r.HandleFunc("/latest", api.Get_latest).Methods("GET").Name("Get_latest")
 	r.HandleFunc("/cleandb", api.Cleandb).Name("Cleandb")
 	r.HandleFunc("/delete", api.Delete).Name("Delete")
-	r.HandleFunc("/migrate", api.Migrate).Name("Migrate")
-	r.HandleFunc("/statsPostgres", api.StatsPg).Name("StatsPostgres")
-	r.HandleFunc("/statsSQLite", api.StatsSqlite).Name("StatsSQLite")
 
 	r.Handle("/metrics", promhttp.Handler()).Name("Metrics")
 
