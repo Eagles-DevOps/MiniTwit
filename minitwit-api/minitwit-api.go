@@ -10,14 +10,16 @@ import (
 	"minitwit-api/db"
 	"minitwit-api/db/postgres"
 	sqlite "minitwit-api/db/sqlitedb"
+	"minitwit-api/logger"
 
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/shirou/gopsutil/cpu"
-	"go.uber.org/zap"
 )
+
+var lg = logger.InitializeLogger()
 
 var (
 	responseCounter = promauto.NewCounterVec(
@@ -90,35 +92,24 @@ func getCPULoad() (float64, error) {
 }
 
 func main() {
+	lg.Info("Starting Minitwit API server")
 
 	pgImpl := &postgres.PostgresDbImplementation{}
 	sqliteImpl := &sqlite.SqliteDbImplementation{}
 	pgImpl.Connect_db()
 	sqliteImpl.Connect_db()
 
-	//logger set up
-	config := zap.NewProductionConfig()
-	logger, err := config.Build()
-	if err != nil {
-		log.Fatal(err)
-	}
-	lg := logger.Sugar()
-
 	dbType := os.Getenv("DBTYPE")
 
 	if dbType == "postgres" {
 		db.SetDb(pgImpl)
-		//fmt.Println("Using postgres as main db")
-		lg.Info("Using postgress as main DB.")
+		lg.Info("Using Postgress as main DB.")
 	} else {
 		db.SetDb(sqliteImpl)
-		//fmt.Println("Using sqlite as main db")
 		lg.Info("Using SQLite as main DB.")
-
 	}
 
 	r := mux.NewRouter()
-
 	r.Use(prometheusMiddleware)
 
 	r.HandleFunc("/register", api.Register).Name("Register")
@@ -133,9 +124,8 @@ func main() {
 
 	//fmt.Println("Listening on port 15001...")
 	lg.Info("Listening on port 15001...")
-	err = http.ListenAndServe(":15001", r)
+	err := http.ListenAndServe(":15001", r)
 	if err != nil {
-		//log.Fatalf("Failed to start server: %v", err)
 		lg.Fatal("Failed to start server: %v", err)
 	}
 }

@@ -3,7 +3,6 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"minitwit-api/db"
 	"minitwit-api/model"
 	"minitwit-api/sim"
@@ -16,21 +15,26 @@ import (
 )
 
 func Register(w http.ResponseWriter, r *http.Request) {
+	lg.Info("Register handler invoked")
 	db, err := db.GetDb()
 	if err != nil {
-		log.Fatalf("Could not get database: %v", err)
+		lg.Error("Could not get database: ", err)
 	}
 	sim.UpdateLatest(r)
 
 	var rv model.RegisterData
 	err = json.NewDecoder(r.Body).Decode(&rv)
 	if err != nil {
+		lg.Error("Error decoding request body: ", err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	if r.Method == "POST" {
-		user_id, _ := db.Get_user_id(rv.Username)
+		user_id, err := db.Get_user_id(rv.Username)
+		if err != nil {
+			lg.Error("Error fetching user ID: ", err)
+		}
 
 		errMsg := ""
 
@@ -45,9 +49,11 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		} else {
 			hash_pw := hashPassword(rv.Pwd)
 			db.QueryRegister([]string{rv.Username, rv.Email, hash_pw})
+			lg.Info("User registered successfully", rv.Username)
 			w.WriteHeader(http.StatusNoContent)
 		}
 		if errMsg != "" {
+			lg.Error("Registration error: ", errMsg)
 			w.WriteHeader(http.StatusBadRequest)
 		}
 	}

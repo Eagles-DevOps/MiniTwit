@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"minitwit-api/logger"
 	"minitwit-api/model"
 	"net/url"
 	"os"
@@ -13,8 +14,10 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
+	gorm_logger "gorm.io/gorm/logger"
 )
+
+var lg = logger.InitializeLogger()
 
 type PostgresDbImplementation struct {
 	// Implement the methods defined in the Idb interface here
@@ -70,9 +73,9 @@ func (pgImpl *PostgresDbImplementation) Connect_db() {
 		Path:   dbname,
 	}
 
-	newLogger := logger.New(
+	newLogger := gorm_logger.New(
 		log.New(os.Stdout, "\r\n", log.LstdFlags),
-		logger.Config{
+		gorm_logger.Config{
 			IgnoreRecordNotFoundError: true,
 		},
 	)
@@ -81,13 +84,14 @@ func (pgImpl *PostgresDbImplementation) Connect_db() {
 		Logger: newLogger,
 	})
 	if err != nil {
-		fmt.Println("Error connecting to the database ", err)
+		lg.Error("Error connecting to the database ", err)
 		readWritesDatabase.WithLabelValues("Connect_db", "connect", "fail").Inc()
 		return
 	}
 
 	pgImpl.db.AutoMigrate(&model.User{}, &model.Follower{}, &model.Message{})
 	readWritesDatabase.WithLabelValues("Connect_db", "connect", "success").Inc()
+	lg.Info("Successfully connected to the database")
 
 	userGauge.Set(pgImpl.QueryUserCount())
 	followerGauge.Set(pgImpl.QueryFollowerCount())
@@ -122,24 +126,26 @@ func (pgImpl *PostgresDbImplementation) QueryRegister(args []string) {
 	}
 	res := pgImpl.db.Create(user)
 	if res.Error != nil {
+		lg.Error("Error registering user: ", res.Error)
 		readWritesDatabase.WithLabelValues("QueryRegister", "write", "fail").Inc()
-		fmt.Println(res.Error)
 		return
 	}
 	userGauge.Inc()
 	readWritesDatabase.WithLabelValues("QueryRegister", "write", "success").Inc()
+	lg.Info("User registered successfully: ", user.Username)
+
 }
 
 func (pgImpl *PostgresDbImplementation) QueryMessage(message *model.Message) {
 	res := pgImpl.db.Create(message)
 	if res.Error != nil {
+		lg.Error("Error creating message: ", res.Error)
 		readWritesDatabase.WithLabelValues("QueryMessage", "write", "fail").Inc()
-		fmt.Println(res.Error)
 		return
 	}
 	messageGauge.Inc()
 	readWritesDatabase.WithLabelValues("QueryMessage", "write", "success").Inc()
-
+	lg.Info("Message created successfully: ", message.Text)
 }
 
 func (pgImpl *PostgresDbImplementation) QueryFollow(args []int) {
@@ -150,10 +156,11 @@ func (pgImpl *PostgresDbImplementation) QueryFollow(args []int) {
 	res := pgImpl.db.Create(follower)
 	if res.Error != nil {
 		readWritesDatabase.WithLabelValues("QueryFollow", "write", "fail").Inc()
-		fmt.Println(res.Error)
+		lg.Error("Error creating follower: ", res.Error)
 		return
 	}
 	followerGauge.Inc()
+	lg.Info("Follower created successfully: ", follower.WhoID, " -> ", follower.WhomID)
 	readWritesDatabase.WithLabelValues("QueryFollow", "write", "success").Inc()
 }
 
@@ -161,10 +168,11 @@ func (pgImpl *PostgresDbImplementation) QueryUnfollow(args []int) {
 	res := pgImpl.db.Where("who_id = ? AND whom_id = ?", args[0], args[1]).Delete(&model.Follower{})
 	if res.Error != nil {
 		readWritesDatabase.WithLabelValues("QueryUnfollow", "write", "fail").Inc()
-		fmt.Println(res.Error)
+		lg.Error("Error unfollowing user: ", res.Error)
 		return
 	}
 	followerGauge.Dec()
+	lg.Info("User unfollowed successfully: ", args[0], " -> ", args[1])
 	readWritesDatabase.WithLabelValues("QueryUnfollow", "write", "success").Inc()
 }
 
@@ -172,10 +180,11 @@ func (pgImpl *PostgresDbImplementation) QueryDelete(args []int) {
 	res := pgImpl.db.Delete(&model.User{}, args[0])
 	if res.Error != nil {
 		readWritesDatabase.WithLabelValues("QueryDelete", "write", "fail").Inc()
-		fmt.Println(res.Error)
+		lg.Error("Error deleting user: ", res.Error)
 		return
 	}
 	readWritesDatabase.WithLabelValues("QueryDelete", "write", "success").Inc()
+	lg.Info("User deleted successfully: ", args[0])
 }
 
 func (pgImpl *PostgresDbImplementation) GetMessages(args []int) []map[string]any {
@@ -183,7 +192,7 @@ func (pgImpl *PostgresDbImplementation) GetMessages(args []int) []map[string]any
 	res := pgImpl.db.Where("flagged = false").Order("pub_date DESC").Limit(args[0]).Find(&messages)
 	if res.Error != nil {
 		readWritesDatabase.WithLabelValues("GetMessages", "read", "fail").Inc()
-		fmt.Println(res.Error)
+		lg.Error("Error getting messages: ", res.Error)
 		return []map[string]any{}
 	}
 
@@ -200,6 +209,7 @@ func (pgImpl *PostgresDbImplementation) GetMessages(args []int) []map[string]any
 		Messages = append(Messages, message)
 	}
 	readWritesDatabase.WithLabelValues("GetMessages", "read", "success").Inc()
+	lg.Info("Messages retrieved successfully")
 	return Messages
 }
 
@@ -208,6 +218,7 @@ func (pgImpl *PostgresDbImplementation) GetMessagesForUser(args []int) []map[str
 	res := pgImpl.db.Where("flagged = false AND author_id = ?", args[0]).Order("pub_date DESC").Limit(args[1]).Find(&messages)
 	if res.Error != nil {
 		readWritesDatabase.WithLabelValues("GetMessagesForUser", "read", "fail").Inc()
+		lg.Error("Error getting messages for user: ", res.Error)
 	}
 
 	var Messages []map[string]any
@@ -224,6 +235,7 @@ func (pgImpl *PostgresDbImplementation) GetMessagesForUser(args []int) []map[str
 		Messages = append(Messages, message)
 	}
 	readWritesDatabase.WithLabelValues("GetMessagesForUser", "read", "success").Inc()
+	lg.Info("Messages for user retrieved successfully")
 	return Messages
 }
 
@@ -238,8 +250,10 @@ func (pgImpl *PostgresDbImplementation) GetFollowees(args []int) []string {
 
 	if res.Error != nil {
 		readWritesDatabase.WithLabelValues("GetFollowees", "read", "fail").Inc()
+		lg.Error("Error getting followees: ", res.Error)
 	}
 	readWritesDatabase.WithLabelValues("GetFollowees", "read", "success").Inc()
+	lg.Info("Followees retrieved successfully")
 	return followees
 }
 
@@ -249,13 +263,16 @@ func (pgImpl *PostgresDbImplementation) Get_user_id(username string) (int, error
 	if res.Error != nil {
 		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
 			readWritesDatabase.WithLabelValues("Get_user_id", "read", "fail").Inc()
+			lg.Error("User not found: ", username)
 			return 0, fmt.Errorf("user with username '%s' not found", username)
 
 		}
 		readWritesDatabase.WithLabelValues("Get_user_id", "read", "fail").Inc()
+		lg.Error("Error querying database: ", res.Error)
 		return 0, fmt.Errorf("error querying database: %v", res.Error)
 	}
 	readWritesDatabase.WithLabelValues("Get_user_id", "read", "success").Inc()
+	lg.Info("User found: ", username)
 	return user.UserID, nil
 }
 

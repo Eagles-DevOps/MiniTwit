@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"log"
 	"minitwit-api/db"
 	"minitwit-api/model"
 	"net/http"
@@ -16,14 +15,16 @@ import (
 )
 
 func Messages(w http.ResponseWriter, r *http.Request) {
+	lg.Info("Messages handler invoked")
 	db, err := db.GetDb()
 	if err != nil {
-		log.Fatalf("Could not get database: %v", err)
+		lg.Error("Could not get database", err)
 	}
 	sim.UpdateLatest(r)
 
 	is_auth := sim.Is_authenticated(w, r)
 	if !is_auth {
+		lg.Warn("Unauthorized access attempt to Messages")
 		return
 	}
 	no_msg := no_msgs(r)
@@ -35,6 +36,7 @@ func Messages(w http.ResponseWriter, r *http.Request) {
 		err := json.NewEncoder(w).Encode(messages)
 
 		if err != nil {
+			lg.Error("Error encoding JSON response:", err)
 			w.WriteHeader(http.StatusForbidden)
 			return
 		}
@@ -44,7 +46,7 @@ func Messages(w http.ResponseWriter, r *http.Request) {
 func Messages_per_user(w http.ResponseWriter, r *http.Request) {
 	db, err := db.GetDb()
 	if err != nil {
-		log.Fatalf("Could not get database: %v", err)
+		lg.Error("Could not get database - Messages per user", err)
 	}
 	vars := mux.Vars(r)
 	username := vars["username"]
@@ -52,12 +54,14 @@ func Messages_per_user(w http.ResponseWriter, r *http.Request) {
 
 	is_auth := sim.Is_authenticated(w, r)
 	if !is_auth {
+		lg.Warn("Unauthorized access attempt to Messages_perUser")
 		return
 	}
 	no_msg := no_msgs(r)
 
 	user_id, err := db.Get_user_id(username)
 	if err != nil {
+		lg.Error("Error getting user ID", err)
 		w.WriteHeader(http.StatusForbidden)
 		return
 	}
@@ -68,6 +72,7 @@ func Messages_per_user(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		err = json.NewEncoder(w).Encode(messages)
 		if err != nil {
+			lg.Error("Error encoding JSON response: ", err)
 			w.WriteHeader(http.StatusForbidden)
 			return
 		}
@@ -77,6 +82,7 @@ func Messages_per_user(w http.ResponseWriter, r *http.Request) {
 
 		err := json.NewDecoder(r.Body).Decode(&rv)
 		if err != nil {
+			lg.Error("Error decoding request body: ", err)
 			w.WriteHeader(http.StatusForbidden)
 			return
 		}
@@ -87,6 +93,7 @@ func Messages_per_user(w http.ResponseWriter, r *http.Request) {
 			Flagged:  false,
 		}
 		db.QueryMessage(message)
+		lg.Info("Message posted", user_id)
 		w.WriteHeader(http.StatusNoContent)
 	}
 }
@@ -96,6 +103,7 @@ func no_msgs(r *http.Request) int {
 	if value != "" {
 		intValue, err := strconv.Atoi(value)
 		if err == nil {
+			lg.Error("Error parsing 'no' query parameter: ", err)
 			return intValue
 		}
 	}
