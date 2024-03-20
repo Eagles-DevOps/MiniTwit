@@ -31,10 +31,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Method == "POST" {
-		user_id, err := db.Get_user_id(rv.Username)
-		if err != nil {
-			lg.Error("Error fetching user ID: ", err)
-		}
+		user_id, _ := db.Get_user_id(rv.Username)
 
 		errMsg := ""
 

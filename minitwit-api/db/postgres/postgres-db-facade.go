@@ -263,7 +263,6 @@ func (pgImpl *PostgresDbImplementation) Get_user_id(username string) (int, error
 	if res.Error != nil {
 		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
 			readWritesDatabase.WithLabelValues("Get_user_id", "read", "fail").Inc()
-			lg.Error("User not found: ", username)
 			return 0, fmt.Errorf("user with username '%s' not found", username)
 
 		}
