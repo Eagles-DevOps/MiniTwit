@@ -10,9 +10,12 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 	"time"
+
+	_ "github.com/lib/pq"
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
@@ -24,6 +27,29 @@ const (
 	DATABASE = "./minitwit.db"
 	PER_PAGE = 30
 )
+
+func getDbUrl() string {
+	user := os.Getenv("POSTGRES_USER")
+	pw := os.Getenv("POSTGRES_PW")
+	host := os.Getenv("POSTGRES_HOST")
+	port := os.Getenv("POSTGRES_PORT")
+	dbname := os.Getenv("POSTGRES_DB_NAME")
+	disableSsl := os.Getenv("POSTGRES_DISABLE_SSL")
+
+	disableSslString := ""
+	if disableSsl == "true" {
+		disableSslString = "sslmode=disable"
+	}
+	url := url.URL{
+		User:     url.UserPassword(user, pw),
+		Scheme:   "postgres",
+		Host:     fmt.Sprintf("%s:%s", host, port),
+		Path:     dbname,
+		RawQuery: disableSslString,
+	}
+	log.Println(url.String())
+	return url.String()
+}
 
 var db *sql.DB
 var store = sessions.NewCookieStore([]byte("SESSIONKEY"))
@@ -80,10 +106,8 @@ func main() {
 	r.HandleFunc("/{username}/unfollow", unfollow_user)
 	r.HandleFunc("/{username}", user_timeline)
 
-	db, err = before_request()
-	if err != nil {
-		fmt.Println("Error connecting to the database")
-	}
+	db = before_request()
+
 	defer after_request()
 
 	fmt.Println("Listening on port 15000...")
@@ -94,15 +118,13 @@ func main() {
 }
 
 // """Returns a new connection to the database."""
-func connect_db() (db *sql.DB, err error) {
+func connect_db() (db *sql.DB) {
 	fmt.Println("Connecting to database...")
-	return sql.Open("sqlite3", DATABASE)
-}
-
-// """Creates the database tables."""
-func init_db() ([]byte, error) {
-	fmt.Println("Initializing database...")
-	return os.ReadFile("schema.sql")
+	db, err := sql.Open("postgres", getDbUrl())
+	if err != nil {
+		panic(err)
+	}
+	return db
 }
 
 // """Queries the database and returns a list of dictionaries."""
@@ -165,7 +187,7 @@ func gravatar_url(email string, size int) string {
 // """Convenience method to look up the id for a username."""
 func get_user_id(username string) (any, error) {
 	var user_id int
-	rv := db.QueryRow("SELECT user_id FROM user WHERE username = ?",
+	rv := db.QueryRow("SELECT user_id FROM public.user WHERE username = $1",
 		username)
 	err := rv.Scan(&user_id)
 	if err != nil {
@@ -192,7 +214,7 @@ func getUser(r *http.Request) (any, any, error) {
 		fmt.Println("No user in the session")
 		return nil, nil, fmt.Errorf("no user in the session")
 	}
-	user, err := query_db("SELECT * FROM user WHERE user_id = ?", []any{user_id}, true)
+	user, err := query_db("SELECT * FROM public.user WHERE user_id = $1", []any{user_id}, true)
 	if err != nil {
 		fmt.Println("Unable to query for user data in getUser()")
 		return nil, nil, err
@@ -201,7 +223,7 @@ func getUser(r *http.Request) (any, any, error) {
 }
 
 // """Opens the database before the request."""
-func before_request() (*sql.DB, error) {
+func before_request() *sql.DB {
 	return connect_db()
 }
 
@@ -226,7 +248,7 @@ func follow_user(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Followuser: Error when trying to find the user in the database in follow", http.StatusNotFound)
 		return
 	}
-	_, err = db.Exec("INSERT INTO follower (who_id, whom_id) VALUES (?, ?)", user_id, whom_id)
+	_, err = db.Exec("INSERT INTO public.follower (who_id, whom_id) VALUES ($1, $2)", user_id, whom_id)
 	if err != nil {
 		fmt.Println("Error when trying to insert data into the database")
 		return
@@ -252,7 +274,7 @@ func unfollow_user(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error when trying to find the user in the database in unfollow", http.StatusNotFound)
 		return
 	}
-	_, err = db.Exec("DELETE FROM follower WHERE who_id=? and whom_id=?", user_id, whom_id)
+	_, err = db.Exec("DELETE FROM public.follower WHERE who_id=$1 and whom_id=$2", user_id, whom_id)
 	if err != nil {
 		fmt.Println("Error when trying to delete data from database")
 		return
@@ -271,7 +293,7 @@ func add_message(w http.ResponseWriter, r *http.Request) {
 	}
 	text := r.FormValue("text")
 	if text != "" {
-		db.Exec("INSERT INTO message (author_id, text, pub_date, flagged) VALUES (?, ?, ?, 0)", user_id, text, int(time.Now().Unix()))
+		db.Exec("INSERT INTO public.message (author_id, text, pub_date, flagged) VALUES ($1, $2, $3, false)", user_id, text, int(time.Now().Unix()))
 		setFlash(w, r, "Your message was recorded")
 	}
 	http.Redirect(w, r, "/", http.StatusFound)
@@ -298,12 +320,12 @@ func timeline(w http.ResponseWriter, r *http.Request) {
 	if err != nil || isNil(user) {
 		http.Redirect(w, r, "/public", http.StatusFound)
 	} else {
-		var query = `SELECT message.*, user.* FROM message, user
-        WHERE message.flagged = 0 AND message.author_id = user.user_id AND (
-            user.user_id = ? OR
-            user.user_id IN (SELECT whom_id FROM follower
-                                    where who_id = ?))
-        ORDER BY message.pub_date desc limit ?`
+		var query = `SELECT public.message.*, public.user.* FROM public.message, public.user
+        WHERE public.message.flagged = false AND public.message.author_id = public.user.user_id AND (
+            public.user.user_id = $1 OR
+            public.user.user_id IN (SELECT whom_id FROM public.follower
+                                    where who_id = $2))
+        ORDER BY public.message.pub_date desc limit $3`
 
 		messages, err := query_db(query, []any{user_id, user_id, PER_PAGE}, false)
 		if err != nil {
@@ -334,9 +356,9 @@ func public_timeline(w http.ResponseWriter, r *http.Request) {
 	if err != nil || isNil(user) {
 		println("public timeline: the user is not logged in")
 	}
-	var query = `SELECT message.*, user.* FROM message, user
-	WHERE message.flagged = 0 AND message.author_id = user.user_id
-	ORDER BY message.pub_date desc limit ?`
+	var query = `SELECT public.message.*, public.user.* FROM public.message, public.user
+	WHERE message.flagged = false AND public.message.author_id = public.user.user_id
+	ORDER BY public.message.pub_date desc limit $1`
 
 	messages, err := query_db(query, []any{PER_PAGE}, false)
 	if err != nil {
@@ -368,7 +390,7 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	username := vars["username"]
 
-	profile_user, err := query_db("SELECT * FROM user WHERE username = ?", []any{username}, true)
+	profile_user, err := query_db("SELECT * FROM public.user WHERE username = $1", []any{username}, true)
 	if err != nil || isNil(profile_user) {
 		setFlash(w, r, "The user does not exist")
 		http.Redirect(w, r, "/", http.StatusSeeOther)
@@ -378,15 +400,15 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 	profile_user_id := profileuserMap["user_id"]
 
 	followed := false
-	usr, err := query_db(`select 1 from follower where
-        follower.who_id = ? and follower.whom_id = ?`, []any{user_id, profile_user_id}, true)
+	usr, err := query_db(`select 1 from public.follower where
+	public.follower.who_id = $1 and public.follower.whom_id = $2`, []any{user_id, profile_user_id}, true)
 
 	if err == nil && usr != nil {
 		followed = true
 	}
-	var query = `SELECT message.*, user.* FROM message, user WHERE
-	user.user_id = message.author_id AND user.user_id = ?
-	ORDER BY message.pub_date desc limit ?`
+	var query = `SELECT public.message.*, public.user.* FROM public.message, public.user WHERE
+	public.user.user_id = public.message.author_id AND public.user.user_id = $1
+	ORDER BY public.message.pub_date desc limit $2`
 
 	messages, err := query_db(query, []any{profile_user_id, PER_PAGE}, false)
 	if err != nil {
@@ -423,7 +445,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		username := r.FormValue("username")
 		password := r.FormValue("password")
 
-		user, err := query_db("select * from user where username = ?", []any{username}, true)
+		user, err := query_db("select * from public.user where username = $1", []any{username}, true)
 		if err != nil || isNil(user) {
 			reload(w, r, "Invalid username", "login.html")
 			return
@@ -495,9 +517,9 @@ func Register(w http.ResponseWriter, r *http.Request) {
 				fmt.Println("Error hashing the password")
 				return
 			}
-			_, err = db.Exec("INSERT INTO user (username, email, pw_hash) VALUES (?, ?, ?)", username, email, hashedPassword)
+			_, err = db.Exec("INSERT INTO public.user (username, email, pw_hash) VALUES ($1, $2, $3)", username, email, hashedPassword)
 			if err != nil {
-				fmt.Println("Database error")
+				fmt.Println("Database error: ", err.Error(), username, email)
 				return
 			}
 			setFlash(w, r, "You were successfully registered and can login now")
