@@ -24,7 +24,6 @@ import (
 )
 
 const (
-	DATABASE = "./minitwit.db"
 	PER_PAGE = 30
 )
 
@@ -47,7 +46,6 @@ func getDbUrl() string {
 		Path:     dbname,
 		RawQuery: disableSslString,
 	}
-	log.Println(url.String())
 	return url.String()
 }
 
