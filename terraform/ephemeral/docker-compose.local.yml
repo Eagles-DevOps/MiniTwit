@@ -1,7 +1,16 @@
-version: '3'
 services:
   minitwit_app:
     build: ../../minitwit-web-app
+  environment:
+      - POSTGRES_USER=minitwituser
+      - POSTGRES_PW=minitwitpw
+      - POSTGRES_HOST=postgres
+      - POSTGRES_DB_NAME=minitwit
+      - POSTGRES_PORT=5432
+      - POSTGRES_DISABLE_SSL=true
+  depends_on:
+      - postgres
+  command: ["./wait-for-it.sh", "postgres:5432", "--", "/usr/local/bin/app"]
 
   minitwit_api:
     build: ../../minitwit-api
