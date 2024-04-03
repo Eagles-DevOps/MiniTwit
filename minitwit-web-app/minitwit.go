@@ -357,7 +357,7 @@ func public_timeline(w http.ResponseWriter, r *http.Request) {
 	var query = `SELECT public.message.*, public.user.* FROM public.message, public.user
 	WHERE message.flagged = false AND public.message.author_id = public.user.user_id
 	ORDER BY public.message.pub_date desc limit $1`
-
+	err = nil
 	messages, err := query_db(query, []any{PER_PAGE}, false)
 	if err != nil {
 		println("Error when trying to query the database: ", err)
@@ -399,7 +399,7 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 
 	followed := false
 	usr, err := query_db(`select 1 from public.follower where
-	public.follower.who_id = $1 and public.follower.whom_id = $2`, []any{user_id, profile_user_id}, true)
+	public.follower.who_id = $1 and public.follower.whom_id = $2`, []any{user_id, profile_user_id}, true) //this is wrong, now we're just checking if our user follow themself
 
 	if err == nil && usr != nil {
 		followed = true
@@ -517,6 +517,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 			}
 			_, err = db.Exec("INSERT INTO public.user (username, email, pw_hash) VALUES ($1, $2, $3)", username, email, hashedPassword)
 			if err != nil {
+				fmt.Println("username is", username)
 				fmt.Println("Database error: ", err.Error(), username, email)
 				return
 			}
