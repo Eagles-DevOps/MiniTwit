@@ -56,6 +56,7 @@
             <strong>{{$fields.username}}</strong>
             {{$fields.text}}
             <small>&mdash; {{gettimestamp $fields.pub_date}}</small>
+            {{if $user}}
             <div class="followstatus">
               {{if eq $user.username $fields.username}}
                 This is you!
@@ -67,6 +68,7 @@
                 <a class="follow" href="{{url_for "follow" (formatUsernameUrl $fields.username)}}">Follow user</a>
               {{end}}
             </div>
+            {{end}}
           </li>
          
         {{end}}

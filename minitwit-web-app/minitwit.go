@@ -399,14 +399,6 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 	profileuserMap := profile_user.(map[any]any)
 	profile_user_id := profileuserMap["user_id"]
 
-	followed := false
-	usr, err := query_db(`select 1 from public.follower where
-	public.follower.who_id = $1 and public.follower.whom_id = $2`, []any{user_id, profile_user_id}, true) //this is wrong, now we're just checking if our user follow themself
-	fmt.Println(usr)
-	if isNil(err) && usr != nil {
-		fmt.Println(err)
-		followed = true
-	}
 	var query = `SELECT public.message.*, public.user.* FROM public.message, public.user WHERE
 	public.user.user_id = public.message.author_id AND public.user.user_id = $1
 	ORDER BY public.message.pub_date desc limit $2`
@@ -420,7 +412,6 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Println(user_id)
 	d := Data{Message: messages,
-		Followed:      followed,
 		User:          user,
 		Profileuser:   profile_user,
 		FlashMessages: flash,
