@@ -86,6 +86,9 @@ func main() {
 		"formatUsernameUrl": func(username string) string {
 			return strings.Replace(username, " ", "%20", -1)
 		},
+		"isFollowing": func(user_id int64, message_author_id int64) bool {
+			return isFollowing(int(user_id), int(message_author_id))
+		},
 	}
 	tpl, err = template.New("timeline.html").Funcs(funcMap).ParseGlob("templates/*.html") // We need to add the funcs that we want to use before parsing
 	if err != nil {
@@ -357,7 +360,6 @@ func public_timeline(w http.ResponseWriter, r *http.Request) {
 	var query = `SELECT public.message.*, public.user.* FROM public.message, public.user
 	WHERE message.flagged = false AND public.message.author_id = public.user.user_id
 	ORDER BY public.message.pub_date desc limit $1`
-	err = nil
 	messages, err := query_db(query, []any{PER_PAGE}, false)
 	if err != nil {
 		println("Error when trying to query the database: ", err)
@@ -400,8 +402,9 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 	followed := false
 	usr, err := query_db(`select 1 from public.follower where
 	public.follower.who_id = $1 and public.follower.whom_id = $2`, []any{user_id, profile_user_id}, true) //this is wrong, now we're just checking if our user follow themself
-
-	if err == nil && usr != nil {
+	fmt.Println(usr)
+	if isNil(err) && usr != nil {
+		fmt.Println(err)
 		followed = true
 	}
 	var query = `SELECT public.message.*, public.user.* FROM public.message, public.user WHERE
@@ -586,4 +589,15 @@ func reload(w http.ResponseWriter, r *http.Request, message string, template str
 	}
 	d.FlashMessages = getFlash(w, r)
 	tpl.ExecuteTemplate(w, template, d)
+}
+
+func isFollowing(user_id int, profile_user_id int) bool {
+	usr, err := query_db(`select 1 from public.follower where
+	public.follower.who_id = $1 and public.follower.whom_id = $2`, []any{user_id, profile_user_id}, true)
+	if isNil(err) && usr != nil {
+		fmt.Println("you're following him kiddo")
+		return true
+	}
+	fmt.Println("you ain't following him kiddo")
+	return false
 }
