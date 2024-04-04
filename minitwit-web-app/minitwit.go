@@ -595,9 +595,7 @@ func isFollowing(user_id int, profile_user_id int) bool {
 	usr, err := query_db(`select 1 from public.follower where
 	public.follower.who_id = $1 and public.follower.whom_id = $2`, []any{user_id, profile_user_id}, true)
 	if isNil(err) && usr != nil {
-		fmt.Println("you're following him kiddo")
 		return true
 	}
-	fmt.Println("you ain't following him kiddo")
 	return false
 }
