@@ -353,7 +353,7 @@ func timeline(w http.ResponseWriter, r *http.Request) {
 
 // """Displays the latest messages of all users."""
 func public_timeline(w http.ResponseWriter, r *http.Request) {
-	user, _, err := getUser(r)
+	user, user_id, err := getUser(r)
 	if err != nil || isNil(user) {
 		println("public timeline: the user is not logged in")
 	}
@@ -366,7 +366,11 @@ func public_timeline(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	flash := getFlash(w, r)
-
+	if !isNil(user) {
+		following := getFollowing(user_id)
+		fmt.Println("yeet")
+		fmt.Println(following)
+	}
 	d := Data{Message: messages,
 		User:          user,
 		Req:           r.RequestURI,
@@ -381,7 +385,7 @@ func public_timeline(w http.ResponseWriter, r *http.Request) {
 
 // """Display's a users tweets."""
 func user_timeline(w http.ResponseWriter, r *http.Request) {
-	user, user_id, err := getUser(r)
+	user, _, err := getUser(r)
 	if err != nil || isNil(user) {
 		setFlash(w, r, "You need to login before you can see the user's timeline")
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
@@ -410,7 +414,6 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 	}
 	flash := getFlash(w, r)
 
-	fmt.Println(user_id)
 	d := Data{Message: messages,
 		User:          user,
 		Profileuser:   profile_user,
@@ -589,4 +592,14 @@ func isFollowing(user_id int, profile_user_id int) bool {
 		return true
 	}
 	return false
+}
+
+func getFollowing(user_id any) any {
+
+	usr, err := query_db(`select whom_id from public.follower where
+	public.follower.who_id = $1`, []any{user_id}, false)
+
+	fmt.Println(usr)
+	fmt.Println(err)
+	return usr
 }
