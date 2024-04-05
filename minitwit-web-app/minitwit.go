@@ -70,7 +70,7 @@ func main() {
 			case "add_message":
 				return "/add_message"
 			case "timeline":
-				return "/"
+				return "/" + username
 			case "public_timeline":
 				return "/public"
 			case "logout":

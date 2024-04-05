@@ -53,7 +53,8 @@
         {{range $fields := .Message}}
           <li>
             <img src="{{getavatar $fields.email 48}}" alt="{{$fields.username}}'s avatar">
-            <strong>{{$fields.username}}</strong>
+            <strong><a href="{{url_for "timeline" (formatUsernameUrl $fields.username)}}">{{$fields.username}}</a></strong>
+
             {{$fields.text}}
             <small>&mdash; {{gettimestamp $fields.pub_date}}</small>
             {{if $user}}
