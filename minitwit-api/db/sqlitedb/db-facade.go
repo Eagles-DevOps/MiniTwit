@@ -94,7 +94,7 @@ func (sqliteImpl *SqliteDbImplementation) Connect_db() {
 		readWritesDatabase.WithLabelValues("Connect_db", "connect", "fail").Inc()
 		return
 	}
-	sqliteImpl.db.AutoMigrate(&model.User{}, &model.Follower{}, &model.Message{})
+	sqliteImpl.db.AutoMigrate(&model.User{}, &model.Follower{}, &model.Message{}, &model.Count{})
 	readWritesDatabase.WithLabelValues("Connect_db", "connect", "success").Inc()
 
 	sqliteUserGauge.Set(sqliteImpl.QueryUserCount())
