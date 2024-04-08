@@ -288,6 +288,16 @@ func (sqliteImpl *SqliteDbImplementation) GetAllFollowers() []model.Follower {
 	return followers
 }
 
+// GetCount implements db.Idb.
+func (sqliteImpl *SqliteDbImplementation) GetCount(key string) int {
+	panic("unimplemented")
+}
+
+// SetCount implements db.Idb.
+func (sqliteImpl *SqliteDbImplementation) SetCount(key string, value int) error {
+	panic("unimplemented")
+}
+
 func (sqliteImpl *SqliteDbImplementation) IsNil(i interface{}) bool {
 	if i == nil || i == interface{}(nil) {
 		return true

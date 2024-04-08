@@ -19,4 +19,7 @@ type Idb interface {
 	GetAllUsers() []model.User
 	GetAllFollowers() []model.Follower
 	GetAllMessages() []model.Message
+
+	GetCount(key string) int
+	SetCount(key string, value int) error
 }
