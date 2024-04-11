@@ -89,6 +89,9 @@ func main() {
 		"isFollowing": func(user_id int64, message_author_id int64) bool {
 			return isFollowing(int(user_id), int(message_author_id))
 		},
+		"IsFollowingBetter": func(following []map[interface{}]interface{}, message_author_id int64) bool {
+			return CheckValueInMap(following, message_author_id)
+		},
 	}
 	tpl, err = template.New("timeline.html").Funcs(funcMap).ParseGlob("templates/*.html") // We need to add the funcs that we want to use before parsing
 	if err != nil {
@@ -335,12 +338,18 @@ func timeline(w http.ResponseWriter, r *http.Request) {
 		}
 		flash := getFlash(w, r)
 		profile_user := user
-
+		var following interface{}
+		following = nil
+		if !isNil(user) {
+			following = getFollowing(user_id)
+			fmt.Println(following)
+		}
 		d := Data{
 			User:          user,
 			Profileuser:   profile_user,
 			Message:       messages,
 			FlashMessages: flash,
+			Followed:      following,
 		}
 
 		err = tpl.ExecuteTemplate(w, "timeline.html", d)
@@ -366,15 +375,17 @@ func public_timeline(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	flash := getFlash(w, r)
+	var following interface{}
+	following = nil
 	if !isNil(user) {
-		following := getFollowing(user_id)
-		fmt.Println("yeet")
+		following = getFollowing(user_id)
 		fmt.Println(following)
 	}
 	d := Data{Message: messages,
 		User:          user,
 		Req:           r.RequestURI,
 		FlashMessages: flash,
+		Followed:      following,
 	}
 	err = tpl.ExecuteTemplate(w, "timeline.html", d)
 	if err != nil {
@@ -599,7 +610,22 @@ func getFollowing(user_id any) any {
 	usr, err := query_db(`select whom_id from public.follower where
 	public.follower.who_id = $1`, []any{user_id}, false)
 
-	fmt.Println(usr)
 	fmt.Println(err)
 	return usr
 }
+
+func CheckValueInMap(maps []map[interface{}]interface{}, value interface{}) bool { //ChatGPT.
+	fmt.Println("chatgpt function")
+	fmt.Println(maps)
+	fmt.Println(value)
+	for _, m := range maps {
+		for _, v := range m {
+			if v == value {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+//Current progress is that it works except for when user Trond is logged in and we're looking at user Bars timeline, of which Trond is following (it then prompts the "you're not currently following this user")
