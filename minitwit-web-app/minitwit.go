@@ -338,12 +338,9 @@ func timeline(w http.ResponseWriter, r *http.Request) {
 		}
 		flash := getFlash(w, r)
 		profile_user := user
-		var following interface{}
-		following = nil
-		if !isNil(user) {
-			following = getFollowing(user_id)
-			fmt.Println(following)
-		}
+
+		following := getFollowing(user_id)
+
 		d := Data{
 			User:          user,
 			Profileuser:   profile_user,
@@ -396,7 +393,7 @@ func public_timeline(w http.ResponseWriter, r *http.Request) {
 
 // """Display's a users tweets."""
 func user_timeline(w http.ResponseWriter, r *http.Request) {
-	user, _, err := getUser(r)
+	user, user_id, err := getUser(r)
 	if err != nil || isNil(user) {
 		setFlash(w, r, "You need to login before you can see the user's timeline")
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
@@ -405,6 +402,7 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	username := vars["username"]
 
+	following := getFollowing(user_id)
 	profile_user, err := query_db("SELECT * FROM public.user WHERE username = $1", []any{username}, true)
 	if err != nil || isNil(profile_user) {
 		setFlash(w, r, "The user does not exist")
@@ -429,6 +427,7 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 		User:          user,
 		Profileuser:   profile_user,
 		FlashMessages: flash,
+		Followed:      following,
 	}
 	err = tpl.ExecuteTemplate(w, "timeline.html", d)
 	if err != nil {
@@ -615,9 +614,7 @@ func getFollowing(user_id any) any {
 }
 
 func CheckValueInMap(maps []map[interface{}]interface{}, value interface{}) bool { //ChatGPT.
-	fmt.Println("chatgpt function")
-	fmt.Println(maps)
-	fmt.Println(value)
+
 	for _, m := range maps {
 		for _, v := range m {
 			if v == value {
