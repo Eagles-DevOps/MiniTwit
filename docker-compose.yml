@@ -1,56 +1,63 @@
 services:
 
-  server:
-    build: ./minitwit-web-app
-    ports:
-      - '15000:15000'
+  minitwit_app:
+    build: ../../minitwit-web-app
     environment:
-      - POSTGRES_USER=minitwituser
-      - POSTGRES_PW=minitwitpw
-      - POSTGRES_HOST=postgres
-      - POSTGRES_DB_NAME=minitwit
-      - POSTGRES_PORT=5432
-      - POSTGRES_DISABLE_SSL=true
+        - POSTGRES_USER=minitwituser
+        - POSTGRES_PW=minitwitpw
+        - POSTGRES_HOST=postgres
+        - POSTGRES_DB_NAME=minitwit
+        - POSTGRES_PORT=5432
+        - POSTGRES_DISABLE_SSL=true
     depends_on:
-      - postgres
+        - postgres
     command: ["./wait-for-it.sh", "postgres:5432", "--", "/usr/local/bin/app"]
 
-  minitwit_api:
-    build: ./minitwit-api
-    ports:
-      - '15001:15001'
-    environment:
-      - SQLITEPATH=./minitwit.db
-      - POSTGRES_USER=minitwituser
-      - POSTGRES_PW=minitwitpw
-      - POSTGRES_HOST=postgres
-      - POSTGRES_DB_NAME=minitwit
-      - POSTGRES_PORT=5432
-      - ALLOWMIGRATION=true
-      - DBTYPE=postgres
-    depends_on:
-      - postgres
-    command: ["./wait-for-it.sh", "postgres:5432", "--", "/minitwit/app"]
+  # minitwit_api:
+  #   build: ./minitwit-api
+  #   ports:
+  #     - '15001:15001'
+  #   environment:
+  #     - SQLITEPATH=./minitwit.db
+  #     - POSTGRES_USER=minitwituser
+  #     - POSTGRES_PW=minitwitpw
+  #     - POSTGRES_HOST=postgres
+  #     - POSTGRES_DB_NAME=minitwit
+  #     - POSTGRES_PORT=5432
+  #     - ALLOWMIGRATION=true
+  #     - DBTYPE=postgres
+  #   depends_on:
+  #     - postgres
+  #   command: ["./wait-for-it.sh", "postgres:5432", "--", "/minitwit/app"]
 
-  legacy_tests:
-    build:
-      context: ./tests/legacy_tests
-      dockerfile: pythontests.Dockerfile
-    entrypoint: sh -c  "sleep 5 && python /tests/refactored_tests.py"
+  # legacy_tests:
+  #   build:
+  #     context: ./tests/legacy_tests
+  #     dockerfile: pythontests.Dockerfile
+  #   entrypoint: sh -c  "sleep 5 && python /tests/refactored_tests.py"
 
-  legacy_api_tests:
-    build:
-      context: ./tests/legacy_api_tests
-      dockerfile: pythontests.Dockerfile
-    entrypoint: sh -c  "sleep 5 && pytest /tests/minitwit_sim_api_test.py"
-    environment:
-      - MT_BASEURL=http://minitwit_api:15001
+  # legacy_api_tests:
+  #   build:
+  #     context: ./tests/legacy_api_tests
+  #     dockerfile: pythontests.Dockerfile
+  #   entrypoint: sh -c  "sleep 5 && pytest /tests/minitwit_sim_api_test.py"
+  #   environment:
+  #     - MT_BASEURL=http://minitwit_api:15001
 
-  tests:
-    build: ./tests/go
-    depends_on:
-      - server
-    command: go test
+  end_to_end_tests:
+      build:
+        context: ./tests/end_to_end_tests
+        dockerfile: endtoendtests.Dockerfile
+      entrypoint: sh -c  "sleep 20 && python /tests/test_itu_minitwit_ui.py"
+      depends_on:
+        - server
+        - postgres
+
+  # tests:
+  #   build: ./tests/go
+  #   depends_on:
+  #     - server
+  #   command: go test
 
   postgres:
     #hostname: postgres.db
