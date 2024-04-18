@@ -19,5 +19,6 @@ COPY  ./templates/ /minitwit/templates/
 COPY  ./static/ /minitwit/static/
 COPY --from=Build /minitwit/app /minitwit/app
 
-
+RUN chown -R 1000 /minitwit
+USER 1000:1000
 CMD ["/minitwit/app"]

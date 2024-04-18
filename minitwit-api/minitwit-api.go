@@ -96,15 +96,15 @@ func main() {
 
 	pgImpl := &postgres.PostgresDbImplementation{}
 	sqliteImpl := &sqlite.SqliteDbImplementation{}
-	pgImpl.Connect_db()
-	sqliteImpl.Connect_db()
 
 	dbType := os.Getenv("DBTYPE")
 
 	if dbType == "postgres" {
+		pgImpl.Connect_db()
 		db.SetDb(pgImpl)
 		lg.Info("Using Postgress as main DB.")
 	} else {
+		sqliteImpl.Connect_db()
 		db.SetDb(sqliteImpl)
 		lg.Info("Using SQLite as main DB.")
 	}
