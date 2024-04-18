@@ -86,11 +86,11 @@ func main() {
 		"formatUsernameUrl": func(username string) string {
 			return strings.Replace(username, " ", "%20", -1)
 		},
-		"isFollowing": func(user_id int64, message_author_id int64) bool {
-			return isFollowing(int(user_id), int(message_author_id))
+		"isFollowing": func(user_id int64, messageAuthorId int64) bool {
+			return isFollowing(int(user_id), int(messageAuthorId))
 		},
-		"IsFollowingBetter": func(following []map[interface{}]interface{}, message_author_id int64) bool {
-			return CheckValueInMap(following, message_author_id)
+		"IsFollowingBetter": func(following []map[interface{}]interface{}, messageAuthorId int64) bool {
+			return CheckValueInMap(following, messageAuthorId)
 		},
 	}
 	tpl, err = template.New("timeline.html").Funcs(funcMap).ParseGlob("templates/*.html") // We need to add the funcs that we want to use before parsing
@@ -604,10 +604,10 @@ func isFollowing(user_id int, profile_user_id int) bool {
 	return false
 }
 
-func getFollowing(user_id any) any {
+func getFollowing(userId any) any {
 
 	usr, err := query_db(`select whom_id from public.follower where
-	public.follower.who_id = $1`, []any{user_id}, false)
+	public.follower.who_id = $1`, []any{userId}, false)
 
 	fmt.Println(err)
 	return usr
