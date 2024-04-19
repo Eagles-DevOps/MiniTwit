@@ -62,7 +62,7 @@
             <div class="followstatus">
               {{if eq $user.username $fields.username}}
                 This is you!
-              {{else if IsFollowingBetter $following $fields.author_id}}
+              {{else if IsFollowing $following $fields.author_id}}
                 You are currently following this user
                 <a class="unfollow" href="{{url_for "unfollow" (formatUsernameUrl $fields.username)}}">Unfollow user</a>
               {{else}}

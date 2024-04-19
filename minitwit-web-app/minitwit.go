@@ -86,10 +86,7 @@ func main() {
 		"formatUsernameUrl": func(username string) string {
 			return strings.Replace(username, " ", "%20", -1)
 		},
-		"isFollowing": func(user_id int64, messageAuthorId int64) bool {
-			return isFollowing(int(user_id), int(messageAuthorId))
-		},
-		"IsFollowingBetter": func(following []map[interface{}]interface{}, messageAuthorId int64) bool {
+		"IsFollowing": func(following []map[interface{}]interface{}, messageAuthorId int64) bool {
 			return CheckValueInMap(following, messageAuthorId)
 		},
 	}
@@ -595,21 +592,14 @@ func reload(w http.ResponseWriter, r *http.Request, message string, template str
 	tpl.ExecuteTemplate(w, template, d)
 }
 
-func isFollowing(user_id int, profile_user_id int) bool {
-	usr, err := query_db(`select 1 from public.follower where
-	public.follower.who_id = $1 and public.follower.whom_id = $2`, []any{user_id, profile_user_id}, true)
-	if isNil(err) && usr != nil {
-		return true
-	}
-	return false
-}
-
 func getFollowing(userId any) any {
 
 	usr, err := query_db(`select whom_id from public.follower where
 	public.follower.who_id = $1`, []any{userId}, false)
 
-	fmt.Println(err)
+	if err != nil {
+		fmt.Println("Database error: ", err.Error())
+	}
 	return usr
 }
 
@@ -624,5 +614,3 @@ func CheckValueInMap(maps []map[interface{}]interface{}, value interface{}) bool
 	}
 	return false
 }
-
-//Current progress is that it works except for when user Trond is logged in and we're looking at user Bars timeline, of which Trond is following (it then prompts the "you're not currently following this user")
