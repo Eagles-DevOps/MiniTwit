@@ -37,7 +37,7 @@ from selenium.webdriver.firefox.options import Options
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 
-GUI_URL = "http://localhost:15000/register"
+GUI_URL = "http://localhost:15000"
 DB_URL = "postgresql://minitwituser:minitwitpw@localhost:5432/minitwit"
 
 

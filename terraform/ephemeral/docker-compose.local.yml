@@ -31,7 +31,7 @@ services:
     build:
       context: ../../tests/end_to_end_tests
       dockerfile: endtoendtests.Dockerfile
-    entrypoint: sh -c  "sleep 20 && python /tests/test_itu_minitwit_ui.py"
+    entrypoint: sh -c  "sleep 20 && pytest /tests/test_itu_minitwit_ui.py"
     depends_on:
       - server
       - postgres
