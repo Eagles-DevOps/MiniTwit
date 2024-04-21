@@ -27,14 +27,14 @@ services:
       - postgres
     command: ["./wait-for-it.sh", "postgres:5432", "--", "/minitwit/app"]
 
-  end_to_end_tests:
-    build:
-      context: ../../tests/end_to_end_tests
-      dockerfile: endtoendtests.Dockerfile
-    entrypoint: sh -c  "sleep 20 && pytest /tests/test_itu_minitwit_ui.py"
-    depends_on:
-      - server
-      - postgres
+  # end_to_end_tests:
+  #   build:
+  #     context: ../../tests/end_to_end_tests
+  #     dockerfile: endtoendtests.Dockerfile
+  #   entrypoint: sh -c  "sleep 20 && pytest /tests/test_itu_minitwit_ui.py"
+  #   depends_on:
+  #     - server
+  #     - postgres
 
 #Just for shadowing
   watchtower:

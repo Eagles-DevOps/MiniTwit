@@ -1,0 +1,48 @@
+name: End-to-end tests
+
+on:
+  push:
+    branches:
+      - 209-add-end-to-end-test
+  workflow_dispatch:
+
+jobs:
+  run-build-script:
+    name: Run script
+    runs-on: ubuntu-latest
+
+    steps: 
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Execute Script
+        run: |
+          bash path/to/your/script.sh
+          sleep 5  # Add a delay of 5 seconds to be sure eveything is up
+
+  run-tests: 
+    name: Run tests
+    needs: run-build-script
+    runs-on: ubuntu-latest
+
+    steps: 
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.11
+
+      - name: Install dependencies
+        run: |
+          pip install selenium
+          pip install psycopg2-binary
+          pip install pytest
+          wget https://github.com/mozilla/geckodriver/releases/download/v0.32.0/geckodriver-v0.32.0-linux64.tar.gz
+          tar xzvf geckodriver-v0.32.0-linux64.tar.gz
+          rm geckodriver-v0.32.0-linux64.tar.gz
+
+      - name: Run Pytest
+        run: pytest ./tests/end_to_end_tests/test_itu_minitwit_ui.py
+
+
+
+
