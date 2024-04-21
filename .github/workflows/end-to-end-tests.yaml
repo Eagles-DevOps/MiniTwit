@@ -17,7 +17,7 @@ jobs:
 
       - name: Execute Script
         run: |
-          bash path/to/your/script.sh
+          bash ./terraform/ephemeral/run-locally.sh
           sleep 5  # Add a delay of 5 seconds to be sure eveything is up
 
   run-tests: 
@@ -43,6 +43,6 @@ jobs:
       - name: Run Pytest
         run: pytest ./tests/end_to_end_tests/test_itu_minitwit_ui.py
 
-
+#destroy the docker images as well after the test 
 
 
