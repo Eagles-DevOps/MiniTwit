@@ -15,17 +15,17 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+      - name: Set up Docker Compose
+        uses: docker/compose-cli@v1
         with:
-          name: terraform-env
-          path: ~/terraform.env 
+          version: '3'  
 
-      - name: Execute Script
-        working-directory: ./terraform/ephemeral  # Specify the working directory
-        run: |
-          bash ./run-locally.sh
-          sleep 5  # Add a delay of 5 seconds to be sure eveything is up
+      - name: Build and run Docker services
+        run: docker compose -f docker-compose.yml -f docker-compose.local.yml up -d --build
+        working-directory: ./terraform/ephemeral  
+
+      - name: Wait for services to start
+        run: sleep 30  
 
   run-tests: 
     name: Run tests
