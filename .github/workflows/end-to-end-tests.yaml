@@ -19,7 +19,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: terraform-env
-          path: ~/terraform.env 
+          path: C:\Users\roman\terraform.env
 
       - name: Execute Script
         working-directory: ./terraform/ephemeral  # Specify the working directory
