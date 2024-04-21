@@ -15,11 +15,6 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Set up Docker Compose
-        uses: docker/compose-cli@v1
-        with:
-          version: '3'  
-
       - name: Build and run Docker services
         run: docker compose -f docker-compose.yml -f docker-compose.local.yml up -d --build
         working-directory: ./terraform/ephemeral  
