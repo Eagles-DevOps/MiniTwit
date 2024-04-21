@@ -16,10 +16,10 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: terraform-env
-          path: C:\Users\roman\terraform.env
+          path: ~/terraform.env 
 
       - name: Execute Script
         working-directory: ./terraform/ephemeral  # Specify the working directory
