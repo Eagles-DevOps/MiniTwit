@@ -16,8 +16,9 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Execute Script
+        working-directory: ./terraform/ephemeral  # Specify the working directory
         run: |
-          bash ./terraform/ephemeral/run-locally.sh
+          bash ./run-locally.sh
           sleep 5  # Add a delay of 5 seconds to be sure eveything is up
 
   run-tests: 
