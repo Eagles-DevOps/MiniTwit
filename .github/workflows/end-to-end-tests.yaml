@@ -15,6 +15,22 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      - name: Upload terraform.env
+        uses: actions/upload-artifact@v2
+        with:
+          name: terra
+          path: C:\Users\roman\terraform.env
+
+      - name: Download local files
+        uses: actions/download-artifact@v2
+        with:
+          name: terra
+
+      - name: Use the local files
+        run: |
+          ls -l
+          cat file.txt
+
       - name: Build and run Docker services
         run: docker compose -f docker-compose.yml -f docker-compose.local.yml up -d --build
         working-directory: ./terraform/ephemeral  
