@@ -24,25 +24,18 @@ Now, the test itself can be executed via: `pytest test_itu_minitwit_ui.py`.
 """
 
 import psycopg2
-import logging
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.firefox.service import Service
-from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
 
-
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-
-
-GUI_URL = "http://localhost:15000"
-DB_URL = "postgresql://minitwituser:minitwitpw@localhost:5432/minitwit"
-
+GUI_URL = "http://localhost:15000/register"
 
 def _register_user_via_gui(driver, data):
-    logging.info("Accessing the GUI to register a user.")
     driver.get(GUI_URL)
 
     wait = WebDriverWait(driver, 5)
@@ -56,14 +49,12 @@ def _register_user_via_gui(driver, data):
     wait = WebDriverWait(driver, 5)
     flashes = wait.until(EC.presence_of_all_elements_located((By.CLASS_NAME, "flashes")))
 
-
-    logging.info(f"Registration feedback received: {flashes[0].text}")
     return flashes
 
 
 def _get_user_by_name(db_conn, name):
     with db_conn.cursor() as cur:
-        cur.execute("SELECT * FROM user WHERE username = %s", (name,))
+        cur.execute("SELECT * FROM \"user\" WHERE username = %s", (name,))
         return cur.fetchone()
 
 def test_register_user_via_gui():
@@ -73,18 +64,22 @@ def test_register_user_via_gui():
     """
     firefox_options = Options()
     firefox_options.add_argument("--headless")
-    # firefox_options = None
-    with webdriver.Firefox(service=Service("./geckodriver"), options=firefox_options) as driver:
+    with webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=firefox_options) as driver:
         generated_msg = _register_user_via_gui(driver, ["Me", "me@some.where", "secure123", "secure123"])[0].text
         expected_msg = "You were successfully registered and can login now"
         assert generated_msg == expected_msg
 
     # Cleanup, make test case idempotent
-    db_conn = psycopg2.connect(DB_URL)
+    db_conn = psycopg2.connect(
+            host="localhost",
+            database="minitwit",
+            user="minitwituser",
+            password="minitwitpw"
+        )
     db_conn.autocommit = True  # To ensure changes are committed immediately
     try:
         with db_conn.cursor() as cursor:
-            cursor.execute("DELETE FROM user WHERE username = %s", ("Me",))
+            cursor.execute("DELETE FROM \"user\" WHERE username = %s", ("Me",))
     finally:
         db_conn.close()
 
@@ -95,8 +90,13 @@ def test_register_user_via_gui_and_check_db_entry():
     """
     firefox_options = Options()
     firefox_options.add_argument("--headless")
-    with webdriver.Firefox(service=Service("./geckodriver"), options=firefox_options) as driver:
-        db_conn = psycopg2.connect(DB_URL)
+    with webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=firefox_options) as driver:
+        db_conn = psycopg2.connect(
+            host="localhost",
+            database="minitwit",
+            user="minitwituser",
+            password="minitwitpw"
+        )
         db_conn.autocommit = True  # to ensure that transactions are committed without having to call db_conn.commit()
 
         try:
@@ -110,5 +110,5 @@ def test_register_user_via_gui_and_check_db_entry():
 
         finally:
             with db_conn.cursor() as cur:
-                cur.execute("DELETE FROM user WHERE username = %s", ("Me",))
+                cur.execute("DELETE FROM \"user\" WHERE username = %s", ("Me",))
             db_conn.close()

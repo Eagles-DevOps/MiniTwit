@@ -35,12 +35,24 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install selenium
-          pip install psycopg2-binary
-          pip install pytest
-          wget https://github.com/mozilla/geckodriver/releases/download/v0.32.0/geckodriver-v0.32.0-linux64.tar.gz
-          tar xzvf geckodriver-v0.32.0-linux64.tar.gz
-          rm geckodriver-v0.32.0-linux64.tar.gz
+          RUN apt-get update && apt-get install -y \
+              libpq-dev \
+              gcc \
+              wget \ 
+              gnupg \
+              unzip \
+              && rm -rf /var/lib/apt/lists/*
+
+          RUN pip install selenium
+          RUN pip install psycopg2-binary
+          RUN pip install pytest
+          RUN pip install webdriver-manager
+
+          RUN wget https://chromedriver.storage.googleapis.com/94.0.4606.41/chromedriver_linux64.zip \
+            && unzip chromedriver_linux64.zip \
+            && mv chromedriver /usr/local/bin/ \
+            && chmod +x /usr/local/bin/chromedriver \
+            && rm chromedriver_linux64.zip
 
       - name: Run Pytest
         run: pytest ./tests/end_to_end_tests/test_itu_minitwit_ui.py
