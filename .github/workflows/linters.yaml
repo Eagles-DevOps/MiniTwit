@@ -42,8 +42,13 @@ jobs:
         - name: Checkout repository
           uses: actions/checkout@v4
 
+        - name: Install Docker
+          run: |
+            sudo apt-get update
+            sudo apt-get install -y docker.io
+
         - name: Hadolint
           run: |
             cd ./minitwit-web-app
-            docker run -i hadolint/hadolint --format tty < Dockerfile
+            docker run --rm -i -e HADOLINT_FORMAT=tty hadolint/hadolint < Dockerfile
           continue-on-error: true
