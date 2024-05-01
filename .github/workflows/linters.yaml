@@ -45,5 +45,5 @@ jobs:
         - name: Hadolint
           run: |
             cd ./minitwit-web-app
-            docker run --rm -i hadolint/hadolint < Dockerfile
+            docker run -i hadolint/hadolint --format tty < Dockerfile
           continue-on-error: true
