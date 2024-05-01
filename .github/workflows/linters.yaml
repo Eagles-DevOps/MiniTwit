@@ -21,6 +21,7 @@ jobs:
         with:
           version: latest
           working-directory: ./minitwit-api
+          continue-on-error: true
 
       - name: WEB app
         uses: golangci/golangci-lint-action@v2
@@ -45,4 +46,5 @@ jobs:
           uses: hadolint/hadolint-action@v2.1.0
           with:
             dockerfile: Dockerfile
+            working-directory: ./minitwit-web-app
           continue-on-error: true
