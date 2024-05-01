@@ -6,7 +6,7 @@ on:
       - 230-add-linters
 
 jobs:
-  Static check:
+  StaticCheck:
     runs-on: ubuntu-latest
     permissions:
       contents: read
