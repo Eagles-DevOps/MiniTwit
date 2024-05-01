@@ -16,12 +16,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Switch to API app 
-        run: |
-          echo "Current directory is $GITHUB_WORKSPACE"
-          cd $GITHUB_WORKSPACE/minitwit-api
-
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v2
         with:
           version: latest
+          working-directory: ./minitwit-api
