@@ -1,0 +1,23 @@
+name: ci-cd
+
+on:
+  push:
+    branches:
+      - 230-add-linters
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run GoKart Linter
+        run : |
+          go install github.com/praetorian-inc/gokart@latest
+          cd minitwit-web-app
+          gokart scan
