@@ -6,7 +6,7 @@ on:
       - 230-add-linters
 
 jobs:
-  build:
+  Static check:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -16,8 +16,33 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: golangci-lint
+      - name: API app
         uses: golangci/golangci-lint-action@v2
         with:
           version: latest
           working-directory: ./minitwit-api
+
+      - name: WEB app
+        uses: golangci/golangci-lint-action@v2
+        with:
+          version: latest
+          working-directory: ./minitwit-web-app
+        continue-on-error: true
+
+
+
+  DockerFileCheck:
+      runs-on: ubuntu-latest
+      permissions:
+        contents: read
+        packages: write
+
+      steps:
+        - name: Checkout repository
+          uses: actions/checkout@v4
+
+        - name: Hadolint
+          uses: hadolint/hadolint-action@v2.1.0
+          with:
+            dockerfile: Dockerfile
+          continue-on-error: true
