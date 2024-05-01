@@ -16,8 +16,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Run GoKart Linter
+      - name: Install  GoKart Linter
         run : |
           go install github.com/praetorian-inc/gokart@latest
+
+      - name: Run GoKart
+        run: |
           cd minitwit-web-app
           gokart scan
+        
