@@ -22,6 +22,4 @@ jobs:
 
       - name: Run GoKart
         run: |
-          cd minitwit-web-app
           gokart scan
-        
