@@ -48,8 +48,14 @@ jobs:
             username: ${{ secrets.DOCKER_USERNAME }}
             password: ${{ secrets.DOCKER_TOKEN }}
 
-        - name: Hadolint
+        - name: Docker file - WEB app
           run: |
             cd ./minitwit-web-app
+            docker run --rm -i -e HADOLINT_FORMAT=tty hadolint/hadolint < Dockerfile
+          continue-on-error: true
+
+        - name: Docker file - API app
+          run: |
+            cd ./minitwit-api
             docker run --rm -i -e HADOLINT_FORMAT=tty hadolint/hadolint < Dockerfile
           continue-on-error: true
