@@ -81,3 +81,8 @@ jobs:
         run: |
           cd ./minitwit-web-app
           go vet ./...
+
+      - name: Run go vet
+        run: |
+          cd ./minitwit-api
+          go vet ./...
