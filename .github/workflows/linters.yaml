@@ -60,3 +60,22 @@ jobs:
             cd ./minitwit-api
             docker run --rm -i -e HADOLINT_FORMAT=tty hadolint/hadolint < Dockerfile
           continue-on-error: true
+
+
+  SourceCode: 
+    runs-on: ubuntu-latest
+      permissions:
+        contents: read
+        packages: write
+
+      steps:
+        - name: Checkout repository
+          uses: actions/checkout@v4
+
+        - name: Set up Go
+          uses: actions/setup-go@v2
+          with:
+            go-version: 1.17
+
+        - name: Run go vet
+          run: go vet ./...
