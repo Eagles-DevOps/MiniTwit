@@ -4,8 +4,7 @@ on:
   push:
     branches:
       - 230-add-linters
-      
-  dispatch_workflow: 
+  workflow_dispatch: 
 
 jobs:
   StaticCheck:
