@@ -3,7 +3,7 @@ name: Linters
 on:
   push:
     branches:
-      - 230-add-linters
+      - main
   workflow_dispatch: 
 
 jobs:
@@ -30,8 +30,6 @@ jobs:
           version: latest
           working-directory: ./minitwit-web-app
         continue-on-error: true
-
-
 
   DockerFileCheck:
     runs-on: ubuntu-latest
@@ -77,14 +75,14 @@ jobs:
         with:
           go-version: 1.20
 
-      - name: Run go vet
+      - name: Web app lint
         run: |
           cd ./minitwit-web-app
           go vet ./...
         continue-on-error: true
 
 
-      - name: Run go vet
+      - name: API app lint
         run: |
           cd ./minitwit-api
           go vet ./...        
