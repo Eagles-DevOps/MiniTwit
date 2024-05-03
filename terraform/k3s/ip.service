@@ -1,0 +1,6 @@
+[Unit]
+Description=Run my task every 5 seconds
+
+[Service]
+Type=simple
+ExecStart=/tmp/update_ip.sh

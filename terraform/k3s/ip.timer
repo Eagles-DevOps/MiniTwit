@@ -1,0 +1,10 @@
+[Unit]
+Description=Runs ip.service every 5 seconds
+
+[Timer]
+OnBootSec=5sec
+OnUnitActiveSec=5sec
+Unit=ip.service
+
+[Install]
+WantedBy=timers.target

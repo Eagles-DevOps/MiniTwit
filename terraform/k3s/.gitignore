@@ -1,0 +1,11 @@
+.terraform/
+
+terranetes.pub
+terranetes.pvt
+
+terraform.tfstate
+terraform.tfstate.backup
+
+redeploy.sh
+destroy.sh
+*secrets.env
