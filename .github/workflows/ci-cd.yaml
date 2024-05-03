@@ -83,10 +83,10 @@ jobs:
         env:
           SSH_KEY: ${{ secrets.SSH_KEY_TERRAFORM }}
 
-      - name: Deploy to server
-        run: >
-          ssh root@$SSH_HOST
-          -i ~/.ssh/terraform -o StrictHostKeyChecking=no
-          'sh /tmp/provision.sh'
-        env:
-          SSH_HOST: ${{ secrets.SSH_HOST_TERRAFORM }}
+ #      - name: Deploy to server
+ #       run: >
+ #         ssh root@$SSH_HOST
+ #         -i ~/.ssh/terraform -o StrictHostKeyChecking=no
+ #         'sh /tmp/provision.sh'
+ #       env:
+ #         SSH_HOST: ${{ secrets.SSH_HOST_TERRAFORM }}
