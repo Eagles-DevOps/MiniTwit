@@ -83,4 +83,4 @@ jobs:
         env:
           KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA }}
         with:
-            command: helm upgrade --install minitwit-api ./Charts/minitwit-api -f ./Charts/minitwit-api/values.yaml --set image.tag=${{steps.meta-api.outputs.version}} --wait -n minitwit
+            command: helm upgrade --install minitwit-api ./Charts/minitwit-api -f ./Charts/minitwit-api/values.yaml --set image.tag=${{steps.meta-api.outputs.version}} --wait -n minitwit-prod
