@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - "235-deploy-to-k3s"
   workflow_dispatch:
 
 env:
@@ -75,18 +76,11 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Configure SSH
-        run: |
-          mkdir -p ~/.ssh/
-          echo "$SSH_KEY" > ~/.ssh/terraform
-          chmod 600 ~/.ssh/terraform
-        env:
-          SSH_KEY: ${{ secrets.SSH_KEY_TERRAFORM }}
 
- #      - name: Deploy to server
- #       run: >
- #         ssh root@$SSH_HOST
- #         -i ~/.ssh/terraform -o StrictHostKeyChecking=no
- #         'sh /tmp/provision.sh'
- #       env:
- #         SSH_HOST: ${{ secrets.SSH_HOST_TERRAFORM }}
+
+      - name: helm deploy
+        uses: koslibpro/helm-eks-action@master
+        env:
+          KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA }}
+        with:
+            command: helm upgrade --install minitwit-api ./Charts/minitwit-api -f ./Charts/minitwit-api/values.yaml --set image.tag=${{steps.meta-api.outputs.version}} --wait -n minitwit
