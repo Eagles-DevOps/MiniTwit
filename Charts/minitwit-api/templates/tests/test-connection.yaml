@@ -6,10 +6,14 @@ metadata:
     {{- include "minitwit-api.labels" . | nindent 4 }}
   annotations:
     "helm.sh/hook": test
-spec:
+spec: # Noncompliant
   containers:
     - name: wget
       image: busybox
       command: ['wget']
       args: ['{{ include "minitwit-api.fullname" . }}:{{ .Values.service.port }}']
+      resources:
+        limits:
+          cpu: 0.5
+          memory: 100Mi
   restartPolicy: Never
