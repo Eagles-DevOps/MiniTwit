@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - "235-deploy-to-k3s"
   workflow_dispatch:
 
 env:

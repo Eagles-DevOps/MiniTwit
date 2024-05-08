@@ -6,7 +6,8 @@ metadata:
     {{- include "minitwit-api.labels" . | nindent 4 }}
   annotations:
     "helm.sh/hook": test
-spec: # Noncompliant
+spec:
+  automountServiceAccountToken: false
   containers:
     - name: wget
       image: busybox
