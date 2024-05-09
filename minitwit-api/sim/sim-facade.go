@@ -2,15 +2,24 @@ package sim
 
 import (
 	"encoding/json"
+	"minitwit-api/db"
+	"minitwit-api/logger"
 	"net/http"
-	"os"
+	"strconv"
 )
+
+var lg = logger.InitializeLogger()
 
 func UpdateLatest(r *http.Request) {
 	r.ParseForm()
 	latest := r.Form.Get("latest")
 	if latest != "" {
-		_ = os.WriteFile("./latest_processed_sim_action_id.txt", []byte((latest)), 0644)
+		db, err := db.GetDb()
+		if err != nil {
+			lg.Fatal("Failed to get DB", err)
+		}
+		val, _ := strconv.Atoi(latest)
+		db.SetCount("sim", val)
 	}
 }
 
