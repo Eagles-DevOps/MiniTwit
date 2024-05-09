@@ -96,22 +96,23 @@ func main() {
 
 	pgImpl := &postgres.PostgresDbImplementation{}
 	sqliteImpl := &sqlite.SqliteDbImplementation{}
-	pgImpl.Connect_db()
-	sqliteImpl.Connect_db()
 
 	dbType := os.Getenv("DBTYPE")
 
 	if dbType == "postgres" {
-		db.SetDb(pgImpl)
 		lg.Info("Using Postgress as main DB.")
+		pgImpl.Connect_db()
+		db.SetDb(pgImpl)
 	} else {
-		db.SetDb(sqliteImpl)
 		lg.Info("Using SQLite as main DB.")
+		sqliteImpl.Connect_db()
+		db.SetDb(sqliteImpl)
 	}
 
 	r := mux.NewRouter()
 	r.Use(prometheusMiddleware)
 
+	r.HandleFunc("/health", api.Health).Name("Health")
 	r.HandleFunc("/register", api.Register).Name("Register")
 	r.HandleFunc("/msgs", api.Messages).Methods("GET").Name("Messages")
 	r.HandleFunc("/msgs/{username}", api.Messages_per_user).Methods("GET", "POST").Name("Messages_per_user")
@@ -122,9 +123,13 @@ func main() {
 
 	r.Handle("/metrics", promhttp.Handler()).Name("Metrics")
 
-	//fmt.Println("Listening on port 15001...")
-	lg.Info("Listening on port 15001...")
-	err := http.ListenAndServe(":15001", r)
+	port := os.Getenv("APP_PORT")
+	if port == "" {
+		port = "15001"
+	}
+
+	lg.Info("Listening on port:", port)
+	err := http.ListenAndServe(":"+port, r)
 	if err != nil {
 		lg.Fatal("Failed to start server: %v", err)
 	}
