@@ -12,6 +12,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"gorm.io/gorm/logger"
 )
 
@@ -93,7 +94,7 @@ func (sqliteImpl *SqliteDbImplementation) Connect_db() {
 		readWritesDatabase.WithLabelValues("Connect_db", "connect", "fail").Inc()
 		return
 	}
-	sqliteImpl.db.AutoMigrate(&model.User{}, &model.Follower{}, &model.Message{})
+	sqliteImpl.db.AutoMigrate(&model.User{}, &model.Follower{}, &model.Message{}, &model.Count{})
 	readWritesDatabase.WithLabelValues("Connect_db", "connect", "success").Inc()
 
 	sqliteUserGauge.Set(sqliteImpl.QueryUserCount())
@@ -286,6 +287,29 @@ func (sqliteImpl *SqliteDbImplementation) GetAllFollowers() []model.Follower {
 		fmt.Println("Error:", res.Error)
 	}
 	return followers
+}
+
+// GetCount implements db.Idb.
+func (sqliteImpl *SqliteDbImplementation) GetCount(key string) int {
+	var sim model.Count
+	sqliteImpl.db.Where("key = ?", key).First(&sim)
+
+	return sim.Value
+}
+
+// SetCount implements db.Idb.
+func (sqliteImpl *SqliteDbImplementation) SetCount(key string, value int) error {
+	// Upsert operation
+	upsert := sqliteImpl.db.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "key"}},              // Unique columns
+		DoUpdates: clause.AssignmentColumns([]string{"value"}), // Columns to update
+	}).Create(&model.Count{Key: key, Value: value})
+
+	if upsert.Error != nil {
+		log.Fatalf("failed to upsert record: %v", upsert.Error)
+		return upsert.Error
+	}
+	return nil
 }
 
 func (sqliteImpl *SqliteDbImplementation) IsNil(i interface{}) bool {
