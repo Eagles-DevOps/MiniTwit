@@ -86,8 +86,8 @@ func main() {
 		"formatUsernameUrl": func(username string) string {
 			return strings.Replace(username, " ", "%20", -1)
 		},
-		"isFollowing": func(user_id int64, message_author_id int64) bool {
-			return isFollowing(int(user_id), int(message_author_id))
+		"IsFollowing": func(following []map[interface{}]interface{}, messageAuthorId int64) bool {
+			return CheckValueInMap(following, messageAuthorId)
 		},
 	}
 	tpl, err = template.New("timeline.html").Funcs(funcMap).ParseGlob("templates/*.html") // We need to add the funcs that we want to use before parsing
@@ -336,11 +336,14 @@ func timeline(w http.ResponseWriter, r *http.Request) {
 		flash := getFlash(w, r)
 		profile_user := user
 
+		following := getFollowing(user_id)
+
 		d := Data{
 			User:          user,
 			Profileuser:   profile_user,
 			Message:       messages,
 			FlashMessages: flash,
+			Followed:      following,
 		}
 
 		err = tpl.ExecuteTemplate(w, "timeline.html", d)
@@ -353,7 +356,7 @@ func timeline(w http.ResponseWriter, r *http.Request) {
 
 // """Displays the latest messages of all users."""
 func public_timeline(w http.ResponseWriter, r *http.Request) {
-	user, _, err := getUser(r)
+	user, user_id, err := getUser(r)
 	if err != nil || isNil(user) {
 		println("public timeline: the user is not logged in")
 	}
@@ -366,11 +369,17 @@ func public_timeline(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	flash := getFlash(w, r)
-
+	var following interface{}
+	following = nil
+	if !isNil(user) {
+		following = getFollowing(user_id)
+		fmt.Println(following)
+	}
 	d := Data{Message: messages,
 		User:          user,
 		Req:           r.RequestURI,
 		FlashMessages: flash,
+		Followed:      following,
 	}
 	err = tpl.ExecuteTemplate(w, "timeline.html", d)
 	if err != nil {
@@ -390,6 +399,7 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	username := vars["username"]
 
+	following := getFollowing(user_id)
 	profile_user, err := query_db("SELECT * FROM public.user WHERE username = $1", []any{username}, true)
 	if err != nil || isNil(profile_user) {
 		setFlash(w, r, "The user does not exist")
@@ -410,11 +420,11 @@ func user_timeline(w http.ResponseWriter, r *http.Request) {
 	}
 	flash := getFlash(w, r)
 
-	fmt.Println(user_id)
 	d := Data{Message: messages,
 		User:          user,
 		Profileuser:   profile_user,
 		FlashMessages: flash,
+		Followed:      following,
 	}
 	err = tpl.ExecuteTemplate(w, "timeline.html", d)
 	if err != nil {
@@ -582,11 +592,25 @@ func reload(w http.ResponseWriter, r *http.Request, message string, template str
 	tpl.ExecuteTemplate(w, template, d)
 }
 
-func isFollowing(user_id int, profile_user_id int) bool {
-	usr, err := query_db(`select 1 from public.follower where
-	public.follower.who_id = $1 and public.follower.whom_id = $2`, []any{user_id, profile_user_id}, true)
-	if isNil(err) && usr != nil {
-		return true
+func getFollowing(userId any) any {
+
+	usr, err := query_db(`select whom_id from public.follower where
+	public.follower.who_id = $1`, []any{userId}, false)
+
+	if err != nil {
+		fmt.Println("Database error: ", err.Error())
+	}
+	return usr
+}
+
+func CheckValueInMap(maps []map[interface{}]interface{}, value interface{}) bool { //ChatGPT.
+
+	for _, m := range maps {
+		for _, v := range m {
+			if v == value {
+				return true
+			}
+		}
 	}
 	return false
 }
