@@ -2,11 +2,6 @@ name: Run tests on PR
 
 on:
   pull_request:
-    paths:
-      - Charts/**
-      - minitwit-api/**
-      - minitwit-web-app/**
-      - tests/**
     branches:
       - main
   
