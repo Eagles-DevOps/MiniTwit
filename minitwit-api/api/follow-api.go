@@ -94,7 +94,6 @@ func no_followees(r *http.Request) int {
 	if value != "" {
 		intValue, err := strconv.Atoi(value)
 		if err == nil {
-			lg.Error("Error parsing 'no' query parameter")
 			return intValue
 		}
 	}
