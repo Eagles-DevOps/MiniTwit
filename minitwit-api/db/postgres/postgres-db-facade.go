@@ -14,6 +14,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	gorm_logger "gorm.io/gorm/logger"
 )
 
@@ -89,7 +90,7 @@ func (pgImpl *PostgresDbImplementation) Connect_db() {
 		return
 	}
 
-	pgImpl.db.AutoMigrate(&model.User{}, &model.Follower{}, &model.Message{})
+	pgImpl.db.AutoMigrate(&model.User{}, &model.Follower{}, &model.Message{}, &model.Count{})
 	readWritesDatabase.WithLabelValues("Connect_db", "connect", "success").Inc()
 	lg.Info("Successfully connected to the database")
 
@@ -313,6 +314,27 @@ func (pgImpl *PostgresDbImplementation) CreateFollowers(followers *[]model.Follo
 	res := pgImpl.db.CreateInBatches(&followers, 100)
 	if res.Error != nil {
 		return res.Error
+	}
+	return nil
+}
+
+func (pgImpl *PostgresDbImplementation) GetCount(key string) int {
+	var sim model.Count
+	pgImpl.db.Where("key = ?", key).First(&sim)
+
+	return sim.Value
+}
+
+func (pgImpl *PostgresDbImplementation) SetCount(key string, value int) error {
+	// Upsert operation
+	upsert := pgImpl.db.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "key"}},              // Unique columns
+		DoUpdates: clause.AssignmentColumns([]string{"value"}), // Columns to update
+	}).Create(&model.Count{Key: key, Value: value})
+
+	if upsert.Error != nil {
+		log.Fatalf("failed to upsert record: %v", upsert.Error)
+		return upsert.Error
 	}
 	return nil
 }
