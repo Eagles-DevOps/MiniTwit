@@ -19,10 +19,13 @@
 - Grafana
     - https://grafana.com/
     - Open source analytics and monitoring solution used for database
+- Mimir
+    - https://grafana.com/oss/mimir/
+    - long term storage for grafana data
+- Loki
+    -  https://grafana.com/oss/loki/
+    -  Loki is a horizontally scalable, highly available, multi-tenant log aggregation system inspired by Prometheus
 
-- github.com/jackc/pgx/v5
-    - PostgreSQL driver with toolkit for GO.
-    - *indirect, imported by Gorm*
 - github.com/prometheus/
     - github.com/prometheus/client_golang, github.com/prometheus/client_model, github.com/prometheus/common, github.com/prometheus/procfs
     - open-source software for monitoring webapps
@@ -43,13 +46,29 @@
     - open source system for automating deployment, scaling, and management of containerized applications.
     - https://kubernetes.io/
 
+- Rancher 
+    - https://www.rancher.com/
+    - open-source multi-cluster orchestration platform
+
+- Letsencrypt
+    - https://letsencrypt.org/
+    -  free, automated, and open certificate authority used for SSL certificates.
+
 - zap
     - https://pkg.go.dev/go.uber.org/zap@v1.27.0
     - Package for fast logging in golang
+- SonarQube
+    - https://www.sonarsource.com/products/sonarqube/
+    -  open-source platform developed by SonarSource for continuous inspection of code quality
+- Codeclimate
+    - https://codeclimate.com/
+    -
 ## Indirect dependencies
 
 
-
+- pgx
+    - PostgreSQL driver with toolkit for GO.
+    - github.com/jackc/pgx/v5 
 
 - SQlite
     - Database engine

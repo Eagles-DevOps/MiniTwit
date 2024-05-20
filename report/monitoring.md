@@ -15,10 +15,14 @@ Besides incrementing counters we also monitor back-end data:
     - Succesful HTTP requests
 
 Monitoring these gives us an insight to the extend of traffic passing through our API.
+For ease of access to the monitored data and for visualization, the group uses Grafanas dashboards, see ![Grafana Business data monitoring](/images/BusinessData.png)
+![Grafana backend data monitoring](/images/BackEndData.png)
 
 ## What do you log in your systems and how do you aggregate logs?
 
-??? 
+
+We log **Insert what we log** using *****
+The aggregation of logs are done using *Loki* 
 
 
 
