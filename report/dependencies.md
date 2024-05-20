@@ -20,4 +20,4 @@
 | Codeclimate | system that helps incorporating fully-configurable static analysis and test coverage data into a development workflow. | https://codeclimate.com/                        |
 | pgx         | PostgreSQL driver with toolkit for GO.                                                                                 | https://github.com/jackc/pgx/v5                 |
 | pq          | postgres for Go's database package                                                                                     | https://github.com/lib/pq                       |
-| go-sqlite3  | sqlite3 driver for Golang                                                                                              | github.com/mattn/go-sqlite3                     |
+| go-sqlite3  | sqlite3 driver for Golang                                                                                              | https://github.com/mattn/go-sqlite3                     |
