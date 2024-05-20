@@ -113,6 +113,7 @@ func main() {
 	r.Use(prometheusMiddleware)
 
 	r.HandleFunc("/health", api.Health).Name("Health")
+	r.HandleFunc("/stress", api.Stress).Name("Stress")
 	r.HandleFunc("/register", api.Register).Name("Register")
 	r.HandleFunc("/msgs", api.Messages).Methods("GET").Name("Messages")
 	r.HandleFunc("/msgs/{username}", api.Messages_per_user).Methods("GET", "POST").Name("Messages_per_user")
