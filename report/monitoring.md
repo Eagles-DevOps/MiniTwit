@@ -3,7 +3,7 @@
 
 ## How do you monitor your systems and what precicely do you monitor?
 
-For monitoring we use Prometheus. We do so by incrementing gauges or vectors whenever an event has succesfully occured.
+For monitoring we use Prometheus with Grafana. We do so by incrementing gauges or vectors whenever an event has succesfully occured.
 In the system we monitor a multitude of things, for business data we log:
     - We monitor the amount of users getting created.
     - The amount of new followers on the platform
@@ -15,19 +15,18 @@ Besides incrementing counters we also monitor back-end data:
     - Succesful HTTP requests
 
 Monitoring these gives us an insight to the extend of traffic passing through our API.
-For ease of access to the monitored data and for visualization, the group uses Grafanas dashboards, see ![Grafana Business data monitoring](/images/BusinessData.png)
-![Grafana backend data monitoring](/images/BackEndData.png)
+For ease of access to the monitored data and for visualization, the group uses Grafanas dashboards, see ![Grafana Business data monitoring](./images/BusinessData.png) //
+
+
 
 ## What do you log in your systems and how do you aggregate logs?
 
 
-We log **Insert what we log** using *****
-The aggregation of logs are done using *Loki* 
+We log every error that happens during any database request. These are written through *zap*. The setup is such that the individual error logs are collected by logtail. Logtail then sends it to a Loki database that handles aggregation of the logs. The logs are visible through the Grafana Dashboard *Error Logs*.
+
+
+It is important to note that we, due to time constraints, did not migrate our logs when moving to Kubernetes. The old logs are still hosted on a droplet
 
 
 
 
-
-
-
-### Vizualisation

@@ -1,101 +1,23 @@
-## List of dependencies
-
-- Golang
-    - https://go.dev/
-    - Statically typed, compiled high-level programming language
-- crypto
-    - golang.org/x/crypto
-    - Package supplying different cryptography libraries for golang
-- net/http
-    - https://pkg.go.dev/net/http
-    - Package used to make HTTP requests
-- https://pkg.go.dev/encoding/json
-    - enables encoding and decoding of JSON and mapping between JSON and go values
-
-- Gorm
-    - gorm.io/gorm
-    - easy to use ORM library for Golang
-
-- Grafana
-    - https://grafana.com/
-    - Open source analytics and monitoring solution used for database
-- Mimir
-    - https://grafana.com/oss/mimir/
-    - long term storage for grafana data
-- Loki
-    -  https://grafana.com/oss/loki/
-    -  Loki is a horizontally scalable, highly available, multi-tenant log aggregation system inspired by Prometheus
-
-- github.com/prometheus/
-    - github.com/prometheus/client_golang, github.com/prometheus/client_model, github.com/prometheus/common, github.com/prometheus/procfs
-    - open-source software for monitoring webapps
-
-- xxhash
-    - github.com/cespare/xxhash
-    - Golang implementation of the (fast) 64-bit xxHash algorithm
-
-- Gorilla
-    - github.com/gorilla
-    - Package that supplies different tools for developing web-applications in golang
-- Gorilla/mux
-    - https://github.com/gorilla/mux
-    - Package for request routing
-- Docker
-    - System for deployment, containerized applications and development
-- Kubernetes
-    - open source system for automating deployment, scaling, and management of containerized applications.
-    - https://kubernetes.io/
-
-- Rancher 
-    - https://www.rancher.com/
-    - open-source multi-cluster orchestration platform
-
-- Letsencrypt
-    - https://letsencrypt.org/
-    -  free, automated, and open certificate authority used for SSL certificates.
-
-- zap
-    - https://pkg.go.dev/go.uber.org/zap@v1.27.0
-    - Package for fast logging in golang
-- SonarQube
-    - https://www.sonarsource.com/products/sonarqube/
-    -  open-source platform developed by SonarSource for continuous inspection of code quality
-- Codeclimate
-    - https://codeclimate.com/
-    -
-## Indirect dependencies
-
-
-- pgx
-    - PostgreSQL driver with toolkit for GO.
-    - github.com/jackc/pgx/v5 
-
-- SQlite
-    - Database engine
-- Protobuf
-    - https://pkg.go.dev/google.golang.org/protobuf
-    - Go implementation for protocol buffers 
-
-- pq
-    - https://github.com/lib/pq
-    - postgres for Go's database package
-- go-sqlite3
-    - github.com/mattn/go-sqlite3
-    - sqlite3 driver for Golang
-- go-spew
-    - github.com/davecgh/go-spew
-    - package for pretty-printing in go
-- go-difflib
-    - github.com/pmezard/go-difflib
-    - go port for python3 library difflib, diffs between strings can be output as strings or written to IO.Writer
-- testify
-    - github.com/stretchr/testify
-    - assertion library for testing
-- gopkg.in/yaml.v3
-    - Data serialization language.
-- perks
-    - github.com/beorn7/perks
-    - Package used to compute approximate quantiles over an unbounded data stream.
-    - *indirect, used by prometheus*
-
--  
+| Name        | Description                                                                                                            | Link                                            |
+|-------------|------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------|
+| Golang      | Statically typed, compiled high-level programming language                                                             | https://go.dev/                                 |
+| crypto      | Package supplying different cryptography libraries for golang                                                          | https://golang.org/x/crypto                     |
+| net/http    | Package used to make HTTP requests                                                                                     | https://pkg.go.dev/net/http                     |
+| Gorm        | easy to use ORM library for Golang                                                                                     | https://gorm.io/gorm                            |
+| Grafana     | Open source analytics and monitoring solution used for database                                                        | https://grafana.com/                            |
+| Mimir       | long term storage for grafana data                                                                                     | https://grafana.com/oss/mimir/                  |
+| Loki        | Loki is a horizontally scalable, highly available, multi-tenant log aggregation system inspired by Prometheus          | https://grafana.com/oss/loki/                   |
+| Prometheus  | open-source software for monitoring webapps                                                                            | https://github.com/prometheus/                  |
+| xxhash      | Golang implementation of the (fast) 64-bit xxHash algorithm                                                            | https://github.com/cespare/xxhash               |
+| Gorilla     | Package that supplies different tools for developing web-applications in golang                                        | https://github.com/gorilla                      |
+| Gorilla/mux | Package for request routing                                                                                            | https://github.com/gorilla/mux                  |
+| Docker      | System for deployment, containerized applications and development                                                      | https://www.docker.com/                         |
+| Kubernetes  | open source system for automating deployment, scaling, and management of containerized applications.                   | https://kubernetes.io/                          |
+| Rancher     | open-source multi-cluster orchestration platform                                                                       | https://www.rancher.com/                        |
+| Letsencrypt | free, automated, and open certificate authority used for SSL certificates.                                             | https://letsencrypt.org/                        |
+| zap         | Package for fast logging in golang                                                                                     | https://pkg.go.dev/go.uber.org/zap@v1.27.0      |
+| SonarQube   | open-source platform developed by SonarSource for continuous inspection of code quality                                | https://www.sonarsource.com/products/sonarqube/ |
+| Codeclimate | system that helps incorporating fully-configurable static analysis and test coverage data into a development workflow. | https://codeclimate.com/                        |
+| pgx         | PostgreSQL driver with toolkit for GO.                                                                                 | https://github.com/jackc/pgx/v5                 |
+| pq          | postgres for Go's database package                                                                                     | https://github.com/lib/pq                       |
+| go-sqlite3  | sqlite3 driver for Golang                                                                                              | https://github.com/mattn/go-sqlite3                     |
