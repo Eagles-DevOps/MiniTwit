@@ -22,8 +22,7 @@ It is important to note that all data
 ## What do you log in your systems and how do you aggregate logs?
 
 
-We log using *loki*
-The aggregation of logs are done using *Loki* 
+We log every error that happens during any database request. These are written through *zap*. The setup is such that the individual error logs are collected by logtail. Logtail then sends it to a Loki database that handles aggregation of the logs. The logs are visible through the Grafana Dashboard *Error Logs*.
 
 
 
