@@ -42,12 +42,13 @@
 - Kubernetes
     - open source system for automating deployment, scaling, and management of containerized applications.
     - https://kubernetes.io/
--
-## Indirect dependencies
 
 - zap
     - https://pkg.go.dev/go.uber.org/zap@v1.27.0
     - Package for fast logging in golang
+## Indirect dependencies
+
+
 
 
 - SQlite
