@@ -16,7 +16,7 @@ Besides incrementing counters we also monitor back-end data:
 
 Monitoring these gives us an insight to the extend of traffic passing through our API.
 For ease of access to the monitored data and for visualization, the group uses Grafanas dashboards, see ![Grafana Business data monitoring](./images/BusinessData.png) //
-It is important to note that all data 
+
 
 
 ## What do you log in your systems and how do you aggregate logs?
@@ -24,6 +24,8 @@ It is important to note that all data
 
 We log every error that happens during any database request. These are written through *zap*. The setup is such that the individual error logs are collected by logtail. Logtail then sends it to a Loki database that handles aggregation of the logs. The logs are visible through the Grafana Dashboard *Error Logs*.
 
+
+It is important to note that we, due to time constraints, did not migrate our logs when moving to Kubernetes. The old logs are still hosted on a droplet
 
 
 
