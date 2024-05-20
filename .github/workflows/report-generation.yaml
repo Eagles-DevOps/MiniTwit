@@ -40,4 +40,4 @@ jobs:
           git commit -m "Generate PDF from Markdown files"
           git push
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.AUTOMATED_RELEASE }}
