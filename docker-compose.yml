@@ -13,7 +13,7 @@ services:
       - POSTGRES_DISABLE_SSL=true
     depends_on:
       - postgres
-    command: ["./wait-for-it.sh", "postgres:5432", "--", "/usr/local/bin/app"]
+    command: ["./wait-for-it.sh", "postgres:5432", "--", "/minitwit/app"]
 
   minitwit_api:
     build: ./minitwit-api
