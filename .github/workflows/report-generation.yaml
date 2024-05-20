@@ -6,8 +6,11 @@ on:
       - report/**
     branches:
       - main
+      - report-generation-fix
   workflow_dispatch:
 
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -18,12 +21,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # https://github.com/docker/login-action
-      - name: Set up Git user
-        run: |
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-
       - name: Install Pandoc
         run: sudo apt-get install -y pandoc
 
@@ -32,10 +29,14 @@ jobs:
 
       - name: Generate PDF
         run: |
-          pandoc $(ls report/*.md | sort) -s -o report/MSc_group_h.pdf
-
+          markdown_files=$(ls report/*.md | grep -v 'template.md' | sort -V) # Sort the files numerically and ignore template.md file
+          pandoc $markdown_files -s -o report/MSc_group_h.pdf
+          
       - name: Commit and push changes
         run: |
+          git config --global user.name ${{ secrets.BOT_USERNAME }}
+          git config --global user.email ${{ secrets.BOT_EMAIL }}
+
           git add report/MSc_group_h.pdf
           git commit -m "Generate PDF from Markdown files"
           git push
