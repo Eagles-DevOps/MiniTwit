@@ -29,7 +29,8 @@ jobs:
 
       - name: Generate PDF
         run: |
-          markdown_files=$(ls report/*.md | grep -v 'template.md' | sort -V) # Sort the files numerically and ignore template.md file
+          cd report
+          markdown_files=$(ls *.md | grep -v 'template.md' | sort -V) # Sort the files numerically and ignore template.md file
           pandoc $markdown_files -s -o report/MSc_group_h.pdf
           
       - name: Commit and push changes
