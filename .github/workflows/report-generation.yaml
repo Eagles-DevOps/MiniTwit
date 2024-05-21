@@ -10,7 +10,11 @@ on:
   workflow_dispatch:
 
 permissions:
+  actions: write
   contents: write
+  deployments: write
+  packages: write
+  repository-projects: write
 
 jobs:
   build:
@@ -42,13 +46,4 @@ jobs:
           git commit -m "Generate PDF from Markdown files"
           git push
         env:
-          GITHUB_TOKEN: ${{ secrets.AUTOMATED_RELEASE }}
-
-      - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: report-update-branch
-          base: main
-          title: "Automated PDF Generation"
-          body: "This pull request contains the latest PDF generated from Markdown files."
+          GITHUB_TOKEN: ${{ secrets.REPORT_TOKEN }}
