@@ -5,8 +5,7 @@ on:
     paths:
       - report/**
     branches:
-      - main
-      - report-generation-fix
+      - Report
   workflow_dispatch:
 
 permissions:
