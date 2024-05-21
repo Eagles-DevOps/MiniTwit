@@ -43,3 +43,12 @@ jobs:
           git push
         env:
           GITHUB_TOKEN: ${{ secrets.AUTOMATED_RELEASE }}
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: report-update-branch
+          base: main
+          title: "Automated PDF Generation"
+          body: "This pull request contains the latest PDF generated from Markdown files."
