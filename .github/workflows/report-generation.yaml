@@ -40,6 +40,7 @@ jobs:
         run: |
           git config --global user.name ${{ vars.BOT_USERNAME }}
           git config --global user.email ${{ secrets.BOT_EMAIL }}
+          git fetch origin
           git checkout report-generation
           git merge Report
           mkdir -p report/build
