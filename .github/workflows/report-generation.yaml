@@ -42,7 +42,7 @@ jobs:
           git config --global user.email ${{ secrets.BOT_EMAIL }}
           git fetch origin
           git checkout report-generation
-          git merge Report
+          git merge Report --allow-unrelated-histories
           mkdir -p report/build
           cd report
           markdown_files=$(ls *.md | grep -v 'template.md' | sort -V) # Sort the files numerically and ignore template.md file
