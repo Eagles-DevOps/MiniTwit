@@ -38,11 +38,18 @@ jobs:
           
       - name: Commit and push changes
         run: |
-          git config --global user.name ${{ secrets.BOT_USERNAME }}
+          git config --global user.name ${{ vars.BOT_USERNAME }}
           git config --global user.email ${{ secrets.BOT_EMAIL }}
-
-          git add report/MSc_group_h.pdf
+          git checkout report-generation
+          git merge Report
+          mkdir -p report/build
+          cd report
+          markdown_files=$(ls *.md | grep -v 'template.md' | sort -V) # Sort the files numerically and ignore template.md file
+          pandoc $markdown_files -s -o build/MSc_group_h.pdf
+          git add -f build/MSc_group_h.pdf
           git commit -m "Generate PDF from Markdown files"
-          git push
+          git push origin report-generation
+          gh pr create --title "Generate PDF from Markdown files" --body "This PR generates a PDF from the Markdown files in the report directory." --base main
+          gh pr merge --squash --auto
         env:
           GITHUB_TOKEN: ${{ secrets.REPORT_TOKEN }}
