@@ -16,5 +16,3 @@ Letsencrypt is used for SSL certificates and is automatically created/renewed fo
 
 
 ![ssl](images/ssl.png)
-
-
