@@ -13,3 +13,15 @@ When the pull request is completed, the changed are merged to main triggering th
 - Push docker image to registry
 - Deploy to K3S with Helm
 
+
+
+### Other workflow
+
+We have a few other workflows as part of our setup.
+
+As required a workflow generating a PDF top the report directory has been created.
+
+A manually triggered workflow for running linters exists in linters.yaml.
+
+Lastly a workflow for automating a weekly release is running at the end of each week.
+At this point it would make more sense to consider each automated deploy a release instead, but the automated release can be seen as a weekly snapshot.
