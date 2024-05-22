@@ -6,6 +6,7 @@ on:
       - report/**
     branches:
       - Report
+      - main
   workflow_dispatch:
 
 permissions:
@@ -38,11 +39,11 @@ jobs:
           
       - name: Commit and push changes
         run: |
-          git config --global user.name ${{ secrets.BOT_USERNAME }}
+          git config --global user.name ${{ vars.BOT_USERNAME }}
           git config --global user.email ${{ secrets.BOT_EMAIL }}
 
           git add report/MSc_group_h.pdf
-          git commit -m "Generate PDF from Markdown files"
+          git commit -m "Generate PDF from Markdown files as ${{ vars.BOT_USERNAME }}"
           git push
         env:
           GITHUB_TOKEN: ${{ secrets.REPORT_TOKEN }}
