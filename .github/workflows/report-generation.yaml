@@ -1,0 +1,48 @@
+name: report-generation
+
+on:
+  push:
+    paths:
+      - report/**
+    branches:
+      - Report
+  workflow_dispatch:
+
+permissions:
+  actions: write
+  contents: write
+  deployments: write
+  packages: write
+  repository-projects: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+        # https://github.com/actions/checkout
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Pandoc
+        run: sudo apt-get install -y pandoc
+
+      - name: Install LaTeX
+        run: sudo apt-get install -y texlive texlive-latex-extra
+
+      - name: Generate PDF
+        run: |
+          cd report
+          markdown_files=$(ls *.md | grep -v 'template.md' | sort -V) # Sort the files numerically and ignore template.md file
+          pandoc $markdown_files -s -o MSc_group_h.pdf
+          
+      - name: Commit and push changes
+        run: |
+          git config --global user.name ${{ secrets.BOT_USERNAME }}
+          git config --global user.email ${{ secrets.BOT_EMAIL }}
+
+          git add report/MSc_group_h.pdf
+          git commit -m "Generate PDF from Markdown files"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.REPORT_TOKEN }}
