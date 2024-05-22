@@ -5,12 +5,15 @@ on:
     paths:
       - report/**
     branches:
-      - main
-      - report-generation-fix
+      - Report
   workflow_dispatch:
 
 permissions:
+  actions: write
   contents: write
+  deployments: write
+  packages: write
+  repository-projects: write
 
 jobs:
   build:
@@ -29,8 +32,9 @@ jobs:
 
       - name: Generate PDF
         run: |
-          markdown_files=$(ls report/*.md | grep -v 'template.md' | sort -V) # Sort the files numerically and ignore template.md file
-          pandoc $markdown_files -s -o report/MSc_group_h.pdf
+          cd report
+          markdown_files=$(ls *.md | grep -v 'template.md' | sort -V) # Sort the files numerically and ignore template.md file
+          pandoc $markdown_files -s -o MSc_group_h.pdf
           
       - name: Commit and push changes
         run: |
@@ -41,4 +45,4 @@ jobs:
           git commit -m "Generate PDF from Markdown files"
           git push
         env:
-          GITHUB_TOKEN: ${{ secrets.AUTOMATED_RELEASE }}
+          GITHUB_TOKEN: ${{ secrets.REPORT_TOKEN }}
