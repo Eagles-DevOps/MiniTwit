@@ -1,0 +1,30 @@
+1. [Introduction](#introduction)
+2. [System's Perspective](#System's-Perspective)
+   1. [Design and Architecture](#design-and-architecture)
+   2. [Dependencies](#dependencies)
+   3. [Interactions of subsystems](#interactions)
+   4. [State of the system](#State-of-the-system)
+3. [Process' perspective](#Process'-perspective)
+   1. [CI/CD](#CI-CD)
+   2. [Monitoring](#monitoring)
+   3. [Security assesment](#security-assesment)
+   4. [Scaling](#scaling)
+4. [Lessons learned](#lessons-learned)
+   1. [Biggest Issues](#Biggest-issues)
+   2. [Reflections](#reflections)
+5. [Conclusion](#conclusion)
+6. [Appendix](#appendix)
+
+
+## Old Setup
+Before we introducted Kubernetes  
+![Module View: Repo overview](diagrams/module-view--overview.drawio.png)  
+
+
+![Module View: API](diagrams/module-view--minitwit-api.drawio.png)  
+
+
+![Module View: Web App](diagrams/module-view--minitwit-web-app.drawio.png)  
+
+
+![Module View: Terraform old](diagrams/module-view--terraform.drawio.png)  
